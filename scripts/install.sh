@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Symlink every skill in this checkout into every supported host:
+# Install every skill in this checkout into every supported host:
 #   ~/.agents/skills  (canonical runtime location)
 #   ~/.claude/skills  (Claude Code)
 #   ~/.cursor/skills  (Cursor)
-# Safe to re-run: existing symlinks are refreshed, real directories are left
-# alone and reported instead of overwritten.
+# Skills are COPIED, not symlinked, so the clone can be deleted after install.
+# Re-running replaces previously installed versions. Real directories that were
+# not installed by ostack (no marker, not a symlink) are left alone and reported.
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -36,7 +37,10 @@ for target in "${TARGETS[@]}"; do
 	mkdir -p "$target"
 done
 
-linked=0
+# Ownership markers: an installed skill carries .ostack so upgrades can tell
+# "ours, replace it" from "foreign, don't touch".
+installed=0
+replaced=0
 skipped=0
 for skill_dir in "$REPO_DIR"/skills/*/; do
 	name="$(basename "$skill_dir")"
@@ -44,32 +48,29 @@ for skill_dir in "$REPO_DIR"/skills/*/; do
 	source="${skill_dir%/}"
 
 	for target in "${TARGETS[@]}"; do
-		link="$target/$name"
-		if [ -e "$link" ] && [ ! -L "$link" ]; then
-			echo "skip $name in $target: exists and is not a symlink" >&2
+		dest="$target/$name"
+		if [ -e "$dest" ] && [ ! -L "$dest" ] && [ ! -f "$dest/.ostack" ]; then
+			echo "skip $name in $target: exists but was not installed by ostack" >&2
 			skipped=$((skipped + 1))
 			continue
 		fi
 		if [ "$DRY_RUN" = 1 ]; then
-			echo "would link $name -> $source ($target)"
-		else
-			ln -sfn "$source" "$link"
+			echo "would install $name -> $target"
+			continue
 		fi
+		rm -rf "$dest"
+		cp -R "$source" "$dest"
+		touch "$dest/.ostack"
 	done
-	linked=$((linked + 1))
+	[ "$DRY_RUN" = 1 ] || installed=$((installed + 1))
 done
 
 echo
 if [ "$DRY_RUN" = 1 ]; then
-	echo "Dry run: $linked skill(s) x ${#TARGETS[@]} hosts would be linked, $skipped skipped."
+	echo "Dry run: $(( $(ls -d "$REPO_DIR"/skills/*/ 2>/dev/null | wc -l) )) skill(s) x ${#TARGETS[@]} hosts."
 	exit 0
 fi
 
-echo "Linked $linked skill(s) into ${#TARGETS[@]} locations:"
+echo "Installed $installed skill(s) into ${#TARGETS[@]} locations:"
 printf '  %s\n' "${TARGETS[@]}"
-[ "$skipped" -gt 0 ] && echo "Skipped $skipped (see warnings above); remove or rename them and re-run to pick those up."
-
-echo
-echo "Memory skills (memory-admin, memory-capture, memory-loop, memory-recall)"
-echo "ship from github.com/orisilber/agent-memory, not this repo. Its own"
-echo "installer links those the same way."
+[ "$skipped" -gt 0 ] && echo "Skipped $skipped (see warnings above); those exist as foreign real directories."
