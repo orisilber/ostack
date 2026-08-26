@@ -108,13 +108,17 @@ git fetch origin && git switch -c "$BRANCH" "origin/$(git symbolic-ref --short r
 
 Default when the repo has no clear pattern:
 `<type>/<squad>/<KEY>-<slug>` — e.g. `bugfix/ravens/DMI-18844-asset-picker-chip-flicker`.
+A `<KEY>/<slug>` variant (`fix/llamas/DMI-19024/negative-duration-url`) is equally
+fine; the Jira↔GitLab bot links the MR off the key either way.
 
 - `<type>`: `feature` for Story, `bugfix` for Production Bug, `fix`/`chore`/`test` otherwise. Use the commitlint types the repo actually allows.
 - `<squad>`: a squad label on the ticket (`llamas`, `ravens`, `grizzlies`, `owls`, `lynx`). No squad label → drop the segment, don't guess.
 - `<slug>`: 4–6 words, kebab-case, from the summary with `[FE]`/`[BE]` tags stripped.
 
 The ticket key goes in every commit subject too: `fix(DMI-1234): <subject>`.
-That link is what makes the MR traceable back to the queue.
+That link is what makes the MR traceable back to the queue: the Jira↔GitLab bot
+sees the key and comments the MR onto the ticket, which is how the next session
+finds the work without being told.
 
 ## 4. Handoff contract
 

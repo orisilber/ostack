@@ -35,12 +35,12 @@ Then widen by text, by area, and by time window around the ship date:
 # text search across summary + description + comments
 acli jira workitem search --jql \
   'project = PROJ AND text ~ "\"rate limit\"" ORDER BY created DESC' \
-  --fields "key,issuetype,status,created,summary" --limit 30 --csv
+  --fields "key,issuetype,status,summary" --limit 30 --csv
 
 # what shipped around the merge date (bracket the window, don't guess)
 acli jira workitem search --jql \
-  'project = PROJ AND resolved >= "2026/01/01" AND resolved <= "2026/01/31"
-   AND text ~ "upload"' --limit 30 --csv
+  'project = PROJ AND resolved >= "2026/01/01" AND resolved <= "2026/01/31" AND text ~ "upload"' \
+  --fields "key,status,summary" --limit 30 --csv
 
 # the epic's whole family, for parent-initiative framing
 acli jira workitem search --jql 'parent = PROJ-1200' --limit 50 --csv
@@ -53,6 +53,16 @@ JQL notes that save a re-run: `text ~` matches summary, description and comments
 quote phrases twice (`text ~ "\"exact phrase\""`); `statusCategory != Done` beats
 listing statuses by name because status vocabularies differ per project; dates are
 `yyyy/MM/dd`; `--limit` and `--fields` are token discipline, not decoration.
+
+`--fields` on `search` only renders a fixed display set (key, type, status,
+priority, assignee, labels, summary). Asking it for `created` or `resolved` errors
+out with `field '<name>' is not allowed`. Filter by date in the JQL and read the
+timestamp from `workitem view` for the one ticket that matters — `--json` on a
+search returns the full field payload per issue and will bury your context.
+
+The Jira↔GitLab bot posts a comment on the ticket the moment an MR mentions its
+key, so `comment list` is usually the cheapest ticket→MR bridge there is. Check it
+before searching GitLab by hand.
 
 ## What to bring back
 

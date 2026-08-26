@@ -20,6 +20,11 @@ acli jira workitem search --jql "parent = $EPIC" \
 acli jira workitem comment list --key "$EPIC" 2>&1 | tail -60
 ```
 
+`search --fields` renders only a fixed display set — key, type, status, priority,
+assignee, labels, summary. Anything else (`created`, `resolved`, `description`)
+errors as `field '<name>' is not allowed`; read those per ticket with
+`workitem view` instead.
+
 Children already exist → you are *extending* a decomposition, not starting one.
 Read them first and never duplicate a scope that's already ticketed.
 

@@ -64,7 +64,7 @@ contents into a report. Credentials come from env or the repo's existing config
 ## 3. Deterministic by construction
 
 - Fixed viewport (`{ width: 1280, height: 800 }` default).
-- UI shows time or relative dates → freeze it: `await page.clock.install({ time: new Date('2026-01-15T10:00:00Z') })`.
+- UI shows time or relative dates → freeze it: `await page.clock.install({ time: new Date('2026-01-15T10:00:00Z') })`. `page.clock` needs Playwright 1.45+; on an older pin (check `npx playwright --version`) stub `Date` yourself with `page.addInitScript` and say which you used.
 - Third-party or flaky endpoint in the flow → `page.route()` it to a fixture.
   Never mock the endpoint the change itself touches; that's how a green run
   proves nothing.
