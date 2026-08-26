@@ -1,6 +1,6 @@
 ---
 name: typescript-best-practices
-description: TypeScript type discipline — discriminated unions, branded types, no `as`, exhaustiveness, parse at the boundary — with worked examples. Triggers reading or editing any .ts or .tsx file. Use as a lens while writing TypeScript; repo-local rules win on style, this wins on types.
+description: TypeScript type discipline. Discriminated unions, branded types, no `as`, exhaustiveness, parse at the boundary, with worked examples. Triggers reading or editing any .ts or .tsx file. Use as a lens while writing TypeScript; repo-local rules win on style, this wins on types.
 ---
 
 # TypeScript best practices

@@ -1,19 +1,19 @@
 ---
 name: reproduce-first
-description: For bug tickets — write a failing test that reproduces the reported behavior before attempting any fix, then fix against it. Triggers "reproduce the bug", "failing test first", "bug ticket". Use ONLY for defect work, not features or refactors.
+description: For bug tickets. Write a failing test that reproduces the reported behavior before attempting any fix, then fix against it. Triggers "reproduce the bug", "failing test first", "bug ticket". Use only for defect work, not features or refactors.
 ---
 
 # Reproduce First
 
-A bug you can't reproduce, you can't fix — and a fix without a failing test
+A bug you can't reproduce, you can't fix, and a fix without a failing test
 first is a guess that might regress later.
 
 ## Order is mandatory
 
-1. RED: test exists, fails for the REPORTED reason
+1. RED: test exists, fails for the reported reason
 2. Fix code (never touch the test's assertions)
 3. GREEN: same test passes
-4. `verify-changes` → commit as TWO commits:
+4. `verify-changes` → commit as two commits:
    - `test: reproduce #<iid>` (the failing-state test)
    - `fix: <what> (#<iid>)`
 
@@ -35,7 +35,7 @@ missing, attempt with the most literal reading of the report.
 Run it. The failure mode must match the reported symptom:
 
 - Test passes immediately → either bug is already fixed (comment on the ticket
-  saying so, close via babysit flow) or you misread the report. Do NOT invent a
+  saying so, close via babysit flow) or you misread the report. Do not invent a
   different bug to have something red.
 - Failure is unrelated (env broken, import error) → fix the harness, not yet
   the product code.
@@ -44,7 +44,7 @@ Run it. The failure mode must match the reported symptom:
 
 Implement the minimal fix. Re-run the repro test AND its neighbors in the same
 file/directory to catch regressions. If fixing requires changing the test's
-assertions — stop: either the report was wrong (escalate) or you're writing a
+assertions, stop: either the report was wrong (escalate) or you're writing a
 different feature than reported.
 
 ## When a unit test is the wrong tool
@@ -52,15 +52,15 @@ different feature than reported.
 The failing test is the default, not a ritual. A test path is impractical when it
 would need broad harness setup, brittle mocks, slow end-to-end infrastructure,
 production-only state, or large unrelated fixture churn. Prefer no new test over a
-bad one — a bad test mostly exercises mocks, encodes current implementation
+bad one. A bad test mostly exercises mocks, encodes current implementation
 details, depends on timing or global state, or would be deleted the moment it
 proved the fix.
 
 Impractical does not mean skip the step. Say out loud why the test isn't worth its
 cost, then reproduce with the closest executable check you can re-run: a targeted
 script, an `e2e-verify` flow, a snapshot comparison, a log assertion, a focused
-integration check, or one documented manual command. The rule is unchanged — the
-broken behavior is observable and failing BEFORE you touch product code.
+integration check, or one documented manual command. The rule is unchanged: the
+broken behavior is observable and failing before you touch product code.
 
 Guardrails either way:
 
@@ -74,7 +74,7 @@ Guardrails either way:
 ## Cannot reproduce after 3 honest attempts
 
 → `escalate` with: exact attempts tried, environments, and your best hypothesis.
-Do NOT ship a speculative fix.
+Do not ship a speculative fix.
 
 ## Report the evidence, not the outcome
 

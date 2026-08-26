@@ -1,6 +1,6 @@
 ---
 name: technical-writing
-description: Layered writing standard — Diataxis structure, Google developer style, simplified technical English, global English syntax — for docs, RFCs, readmes, MR descriptions, and commit messages. Triggers "technical writing", "write the docs", "draft the MR description". Use for the shape and correctness of prose; unslop strips the AI tells afterwards.
+description: Layered writing standard. Diataxis structure, Google developer style, simplified technical English, global English syntax, for docs, RFCs, readmes, MR descriptions, and commit messages. Triggers "technical writing", "write the docs", "draft the MR description". Use for the shape and correctness of prose; unslop strips the AI tells afterwards.
 disable-model-invocation: true
 ---
 

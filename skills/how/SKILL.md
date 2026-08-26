@@ -1,6 +1,6 @@
 ---
 name: how
-description: Explain how a subsystem works — runtime flow, architecture, ownership and layering ("where should this live") — with an optional multi-model critique pass. Triggers "how does X work", "walk me through this", "which layer owns this". Use ONLY for behavior and structure; motivation and history belong to why.
+description: Explain how a subsystem works, runtime flow, architecture, ownership and layering ("where should this live"), with an optional multi-model critique pass. Triggers "how does X work", "walk me through this", "which layer owns this". Use only for behavior and structure; motivation and history belong to why.
 ---
 
 # How
@@ -14,20 +14,20 @@ Two modes:
 
 ## Model panel
 
-pstack's `~/.cursor/rules/pstack-models.mdc` is the roster whenever it exists —
-read it and don't define a competing config. Without it:
+pstack's `~/.cursor/rules/pstack-models.mdc` is the roster whenever it exists.
+Read it and don't define a competing config. Without it:
 
 - **Cursor (default)**: `claude-fable-5-thinking-max`, `gpt-5.6-sol-max`,
   `grok-4.6-fast-xhigh`, `claude-opus-5-thinking-xhigh`. Cheap mechanical fan-out
   goes to grok; judgment and prose go to fable.
 - **Single-vendor host** (Claude Code, opencode): the panel collapses to one
-  family. Diversity then comes from the lens, not the model — one agent per
+  family. Diversity then comes from the lens, not the model: one agent per
   distinct angle on the best model available, and say in the output that model
   diversity was unavailable. Agreement between same-family agents is weaker
   evidence than cross-vendor agreement; don't report it as consensus.
 - **Rejected slug**: never a reason to skip the panel. Drop to the nearest valid
   slug in the same family, note the substitution, keep going. `inherit-parent` and
-  `auto` are not broken slugs — omit the model instead.
+  `auto` are not broken slugs. Omit the model instead.
 
 ## Explain Mode
 

@@ -1,6 +1,6 @@
 ---
 name: recall
-description: Rebuild your working context on a topic from your own transcripts plus the shared record (MRs, tickets, incidents, errors) and hand back a tight current-state brief. Triggers "catch me up", "what was I working on", "where did I leave off", before resuming work. Use ONLY to reconstruct context; durable preferences and facts are memory-recall.
+description: Rebuild your working context on a topic from your own transcripts plus the shared record (MRs, tickets, incidents, errors) and hand back a tight current-state brief. Triggers "catch me up", "what was I working on", "where did I leave off", before resuming work. Use only to reconstruct context; durable preferences and facts are memory-recall.
 disable-model-invocation: true
 ---
 
@@ -15,7 +15,7 @@ Your context lives in two records. Your own chat history holds what you did and 
 Transcripts are per-workspace JSONL, one chat message per line. Where they live depends on the host:
 
 - **Cursor**: `~/.cursor/projects/<slug>/agent-transcripts/<uuid>/<uuid>.jsonl`, where `<slug>` is the workspace path with the leading slash dropped and each "/" turned into "-" (so `/Users/you/proj` becomes `Users-you-proj`).
-- **Claude Code**: `~/.claude/projects/<slug>/<uuid>.jsonl`, where `<slug>` is the full path with every "/" and "." turned into "-", leading dash kept (so `/Users/you/dev/proj` becomes `-Users-you-dev-proj`). A git worktree is its own slug, so a task worked in a worktree is not in the main checkout's directory — check both.
+- **Claude Code**: `~/.claude/projects/<slug>/<uuid>.jsonl`, where `<slug>` is the full path with every "/" and "." turned into "-", leading dash kept (so `/Users/you/dev/proj` becomes `-Users-you-dev-proj`). A git worktree is its own slug, so a task worked in a worktree is not in the main checkout's directory. Check both.
 
 Neither directory exists → say so and work from live state alone. Don't invent a history.
 

@@ -1,6 +1,6 @@
 ---
 name: interrogate
-description: Adversarial review panel over a diff — independent reviewers attack it from different angles, then one lead judgment sorts every finding into act-on / consider / noted / dismissed. Triggers "interrogate", "adversarial review", "stress test this", "tear this apart". Use ONLY on a changeset you want broken; it never auto-applies fixes, and a repo-local review skill wins where one exists.
+description: Adversarial review panel over a diff. Independent reviewers attack it from different angles, then one lead judgment sorts every finding into act-on / consider / noted / dismissed. Triggers "interrogate", "adversarial review", "stress test this", "tear this apart". Use only on a changeset you want broken; it never auto-applies fixes, and a repo-local review skill wins where one exists.
 disable-model-invocation: true
 ---
 
@@ -8,24 +8,24 @@ disable-model-invocation: true
 
 Spawn one reviewer per configured model to adversarially review code changes. Each model gets the same prompt and rubric. The adversarial signal comes from model diversity, not assigned personas. Models differ in blind spots, priors, and reasoning patterns. Agreement across models is high-confidence signal; lone-model findings are worth reading but lower confidence.
 
-The deliverable is a synthesized verdict. Do NOT auto-apply changes.
+The deliverable is a synthesized verdict. Do not auto-apply changes.
 
 ## Model panel
 
-pstack's `~/.cursor/rules/pstack-models.mdc` is the roster whenever it exists —
-read it and don't define a competing config. Without it:
+pstack's `~/.cursor/rules/pstack-models.mdc` is the roster whenever it exists.
+Read it and don't define a competing config. Without it:
 
 - **Cursor (default)**: `claude-fable-5-thinking-max`, `gpt-5.6-sol-max`,
   `grok-4.6-fast-xhigh`, `claude-opus-5-thinking-xhigh`. Cheap mechanical fan-out
   goes to grok; judgment and prose go to fable.
 - **Single-vendor host** (Claude Code, opencode): the panel collapses to one
-  family. Diversity then comes from the lens, not the model — one agent per
+  family. Diversity then comes from the lens, not the model: one agent per
   distinct angle on the best model available, and say in the output that model
   diversity was unavailable. Agreement between same-family agents is weaker
   evidence than cross-vendor agreement; don't report it as consensus.
 - **Rejected slug**: never a reason to skip the panel. Drop to the nearest valid
   slug in the same family, note the substitution, keep going. `inherit-parent` and
-  `auto` are not broken slugs — omit the model instead.
+  `auto` are not broken slugs. Omit the model instead.
 
 ## Step 1, Determine Scope
 

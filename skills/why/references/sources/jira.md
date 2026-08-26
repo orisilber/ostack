@@ -14,7 +14,7 @@ Best at the **product or business forcing function**: who asked, what deadline, 
 ## Access, in order of preference
 
 1. **Atlassian MCP**, if connected. Richest for search and for fields the CLI hides.
-2. **`acli`**, always available once authenticated (`acli jira auth status`). No MCP needed — this is why an absent Jira MCP is *not* a reason to skip this category.
+2. **`acli`**, always available once authenticated (`acli jira auth status`). No MCP needed, which is why an absent Jira MCP is *not* a reason to skip this category.
 3. Jira REST via `curl` with an API token, only for fields `acli` won't return.
 
 Never assume the category is unavailable without trying `acli` first.
@@ -57,7 +57,7 @@ listing statuses by name because status vocabularies differ per project; dates a
 `--fields` on `search` only renders a fixed display set (key, type, status,
 priority, assignee, labels, summary). Asking it for `created` or `resolved` errors
 out with `field '<name>' is not allowed`. Filter by date in the JQL and read the
-timestamp from `workitem view` for the one ticket that matters — `--json` on a
+timestamp from `workitem view` for the one ticket that matters. `--json` on a
 search returns the full field payload per issue and will bury your context.
 
 The Jira↔GitLab bot posts a comment on the ticket the moment an MR mentions its

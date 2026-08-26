@@ -1,12 +1,12 @@
 ---
 name: escalate
-description: Stop-and-ask policy for autonomous agents — decides when to halt and ping the human instead of guessing. Triggers "escalate", "should I ask the user", "blocked". Called by every other ostack skill at decision points. Use ONLY for escalation decisions and formatting the ask, not for general questions.
+description: Stop-and-ask policy for autonomous agents. Decides when to halt and ping the human instead of guessing. Triggers "escalate", "should I ask the user", "blocked". Called by every other ostack skill at decision points. Use only for escalation decisions and formatting the ask, not for general questions.
 ---
 
 # Escalate
 
 Autonomy is bounded. This skill is the boundary. When any rule below matches,
-STOP working and emit ONE ask — never continue past a hard stop.
+stop working and emit one ask. Never continue past a hard stop.
 
 ## Hard stops (always halt, no judgment calls)
 
@@ -17,8 +17,8 @@ STOP working and emit ONE ask — never continue past a hard stop.
 - **Security findings**: exposed credentials, vulnerable dependency with known CVE,
   suspicious code in the diff.
 - **Spend/time budget**: session exceeded its declared budget. Default 30 min
-  wall-clock UNLESS the calling skill declares its own (long-running skills
-  like babysit-gitlab-mr legitimately run hours — their budget overrides this
+  wall-clock unless the calling skill declares its own (long-running skills
+  like babysit-gitlab-mr legitimately run hours; their budget overrides this
   default).
 - **Scope wall**: task requires access you don't have (prod systems, third-party
   consoles, approvals).
@@ -37,20 +37,20 @@ Style preferences, naming, missing tests you can write, transient network errors
 (retry once), docs gaps you can fill, anything reversible inside the worktree.
 
 The default outside the stops above is to proceed, not to ask. On reversible work,
-act, present the result, and let the human course-correct after the fact — that is
+act, present the result, and let the human course-correct after the fact. That is
 the **never-block-on-the-human** principle, and this skill is its only boundary.
 An ask that could have been a diff wastes the human's turn. When the two pull
 against each other, a hard stop always wins.
 
-## The ask — format exactly once, batched
+## The ask: format exactly once, batched
 
 ```
-ESCALATION — <task/ticket ref>
+ESCALATION: <task/ticket ref>
 Blocked: <one sentence, concrete>
 Tried: <numbered list of what was attempted, one line each>
 Options:
-  A) <action> — <consequence> (recommended)
-  B) <action> — <consequence>
+  A) <action>: <consequence> (recommended)
+  B) <action>: <consequence>
 Default if no answer: <what you will do and when you will do it>
 ```
 

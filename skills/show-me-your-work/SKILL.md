@@ -1,6 +1,6 @@
 ---
 name: show-me-your-work
-description: Keep a reviewable decision trail for long or unattended runs — one TSV row per decision with what, why, evidence, and result. Triggers "show me your work", "keep a decision log", autonomous or multi-phase runs, work a human reviews after stepping away. Use ONLY for logging decisions; it neither makes them nor verifies them.
+description: Keep a reviewable decision trail for long or unattended runs, one TSV row per decision with what, why, evidence, and result. Triggers "show me your work", "keep a decision log", autonomous or multi-phase runs, work a human reviews after stepping away. Use only for logging decisions; it neither makes them nor verifies them.
 disable-model-invocation: true
 ---
 
@@ -41,7 +41,7 @@ Log decision points and checkpoints, not every action: a fork chosen, a unit com
 
 ## Where it lives
 
-By default the log is a working artifact, not committed. Keep it at `decisions.tsv` in the work dir, or `.audit/<task-slug>.tsv` when several efforts run at once, and leave it out of git. In an ostack loop, put it beside the run's state file — `.git/<ticket>-decisions.tsv` next to `.git/<skill>-state.json` — so a resumed session finds the trail and the state in the same place, and neither gets committed by accident. Most work doesn't need a committed trail; the local log still keeps the run honest and can be discarded after.
+By default the log is a working artifact, not committed. Keep it at `decisions.tsv` in the work dir, or `.audit/<task-slug>.tsv` when several efforts run at once, and leave it out of git. In an ostack loop, put it beside the run's state file: `.git/<ticket>-decisions.tsv` next to `.git/<skill>-state.json`, so a resumed session finds the trail and the state in the same place, and neither gets committed by accident. Most work doesn't need a committed trail; the local log still keeps the run honest and can be discarded after.
 
 Commit it only when the work is ambitious enough that a reviewer needs the trail to trust the result: a large cross-language port, a multi-week migration, anything where confidence has to be shown rather than assumed. A committed log renders as a table in the PR.
 

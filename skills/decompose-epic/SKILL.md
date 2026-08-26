@@ -1,6 +1,6 @@
 ---
 name: decompose-epic
-description: Split a Jira epic into atomic, conflict-free agent tickets with acceptance criteria and disjoint file scopes, and create them with acli as child work items. Triggers "decompose epic", "break down ticket", "create backlog", "split into tasks". Use ONLY for epic→ticket decomposition, not for claiming or implementing tickets.
+description: Split a Jira epic into atomic, conflict-free agent tickets with acceptance criteria and disjoint file scopes, and create them with acli as child work items. Triggers "decompose epic", "break down ticket", "create backlog", "split into tasks". Use only for epic→ticket decomposition, not for claiming or implementing tickets.
 ---
 
 # Decompose Epic
@@ -20,7 +20,7 @@ acli jira workitem search --jql "parent = $EPIC" \
 acli jira workitem comment list --key "$EPIC" 2>&1 | tail -60
 ```
 
-`search --fields` renders only a fixed display set — key, type, status, priority,
+`search --fields` renders only a fixed display set: key, type, status, priority,
 assignee, labels, summary. Anything else (`created`, `resolved`, `description`)
 errors as `field '<name>' is not allowed`; read those per ticket with
 `workitem view` instead.
@@ -28,7 +28,7 @@ errors as `field '<name>' is not allowed`; read those per ticket with
 Children already exist → you are *extending* a decomposition, not starting one.
 Read them first and never duplicate a scope that's already ticketed.
 
-If discussion is long, summarize it now and work from the summary — never
+If discussion is long, summarize it now and work from the summary. Never
 re-read it later. Then explore the codebase enough to name real files and
 modules per ticket. Guessing scopes from titles is how parallel agents collide.
 
@@ -40,14 +40,14 @@ Each ticket needs:
   implementable without reading the epic.
 - **Description**: goal in 2–3 sentences, acceptance criteria as a CHECKLIST
   (each item objectively checkable), explicit out-of-scope line.
-- **Scope**: the files and modules it touches — MUST be disjoint across tickets.
-  Shared foundations (types, API client, feature flag, util) become their OWN
+- **Scope**: the files and modules it touches, and must be disjoint across tickets.
+  Shared foundations (types, API client, feature flag, util) become their own
   first ticket that the others depend on.
 - **Dependencies**: which tickets must merge first. A DAG, kept shallow.
 - **Type**: `Story` for behavior, `Production Bug` only for a real reported
   defect, `Sub-task` when the parent is a Story rather than an Epic. Match the
   types the project actually has; `acli jira project view` if unsure.
-- **Size**: if you can't state the touched files, it's too big — split.
+- **Size**: if you can't state the touched files, it's too big. Split.
 
 ## 3. Self-check before creating
 
@@ -68,9 +68,9 @@ Run this matrix against the draft:
 ## 4. Show ONE approval table, then create
 
 Present `# | summary | type | scope | depends on`. The user edits or approves
-ONCE. Skip the approval entirely when invoked with "auto" or from a loop.
+once. Skip the approval entirely when invoked with "auto" or from a loop.
 
-Write each description to a file rather than inlining it — Jira descriptions are
+Write each description to a file rather than inlining it. Jira descriptions are
 multi-line and shell-quoting them is where this step breaks:
 
 ```bash
@@ -107,7 +107,7 @@ One summary block: created keys, the DAG as `DMI-1 → DMI-2` lines, and the
 suggested parallel lanes (which tickets can run simultaneously). Nothing else.
 
 `pick-next-task` picks these up from here. If the lanes matter, say so in the
-epic as one comment — that's where the next session looks:
+epic as one comment. That's where the next session looks:
 
 ```bash
 acli jira workitem comment create --key "$EPIC" --body-file /tmp/lanes.md

@@ -1,6 +1,6 @@
 ---
 name: deploy-watch
-description: Watch a deployment's health after release — compare error/latency/uptime metrics against baseline, and roll back or alert per pre-authorized policy. Triggers "watch the deploy", "post-deploy check", "monitor rollout". Use ONLY for post-deployment monitoring; triggering deploys belongs to CI or release.
+description: Watch a deployment's health after release. Compare error/latency/uptime metrics against baseline, and roll back or alert per pre-authorized policy. Triggers "watch the deploy", "post-deploy check", "monitor rollout". Use only for post-deployment monitoring; triggering deploys belongs to CI or release.
 ---
 
 # Deploy Watch
@@ -32,12 +32,12 @@ Per-project config in `AGENTS.md` or `.gitlab-ci.yml`-adjacent
 No contract found → `escalate`: watching without defined triggers produces
 noise, not safety. Never invent thresholds.
 
-## 1. Establish baseline BEFORE judging
+## 1. Establish baseline before judging
 
 Read each source for the `baseline_minutes` window prior to deploy. One line:
 `Baseline: err 0.4% · p95 210ms · uptime 100%`.
 
-## 2. Watch — blocking poll, never busy-loop
+## 2. Watch: blocking poll, never busy-loop
 
 One bash call per ~10 min window (loop + sleep inside, like babysit-gitlab-mr),
 projecting each metric to a single number via the source's CLI/API with `--jq`
@@ -53,7 +53,7 @@ Each wake emits exactly one line:
   configured command, then keep watching the ROLLBACK deploy to completion.
   Announce: `Rolled back <sha>: <trigger>`. Never improvise a different
   rollback path.
-- `auto_rollback` but NOT authorized → `escalate` immediately with metric
+- `auto_rollback` but not authorized → `escalate` immediately with metric
   evidence; recommend rollback explicitly.
 - `alert` → collect evidence (one screenshot/log tail), file an issue
   (`glab issue create`) tagged `deploy-alert`, continue watching.
@@ -62,7 +62,7 @@ Each wake emits exactly one line:
 
 - Window elapsed clean → final line `Deploy healthy: <sha> after Nm`, stop.
 - Rollback completed stable → summary + auto-created issue linking timeline, stop.
-- Deteriorating-but-under-threshold at window end → extend ONCE by
+- Deteriorating-but-under-threshold at window end → extend once by
   `watch_minutes`, then report either way.
 
 ## Hard rules

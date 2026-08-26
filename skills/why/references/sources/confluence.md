@@ -23,7 +23,7 @@ curl -sS -u "$ATLASSIAN_EMAIL:$ATLASSIAN_API_TOKEN" \
   --data-urlencode 'limit=20' | jq -r '.results[] | "\(.content.id)\t\(.title)"'
 ```
 
-3. **`acli confluence page view --id <id>`** once you have an ID or URL — it reads
+3. **`acli confluence page view --id <id>`** once you have an ID or URL. It reads
    a page but cannot search:
 
 ```bash
@@ -36,7 +36,7 @@ was searchable only through links found elsewhere. That's a gap, not a skip.
 
 ## How to search it
 
-- Search the feature name, the symbol, and the error string — docs use product
+- Search the feature name, the symbol, and the error string. Docs use product
   language, so also search the user-facing name, not just the identifier.
 - Bracket the ship date: `lastModified` and `created` windows around the MR merge.
 - Follow the page tree: `--include-direct-children` finds the sibling ADR the

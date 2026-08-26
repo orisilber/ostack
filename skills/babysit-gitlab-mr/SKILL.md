@@ -1,6 +1,6 @@
 ---
 name: babysit-gitlab-mr
-description: Babysit a GitLab merge request end-to-end using glab CLI — find or create the MR from a URL or current branch, drive the review bot by commenting "!review", fix or push back on review comments in a loop until the bot approves, verify all non-optional CI pipeline jobs pass, then optionally enter watch mode polling for human comments until approval. Triggers: "babysit mr", "babysit this mr", "run review loop", "!review", "watch my merge request", "gitlab pipeline check". Use ONLY for GitLab MR babysitting workflows, not GitHub PRs.
+description: Babysit a GitLab merge request end-to-end using glab CLI: find or create the MR from a URL or current branch, drive the review bot by commenting "!review", fix or push back on review comments in a loop until the bot approves, verify all non-optional CI pipeline jobs pass, then optionally enter watch mode polling for human comments until approval. Triggers: "babysit mr", "babysit this mr", "run review loop", "!review", "watch my merge request", "gitlab pipeline check". Use only for GitLab MR babysitting workflows, not GitHub PRs.
 ---
 
 # Babysit GitLab MR
@@ -36,7 +36,7 @@ Create/update it with a single `cat > .git/babysit-mr-state.json <<'EOF'` call.
 If resuming an interrupted run, rebuild missing fields from `glab mr view`.
 Capture `me` once via `glab api user --jq .username`.
 
-## Phase 0 — Resolve the MR
+## Phase 0: Resolve the MR
 
 - User gave a URL: extract project path + IID from it.
 - Otherwise derive from the current branch:
@@ -53,16 +53,16 @@ Capture `me` once via `glab api user --jq .username`.
 Self-hosted GitLab: export `GITLAB_HOST=<host>` once at session start if
 `glab repo view` fails against gitlab.com defaults.
 
-## Phase 1 — Review loop
+## Phase 1: Review loop
 
 Round structure:
 
 1. Kick off: `glab mr note <iid> -m '!review'` (skip re-posting if the previous
-   round already triggered this exact push — track via `round` vs latest commit SHA).
-2. **Wait for review comments** — one blocking call (~10 min budget), repeat as needed.
+   round already triggered this exact push; track via `round` vs latest commit SHA).
+2. **Wait for review comments**: one blocking call (~10 min budget), repeat as needed.
    Payload shape per discussion: `{id, individual_note, notes:[{body, system,
    author:{username}}]}`. Verify the query once on the first call, then freeze it.
-   Exclude `$ME` (your own `!review` notes and replies) and system notes —
+   Exclude `$ME` (your own `!review` notes and replies) and system notes;
    everything else counts, including the bot:
 
 ```bash
@@ -76,24 +76,24 @@ done
 echo NO_CHANGE
 ```
 
-   Note: discussion `id` is an opaque string — always use max numeric **note id**
+   Note: discussion `id` is an opaque string, so always use max numeric **note id**
    (`nid`) as the "last seen" cursor. Trigger rule = a non-system note from
    someone other than you with id > LAST (so your own replies never re-trigger).
 
    On `NO_CHANGE`: re-check that the bot actually ran (pipeline status); if the
-   bot never started, investigate CI, do NOT spam more `!review` comments — max
+   bot never started, investigate CI, do not spam more `!review` comments. Max
    2 nudges total, then report to user.
 3. **Triage each thread** → verdict per thread:
    - `FIX`: valid issue. Make the code change.
    - `REJECT`: wrong/preference/out-of-scope. Reply on the thread with a concrete
-     technical justification (file paths, behavior, constraints — 1–3 sentences,
+     technical justification (file paths, behavior, constraints, 1 to 3 sentences,
      no fluff), then resolve it:
      `glab api -X PUT "projects/$PID/merge_requests/$IID/discussions/$DISC_ID" -f resolved=true`
-   - **Every thread reply MUST open with an LLM identification line**, e.g.
-     `🤖 Automated reply — LLM agent working for @<me>:` followed by the
-     substance. Applies to REJECT justifications and FIX notifications alike —
+   - **Every thread reply must open with an LLM identification line**, e.g.
+     `🤖 Automated reply: LLM agent working for @<me>:` followed by the
+     substance. Applies to REJECT justifications and FIX notifications alike;
      never post as if a human wrote it.
-   - Ambiguous/breaking user intent: batch ambiguous threads, ask the user ONCE
+   - Ambiguous/breaking user intent: batch ambiguous threads, ask the user once
      per round (not per thread).
 4. Apply all FIXes in one pass. Run lint/typecheck/tests if the repo defines them.
 5. Commit (`fix: address review round N: <topics>`) and push.
@@ -101,11 +101,12 @@ echo NO_CHANGE
 7. Comment `!review` again. Go to 2.
 
 **Loop exit**: latest bot response reports clean/approved (match markers like
-"no issues|all clear|LGTM|approved|✅" — confirm the bot's actual wording on the
-first round and reuse exactly that) AND zero unresolved actionable threads.
+"no issues|all clear|LGTM|approved|✅", confirmed against the bot's actual
+wording on the first round and reused exactly) AND zero unresolved actionable
+threads.
 Cap: 15 rounds, then stop and report.
 
-## Phase 2 — Pipeline gate
+## Phase 2: Pipeline gate
 
 Do not trust the bot's word alone. Walk the pipeline:
 
@@ -116,13 +117,13 @@ Do not trust the bot's word alone. Walk the pipeline:
 3. Enumerate jobs:
    `glab api "projects/$PID/pipelines/$PIPE_ID/jobs?per_page=100" --jq '[.[] | {name,stage,status,allow_failure}] | map(select(.allow_failure | not))'`
 4. Every non-optional job must be `success`. Any failure:
-   pull ONLY the tail of the log
+   pull only the tail of the log
    (`glab api "projects/$PID/jobs/$JOB_ID/trace" | tail -40`), diagnose, fix,
    commit, push → this re-enters Phase 1 (new commit may draw new review).
    Retry-once is allowed only for obvious flakes (network timeouts, runner lost).
 5. Gate passes when: pipeline `success` AND all non-optional jobs `success`.
 
-## Phase 3 — Report, then offer watch mode
+## Phase 3: Report, then offer watch mode
 
 Report concisely: MR url, rounds used, what was fixed vs rejected, pipeline status.
 

@@ -4,8 +4,8 @@ Personal agent skills. Two layers: the procedure that gets work from a ticket to
 a merged MR, and the judgment that decides whether what shipped was any good.
 
 Skills live in [`skills/`](skills/) as standard `SKILL.md` folders (Cursor /
-Claude Code / opencode compatible). Written Cursor-first — multi-model panels and
-`~/.cursor` paths are the default path — but every skill names its fallback for
+Claude Code / opencode compatible). Written Cursor-first: multi-model panels and
+`~/.cursor` paths are the default path, but every skill names its fallback for
 single-vendor hosts, so nothing silently no-ops in Claude Code.
 
 ## Skills
@@ -119,7 +119,7 @@ mkdir -p ~/.agents/skills
 for d in ~/dev/ostack/skills/*; do ln -sfn "$d" "$HOME/.agents/skills/$(basename "$d")"; done
 ```
 
-Then start a shell — the `sync_agent_assets` function in `~/.zshrc` propagates
+Then start a shell. The `sync_agent_assets` function in `~/.zshrc` propagates
 everything into Cursor and Claude Code automatically.
 
 Skills that shell out need `glab` (GitLab), `acli` (Jira/Confluence), and `node`

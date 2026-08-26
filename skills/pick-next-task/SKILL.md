@@ -1,6 +1,6 @@
 ---
 name: pick-next-task
-description: Claim the next unit of work from Jira autonomously — filter by agent-ready criteria with acli/JQL, self-assign, move to In Progress, create the branch, and hand off to implementation. Triggers "pick next task", "what should I work on", "claim ticket", "start next issue". Use ONLY for task acquisition from Jira, not for doing or planning the work itself.
+description: Claim the next unit of work from Jira autonomously: filter by agent-ready criteria with acli/JQL, self-assign, move to In Progress, create the branch, and hand off to implementation. Triggers "pick next task", "what should I work on", "claim ticket", "start next issue". Use only for task acquisition from Jira, not for doing or planning the work itself.
 ---
 
 # Pick Next Task
@@ -25,7 +25,7 @@ git log --oneline -100 | grep -oE '\b[A-Z]{2,6}-[0-9]+\b' \
 ```
 
 The dominant prefix is the project key (`DMI`, `LNX`, …). Two keys close in
-count means the repo serves two teams — take the one the user named, else the
+count means the repo serves two teams. Take the one the user named, else the
 top one, and say which you picked in one line.
 
 Host with the Atlassian MCP connected → use it for the *reads* in step 1 and
@@ -39,7 +39,7 @@ acli jira workitem search --jql "$JQL" \
   --fields "key,issuetype,status,priority,labels,summary" --limit 30 --csv
 ```
 
-Base `$JQL` — unassigned, actionable, mine to take:
+Base `$JQL`, unassigned, actionable, mine to take:
 
 ```
 project = DMI AND statusCategory != Done AND assignee IS EMPTY
@@ -52,7 +52,7 @@ Then pick, in order:
 1. Label `agent-priority`.
 2. Oldest with label `agent-ready`.
 3. Highest `priority` (`Critical` > `High` > …) that is small and well-specified.
-4. Oldest unassigned Sub-task under an epic already in flight — its siblings
+4. Oldest unassigned Sub-task under an epic already in flight. Its siblings
    have proven the scope.
 
 `agent-ready` / `agent-priority` are an opt-in convention. In a project that
@@ -63,7 +63,7 @@ Skip on sight: assigned to anyone, `status` in `Blocked`/`Cancelled`, a
 `[Design]`/`[QA]` prefix that needs a human in a tool you don't have, an empty
 description, or anything inside `escalate`'s forbidden zones (auth, payments,
 migrations, infra). Missing acceptance criteria is not a skip if you run
-`clarify-requirements` immediately after claiming — it IS a skip if nobody is
+`clarify-requirements` immediately after claiming. It IS a skip if nobody is
 around to answer.
 
 Read the one you chose in full before claiming:
@@ -74,7 +74,7 @@ acli jira workitem view "$KEY" --fields "summary,description,status,labels,paren
 
 ## 2. Claim atomically
 
-Jira assignment is last-writer-wins, so assign and then **read back** — that
+Jira assignment is last-writer-wins, so assign and then **read back**. That
 read is the claim check, not the write.
 
 ```bash
@@ -107,7 +107,7 @@ git fetch origin && git switch -c "$BRANCH" "origin/$(git symbolic-ref --short r
 ```
 
 Default when the repo has no clear pattern:
-`<type>/<squad>/<KEY>-<slug>` — e.g. `bugfix/ravens/DMI-18844-asset-picker-chip-flicker`.
+`<type>/<squad>/<KEY>-<slug>`, e.g. `bugfix/ravens/DMI-18844-asset-picker-chip-flicker`.
 A `<KEY>/<slug>` variant (`fix/llamas/DMI-19024/negative-duration-url`) is equally
 fine; the Jira↔GitLab bot links the MR off the key either way.
 
@@ -124,7 +124,7 @@ finds the work without being told.
 
 After claiming, the flow is always:
 
-1. `clarify-requirements` (if anything is ambiguous) — post the questions as a
+1. `clarify-requirements` (if anything is ambiguous). Post the questions as a
    Jira comment so the answer lands where the next session will look.
 2. implement (`reproduce-first` first if it's a bug)
 3. `verify-changes` before push
@@ -133,18 +133,18 @@ After claiming, the flow is always:
    only if the team's workflow says the developer closes it. Many teams close on
    QA, so check once and then respect it.
 
-Never skip 3 — the gate runs before every push, no exceptions.
+Never skip 3. The gate runs before every push, no exceptions.
 
 ## 5. Failure to find anything
 
 Empty result set is a real answer. Report `No agent-ready work in <KEY>` plus the
-JQL you ran, and stop. Do not widen the filter until you find something claimable
-— that's how an agent ends up rewriting the auth layer at 3am.
+JQL you ran, and stop. Do not widen the filter until you find something
+claimable. That's how an agent ends up rewriting the auth layer at 3am.
 
 ## Batch mode
 
 Invoked repeatedly (e.g. via `/loop`), this skill IS the intake pump: each run
-claims at most ONE ticket and returns. Never claim several — parallel sessions
+claims at most ONE ticket and returns. Never claim several. Parallel sessions
 each claim their own.
 
 ## Fallback: repos whose queue is GitLab issues

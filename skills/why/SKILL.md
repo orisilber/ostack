@@ -1,6 +1,6 @@
 ---
 name: why
-description: Recover why code is the way it is — design rationale, regressions, where a number came from — by querying every reachable evidence source in parallel (git/GitLab, Jira via acli, Confluence, chat, observability, error tracking, analytics) and returning a cited read. Triggers "why does X work this way", "why did we pick Y", postmortems, data-backed thresholds. Use ONLY for motivation and history; runtime behavior belongs to how.
+description: Recover why code is the way it is: design rationale, regressions, where a number came from, by querying every reachable evidence source in parallel (git/GitLab, Jira via acli, Confluence, chat, observability, error tracking, analytics) and returning a cited read. Triggers "why does X work this way", "why did we pick Y", postmortems, data-backed thresholds. Use only for motivation and history; runtime behavior belongs to how.
 ---
 
 # Why
@@ -11,20 +11,20 @@ Companion to the `how` skill. `how` answers what the code does and how it works.
 
 ## Model panel
 
-pstack's `~/.cursor/rules/pstack-models.mdc` is the roster whenever it exists —
-read it and don't define a competing config. Without it:
+pstack's `~/.cursor/rules/pstack-models.mdc` is the roster whenever it exists.
+Read it and don't define a competing config. Without it:
 
 - **Cursor (default)**: `claude-fable-5-thinking-max`, `gpt-5.6-sol-max`,
   `grok-4.6-fast-xhigh`, `claude-opus-5-thinking-xhigh`. Cheap mechanical fan-out
   goes to grok; judgment and prose go to fable.
 - **Single-vendor host** (Claude Code, opencode): the panel collapses to one
-  family. Diversity then comes from the lens, not the model — one agent per
+  family. Diversity then comes from the lens, not the model: one agent per
   distinct angle on the best model available, and say in the output that model
   diversity was unavailable. Agreement between same-family agents is weaker
   evidence than cross-vendor agreement; don't report it as consensus.
 - **Rejected slug**: never a reason to skip the panel. Drop to the nearest valid
   slug in the same family, note the substitution, keep going. `inherit-parent` and
-  `auto` are not broken slugs — omit the model instead.
+  `auto` are not broken slugs. Omit the model instead.
 
 ## How this skill works
 
@@ -173,7 +173,7 @@ Each entry lists what the category physically contains and the kind of "why" it 
 
 Only skip with an **explicit, written justification** that goes in the final "Sources Consulted" section. Two valid reasons:
 
-- **No MCP and no CLI is available for that category** in this environment. Flag this as a gap, not a choice. Example: "Real-time team chat skipped. No matching MCP available, so the conversational record was not searchable." This reason never applies to source control or the issue tracker while `git`, `glab`/`gh`, and `acli` are on the machine — run those first.
+- **No MCP and no CLI is available for that category** in this environment. Flag this as a gap, not a choice. Example: "Real-time team chat skipped. No matching MCP available, so the conversational record was not searchable." This reason never applies to source control or the issue tracker while `git`, `glab`/`gh`, and `acli` are on the machine. Run those first.
 - **The source is provably irrelevant**, not just "probably irrelevant." A high bar. Example: "Error / exception tracking skipped. Target is a build-time script with no runtime code path." Not "probably not in error tracking, it's a feature not an error."
 
 "It's pure feature code, error tracking won't have anything" is **not** sufficient, and neither is "I doubt long-form docs would have this." Run the search; let the null result speak. The cost of an investigator returning empty is one subagent. The cost of missing a design doc that actually exists is a wrong answer.

@@ -26,7 +26,7 @@ You are answering a "why" question about a piece of code by synthesizing finding
 
 ## Epistemics Framework
 
-You MUST follow the framework in `references/epistemics.md`. Read it in full before writing the output. The key rules:
+You must follow the framework in `references/epistemics.md`. Read it in full before writing the output. The key rules:
 
 1. Every claim sits in one of these tiers: **Direct**, **Supported**, **Inferred**, **Speculative**, **Unknown**. The tier determines what section the claim goes in and how it's phrased.
 2. Every Direct/Supported claim must have a citation (PR #, ticket ID, doc URL, chat permalink, commit hash, or file:line).

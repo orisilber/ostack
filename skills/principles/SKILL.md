@@ -1,6 +1,6 @@
 ---
 name: principles
-description: The engineering-judgment layer behind every other ostack skill — 21 one-line rules for how to shape code, verify it, and delegate it, with the full text in references. Triggers "principles", "apply the principles", "what would you change about this design", or any non-trivial implementation, refactor, or review where shape matters. Use as a lens on work you're already doing, not as a task in itself.
+description: The engineering-judgment layer behind every other ostack skill, 21 one-line rules for how to shape code, verify it, and delegate it, with the full text in references. Triggers "principles", "apply the principles", "what would you change about this design", or any non-trivial implementation, refactor, or review where shape matters. Use as a lens on work you're already doing, not as a task in itself.
 ---
 
 # Principles
@@ -29,7 +29,7 @@ text per group in `references/`: [core](references/core.md),
 | **Outcome-oriented execution** | Planned migrations with phase boundaries. Converge on the target; don't preserve throwaway intermediate states. |
 | **Experience first** | Product and scope tradeoffs. User delight over implementation convenience; fewer polished features over more rough ones. |
 | **Exhaust the design space** | A novel interaction or architectural call with no precedent. Two or three competing prototypes, compared side by side. |
-| **Build the lever** | Any non-trivial work. Build the codemod, script, or generator that does it or proves it — that's the artifact a reviewer can re-run. |
+| **Build the lever** | Any non-trivial work. Build the codemod, script, or generator that does it or proves it. That's the artifact a reviewer can re-run. |
 
 ## Architecture
 
@@ -46,7 +46,7 @@ text per group in `references/`: [core](references/core.md),
 
 | Rule | Apply when |
 |---|---|
-| **Prove it works** | Before declaring done. Verify against the real artifact — not a proxy, not a self-report, not "it compiles." |
+| **Prove it works** | Before declaring done. Verify against the real artifact, not a proxy, not a self-report, not "it compiles." |
 | **Fix root causes** | Debugging. Trace each symptom to its cause and fix it there; resist the guard that silences the crash. |
 | **Sequence verifiable units** | Multi-step work, and how you stack commits. Each unit ends in a checkable state, and the order proves itself to a reviewer. |
 

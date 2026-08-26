@@ -1,6 +1,6 @@
 ---
 name: e2e-verify
-description: Verify UI changes with real Playwright automation — scripted user flows, web-first assertions, console-error capture, and screenshots at key states. Triggers "e2e check", "verify in browser", "test the UI", "screenshot verification". Use ONLY for runtime UI verification, not static code review.
+description: Verify UI changes with real Playwright automation: scripted user flows, web-first assertions, console-error capture, and screenshots at key states. Triggers "e2e check", "verify in browser", "test the UI", "screenshot verification". Use only for runtime UI verification, not static code review.
 ---
 
 # E2E Verify
@@ -16,7 +16,7 @@ If the host has a browser MCP (Playwright MCP, chrome-devtools MCP), use it to
 reachable. Then encode what you learned as a Playwright script and run that.
 The MCP session proves nothing to the next person; the script does.
 
-## 1. Reuse the repo's setup — don't import your own
+## 1. Reuse the repo's setup, don't import your own
 
 - Existing `playwright.config.*` or e2e dir → follow its conventions exactly
   (fixtures, auth helpers, base URL, projects) and run through its own command:
@@ -44,7 +44,7 @@ script. Read it; don't assume `localhost:3000`.
 Login once, headed, and save the session:
 
 ```ts
-// login.spec.ts — run with --headed, once per expiry window
+// login.spec.ts: run with --headed, once per expiry window
 await page.goto(BASE_URL);
 // ...complete SSO by hand if it needs a human...
 await page.context().storageState({ path: process.env.E2E_STATE! });
@@ -58,8 +58,8 @@ test.use({ storageState: process.env.E2E_STATE! });
 
 `storageState` is a live session token. Keep it outside the repo
 (`~/.cache/ostack-e2e/state.json`), `chmod 600`, never commit it, never paste its
-contents into a report. Credentials come from env or the repo's existing config
-— if neither exists, `escalate` rather than inventing a test user.
+contents into a report. Credentials come from env or the repo's existing config.
+If neither exists, `escalate` rather than inventing a test user.
 
 ## 3. Deterministic by construction
 
@@ -72,7 +72,7 @@ contents into a report. Credentials come from env or the repo's existing config
   `page.waitForResponse`, `locator.waitFor()`. A `waitForTimeout` in the final
   script is a bug.
 - Prefer role/label/test-id locators over CSS paths. If the only stable handle is
-  a CSS chain, add a `data-testid` in the product code — that's a real fix, not
+  a CSS chain, add a `data-testid` in the product code. That's a real fix, not
   test scaffolding.
 
 ## 4. The pass
@@ -84,7 +84,7 @@ Script the ticket's acceptance criteria as one user journey:
 3. **Assert**: behavior first (text present/absent, element state, URL,
    network call fired), and a screenshot at each key state:
    `await page.screenshot({ path: 'artifacts/03-after-apply.png', animations: 'disabled' })`.
-4. **Capture errors throughout** — attach these before the first `goto`:
+4. **Capture errors throughout**: attach these before the first `goto`:
 
 ```ts
 const errors: string[] = [];
@@ -95,8 +95,8 @@ page.on('requestfailed', r => errors.push(`requestfailed: ${r.url()}`));
 expect(errors.filter(e => !KNOWN_NOISE.some(n => e.includes(n)))).toEqual([]);
 ```
 
-Any NEW console error fails the run even when the visuals look right. Suppress
-only pre-existing noise, and list what you suppressed in the verdict — an
+Any new console error fails the run even when the visuals look right. Suppress
+only pre-existing noise, and list what you suppressed in the verdict. An
 expected 4xx that the app already tolerates is noise; a new one is the bug.
 
 A screenshot is evidence only if you looked at it. Read every capture before
@@ -114,8 +114,8 @@ Suppressed: <none | the pre-existing noise you filtered>
 ```
 
 On FAIL: the failing assertion, the last screenshot path, and the trace
-(`npx playwright show-trace <path>`). Fix product code — adjust selectors freely
-when the UI intentionally changed — re-run max 3 times, then `escalate`.
+(`npx playwright show-trace <path>`). Fix product code, adjust selectors freely
+when the UI intentionally changed, re-run max 3 times, then `escalate`.
 
 ## 6. Flake protocol
 
