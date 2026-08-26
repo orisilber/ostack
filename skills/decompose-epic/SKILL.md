@@ -18,6 +18,9 @@ glab issue view <iid> -F json --jq '{title,description,labels}'
 glab issue view <iid> -c 2>/dev/null | tail -60   # comments, capped
 ```
 
+Verify these commands' output shape once on your GitLab version before relying
+on them (same discipline as babysit-gitlab-mr's queries).
+
 If discussion is long, summarize it before proceeding — never re-read it later.
 Explore the codebase enough to name real files/modules per ticket; guessing
 scopes from titles alone is how parallel agents collide.

@@ -16,8 +16,10 @@ STOP working and emit ONE ask — never continue past a hard stop.
   force-push to shared branches).
 - **Security findings**: exposed credentials, vulnerable dependency with known CVE,
   suspicious code in the diff.
-- **Spend/time budget**: session exceeded its declared budget (default: 30 min
-  wall-clock or 3 failed fix attempts on one problem).
+- **Spend/time budget**: session exceeded its declared budget. Default 30 min
+  wall-clock UNLESS the calling skill declares its own (long-running skills
+  like babysit-gitlab-mr legitimately run hours — their budget overrides this
+  default).
 - **Scope wall**: task requires access you don't have (prod systems, third-party
   consoles, approvals).
 
