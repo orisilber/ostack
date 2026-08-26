@@ -52,7 +52,6 @@ below for what changed).
 |---|---|---|
 | `escalate` | ostack | Stop-and-ask policy: hard stops, soft stops after N attempts, batched ask with a declared default |
 | `show-me-your-work` | pstack | Reviewable decision trail for long or unattended runs, one TSV row per decision |
-| `release` | ostack | Forge-agnostic release flow: bump → build → tag → publish → manifest SHA updates |
 | `deploy-watch` | ostack | Post-deploy metric watch against contract-defined triggers, authorized auto-rollback |
 
 ### Writing
@@ -75,9 +74,15 @@ mechanism, picked up by `recall` and every other skill that references
 ## Where the loop runs
 
 Work comes from **Jira** (`acli`), lands in **GitLab** (`glab`). `pick-next-task`
-and `decompose-epic` speak Jira; `babysit-gitlab-mr` and `release` speak GitLab.
-Both keep a GitLab-issues fallback at the bottom of the file for repos whose
-queue lives there instead.
+and `decompose-epic` speak Jira; `babysit-gitlab-mr` speaks GitLab. Both keep a
+GitLab-issues fallback at the bottom of the file for repos whose queue lives
+there instead.
+
+No skill cuts a release. That's deliberate: releasing is a one-way door
+(published artifact, tagged version, sometimes a customer-visible changelog),
+and this stack doesn't grant that authority to an agent by default. Cut
+releases yourself, or write a project-local skill scoped to your own approval
+step if you want the agent doing the mechanics under supervision.
 
 ## Provenance
 

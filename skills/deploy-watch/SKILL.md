@@ -1,6 +1,6 @@
 ---
 name: deploy-watch
-description: Watch a deployment's health after release. Compare error/latency/uptime metrics against baseline, and roll back or alert per pre-authorized policy. Triggers "watch the deploy", "post-deploy check", "monitor rollout". Use only for post-deployment monitoring; triggering deploys belongs to CI or release.
+description: Watch a deployment's health after release. Compare error/latency/uptime metrics against baseline, and roll back or alert per pre-authorized policy. Triggers "watch the deploy", "post-deploy check", "monitor rollout". Use only for post-deployment monitoring; triggering deploys belongs to CI, not this skill.
 ---
 
 # Deploy Watch
