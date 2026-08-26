@@ -8,6 +8,18 @@ Claude Code / opencode compatible). Written Cursor-first: multi-model panels and
 `~/.cursor` paths are the default path, but every skill names its fallback for
 single-vendor hosts, so nothing silently no-ops in Claude Code.
 
+## Install
+
+```sh
+git clone git@github.com:orisilber/ostack.git ~/dev/ostack -q && ~/dev/ostack/scripts/install.sh
+```
+
+One line. The script symlinks every skill directly into `~/.agents/skills`,
+`~/.claude/skills`, and `~/.cursor/skills`, skipping (and reporting) anything
+already there that isn't a symlink, so it's safe to re-run after a `git pull`.
+Override the canonical home with `AGENTS_HOME`, or preview first with
+`--dry-run`.
+
 ## Skills
 
 The **source** column says where a skill's content originates: `ostack` is
@@ -110,28 +122,6 @@ its own playbook set, tied to graphite and GitHub), `setup-pstack`,
 If you run pstack as a Cursor plugin *and* symlink ostack into `~/.cursor/skills`,
 the shared names collide. Pick one: keep pstack for the upstream set, or keep
 these forks. Running both means a coin flip over which `/how` you get.
-
-## Layout on this machine
-
-The canonical runtime location is `~/.agents/`:
-
-```
-~/.agents/skills/<name>  ->  symlink into this repo checkout
-~/.cursor/{skills,commands,agents}/  ->  symlinked from ~/.agents by ~/.zshrc sync_agent_assets
-~/.claude/skills/<name>  ->  symlinked from ~/.agents by ~/.zshrc sync_agent_assets
-```
-
-## Install on a new machine
-
-```sh
-git clone git@github.com:orisilber/ostack.git ~/dev/ostack -q && ~/dev/ostack/scripts/install.sh
-```
-
-One line. The script symlinks every skill directly into `~/.agents/skills`,
-`~/.claude/skills`, and `~/.cursor/skills`, skipping (and reporting) anything
-already there that isn't a symlink, so it's safe to re-run after a `git pull`.
-Override the canonical home with `AGENTS_HOME`, or preview first with
-`--dry-run`.
 
 Skills that shell out need `glab` (GitLab), `acli` (Jira/Confluence), and `node`
 with `npx playwright` for `e2e-verify`.
