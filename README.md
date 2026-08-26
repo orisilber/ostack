@@ -124,17 +124,14 @@ The canonical runtime location is `~/.agents/`:
 ## Install on a new machine
 
 ```sh
-git clone git@github.com:orisilber/ostack.git ~/dev/ostack
-~/dev/ostack/scripts/install.sh
+git clone git@github.com:orisilber/ostack.git ~/dev/ostack -q && ~/dev/ostack/scripts/install.sh
 ```
 
-The script symlinks every skill into `~/.agents/skills`, skipping (and reporting)
-anything already there that isn't a symlink, so it's safe to re-run after a
-`git pull`. Override the target with `AGENTS_HOME`, or preview first with
+One line. The script symlinks every skill directly into `~/.agents/skills`,
+`~/.claude/skills`, and `~/.cursor/skills`, skipping (and reporting) anything
+already there that isn't a symlink, so it's safe to re-run after a `git pull`.
+Override the canonical home with `AGENTS_HOME`, or preview first with
 `--dry-run`.
-
-Then start a shell. The `sync_agent_assets` function in `~/.zshrc` propagates
-everything into Cursor and Claude Code automatically.
 
 Skills that shell out need `glab` (GitLab), `acli` (Jira/Confluence), and `node`
 with `npx playwright` for `e2e-verify`.
