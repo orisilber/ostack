@@ -36,6 +36,12 @@ STOP working and emit ONE ask — never continue past a hard stop.
 Style preferences, naming, missing tests you can write, transient network errors
 (retry once), docs gaps you can fill, anything reversible inside the worktree.
 
+The default outside the stops above is to proceed, not to ask. On reversible work,
+act, present the result, and let the human course-correct after the fact — that is
+the **never-block-on-the-human** principle, and this skill is its only boundary.
+An ask that could have been a diff wastes the human's turn. When the two pull
+against each other, a hard stop always wins.
+
 ## The ask — format exactly once, batched
 
 ```

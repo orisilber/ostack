@@ -47,7 +47,39 @@ file/directory to catch regressions. If fixing requires changing the test's
 assertions — stop: either the report was wrong (escalate) or you're writing a
 different feature than reported.
 
+## When a unit test is the wrong tool
+
+The failing test is the default, not a ritual. A test path is impractical when it
+would need broad harness setup, brittle mocks, slow end-to-end infrastructure,
+production-only state, or large unrelated fixture churn. Prefer no new test over a
+bad one — a bad test mostly exercises mocks, encodes current implementation
+details, depends on timing or global state, or would be deleted the moment it
+proved the fix.
+
+Impractical does not mean skip the step. Say out loud why the test isn't worth its
+cost, then reproduce with the closest executable check you can re-run: a targeted
+script, an `e2e-verify` flow, a snapshot comparison, a log assertion, a focused
+integration check, or one documented manual command. The rule is unchanged — the
+broken behavior is observable and failing BEFORE you touch product code.
+
+Guardrails either way:
+
+- Never change an existing test to match a wrong implementation, and never weaken
+  an assertion unless the expected behavior genuinely changed and you can say how.
+- Keep the repro focused on this bug. Sibling coverage, if it's warranted, lands
+  after the focused fix.
+- A flaky bug gets a deterministic repro where possible; name the signal you
+  locked down.
+
 ## Cannot reproduce after 3 honest attempts
 
 → `escalate` with: exact attempts tried, environments, and your best hypothesis.
 Do NOT ship a speculative fix.
+
+## Report the evidence, not the outcome
+
+Name the failing-before check and the failure it produced, then the passing-after
+run and any neighbors you ran with it. If you could not demonstrate a failing
+state, say so explicitly and name the check you used instead. "Fixed and tested"
+without those two lines is a self-report, which is exactly what `prove-it-works`
+rejects.

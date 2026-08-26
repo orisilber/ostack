@@ -7,6 +7,10 @@ description: Pre-push quality gate — discover and run a repo's lint, typecheck
 
 Gate every push. A diff that hasn't passed this never leaves the machine.
 
+This is **prove-it-works** (see `principles`) with commands attached: the verdict
+below is a claim about the real artifact, so never emit PASS from a run you
+didn't watch finish.
+
 ## Verdicts
 
 End with exactly one line: `VERIFY: PASS`, `VERIFY: FAIL <one-line reason>`, or

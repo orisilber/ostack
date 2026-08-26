@@ -1,6 +1,6 @@
 ---
 name: decompose-epic
-description: Split a GitLab epic into atomic, conflict-free agent tickets with acceptance criteria and disjoint file scopes, and create them as issues. Triggers "decompose epic", "break down issue", "create backlog", "split into tasks". Use ONLY for epic→ticket decomposition, not for claiming or implementing tickets.
+description: Split a Jira epic into atomic, conflict-free agent tickets with acceptance criteria and disjoint file scopes, and create them with acli as child work items. Triggers "decompose epic", "break down ticket", "create backlog", "split into tasks". Use ONLY for epic→ticket decomposition, not for claiming or implementing tickets.
 ---
 
 # Decompose Epic
@@ -8,64 +8,109 @@ description: Split a GitLab epic into atomic, conflict-free agent tickets with a
 One epic in, N ready-to-claim tickets out. Quality bar: each ticket must be
 completable in ONE agent session and parallel-safe.
 
+Spec still in Confluence, not Jira? That's `spec-to-backlog` (Atlassian plugin),
+then come back here to make its output agent-shaped.
+
 ## 1. Read the epic once
 
-Accept either a real GitLab epic (group-level) or an issue acting as epic
-(labeled `epic`) — check which when resolving the ref. Read body + comments:
-
 ```bash
-glab issue view <iid> -F json --jq '{title,description,labels}'
-glab issue view <iid> -c 2>/dev/null | tail -60   # comments, capped
+acli jira workitem view "$EPIC" --fields "summary,description,labels,status,priority"
+acli jira workitem search --jql "parent = $EPIC" \
+  --fields "key,issuetype,status,assignee,summary" --limit 50 --csv
+acli jira workitem comment list --key "$EPIC" 2>&1 | tail -60
 ```
 
-Verify these commands' output shape once on your GitLab version before relying
-on them (same discipline as babysit-gitlab-mr's queries).
+Children already exist → you are *extending* a decomposition, not starting one.
+Read them first and never duplicate a scope that's already ticketed.
 
-If discussion is long, summarize it before proceeding — never re-read it later.
-Explore the codebase enough to name real files/modules per ticket; guessing
-scopes from titles alone is how parallel agents collide.
+If discussion is long, summarize it now and work from the summary — never
+re-read it later. Then explore the codebase enough to name real files and
+modules per ticket. Guessing scopes from titles is how parallel agents collide.
 
 ## 2. Draft tickets (in memory, no API calls yet)
 
 Each ticket needs:
 
-- **Title**: imperative, `<type>: <what>` — implementable without reading the epic
-- **Description**: goal (2–3 sentences), acceptance criteria as a CHECKLIST
-  (each item objectively checkable), explicit out-of-scope line
-- **Scope**: files/modules it touches — MUST be disjoint across tickets;
-  shared foundations (types, utils, interfaces) become their OWN first ticket
-  that others depend on
-- **Dependencies**: which ticket iids must merge first (DAG, prefer shallow)
-- **Size**: if you can't state the touched files, it's too big — split
+- **Summary**: imperative, prefixed the way the project does it (`[FE]` / `[BE]`),
+  implementable without reading the epic.
+- **Description**: goal in 2–3 sentences, acceptance criteria as a CHECKLIST
+  (each item objectively checkable), explicit out-of-scope line.
+- **Scope**: the files and modules it touches — MUST be disjoint across tickets.
+  Shared foundations (types, API client, feature flag, util) become their OWN
+  first ticket that the others depend on.
+- **Dependencies**: which tickets must merge first. A DAG, kept shallow.
+- **Type**: `Story` for behavior, `Production Bug` only for a real reported
+  defect, `Sub-task` when the parent is a Story rather than an Epic. Match the
+  types the project actually has; `acli jira project view` if unsure.
+- **Size**: if you can't state the touched files, it's too big — split.
 
 ## 3. Self-check before creating
 
-Run this matrix mentally against the draft:
+Run this matrix against the draft:
 
-1. Any two tickets touching the same file? → merge them or extract a shared
-   foundation ticket.
-2. Can each be verified independently? If two tickets only make sense together,
-   they are one ticket.
-3. Does any acceptance criterion require human judgment ("looks good")?
-   Rewrite it into something checkable or drop it.
-4. Is there a final integration ticket (wiring + e2e) if the pieces interact?
+1. Any two tickets touching the same file? → merge them, or extract a shared
+   foundation ticket both depend on.
+2. Can each be verified independently? If two only make sense together, they are
+   one ticket.
+3. Does any acceptance criterion need human judgment ("looks good", "feels
+   fast")? Rewrite it into something checkable, or drop it.
+4. Is there a final integration ticket (wiring + `e2e-verify`) if the pieces
+   interact at runtime?
+5. Does any ticket land in an `escalate` forbidden zone (auth, payments,
+   migrations, infra)? Keep it in the plan, but mark it human-only so no agent
+   claims it.
 
 ## 4. Show ONE approval table, then create
 
-Present: `# | title | scope | depends on` — user edits/approves ONCE (skip
-approval entirely when invoked with "auto" / from a loop).
+Present `# | summary | type | scope | depends on`. The user edits or approves
+ONCE. Skip the approval entirely when invoked with "auto" or from a loop.
 
-Create with:
+Write each description to a file rather than inlining it — Jira descriptions are
+multi-line and shell-quoting them is where this step breaks:
 
 ```bash
-glab issue create -t "<title>" -d "<description>" -l agent-ready
+acli jira workitem create \
+  --project "$KEY" --type Story --parent "$EPIC" \
+  --summary "[FE] Add brand column to the prompts table" \
+  --description-file /tmp/ticket-1.md \
+  --label agent-ready --json
 ```
 
-Then record dependency edges by adding to each description:
-`Depends on #<iid>.` (GitLab cross-links automatically). Add `agent-priority`
-label to the critical-path start.
+- `--parent` takes the Epic key for Story/Task children, or the Story key for
+  `Sub-task` children. A rejected parent means the project's hierarchy differs:
+  check with `acli jira workitem view "$EPIC" --fields issuetype` and adjust the
+  child type instead of dropping the link.
+- Many tickets, no per-ticket descriptions needed → one
+  `acli jira workitem create-bulk --from-json tickets.json` pass, then a
+  `workitem edit --description-file` per ticket. Slower than it looks; prefer the
+  per-ticket create.
+- Add `agent-priority` to the critical-path starter only.
+
+Record dependency edges as real Jira links, not prose:
+
+```bash
+acli jira workitem link create --out "$BLOCKER" --in "$BLOCKED" --type Blocks --yes
+```
+
+`--out` is the ticket that blocks; `--in` is the one waiting. Getting these
+backwards inverts the whole plan, so verify one edge with
+`acli jira workitem link list --key "$BLOCKED"` before creating the rest.
 
 ## 5. Output
 
-One summary block: created iids, the DAG as `a → b` lines, suggested parallel
-lanes (which tickets can run simultaneously). Nothing else.
+One summary block: created keys, the DAG as `DMI-1 → DMI-2` lines, and the
+suggested parallel lanes (which tickets can run simultaneously). Nothing else.
+
+`pick-next-task` picks these up from here. If the lanes matter, say so in the
+epic as one comment — that's where the next session looks:
+
+```bash
+acli jira workitem comment create --key "$EPIC" --body-file /tmp/lanes.md
+```
+
+## Fallback: repos whose queue is GitLab issues
+
+`glab issue view <iid>` to read, `glab issue create -t … -d … -l agent-ready` to
+create, and `Depends on #<iid>.` in the description for edges (GitLab cross-links
+automatically). Verify the output shape of those commands once on your GitLab
+version before relying on them.
