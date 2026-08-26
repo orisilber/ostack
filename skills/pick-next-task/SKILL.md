@@ -1,6 +1,6 @@
 ---
 name: pick-next-task
-description: Claim the next unit of work from Jira autonomously: filter by agent-ready criteria with acli/JQL, self-assign, move to In Progress, create the branch, and hand off to implementation. Triggers "pick next task", "what should I work on", "claim ticket", "start next issue". Use only for task acquisition from Jira, not for doing or planning the work itself.
+description: Claim the next Jira work item by agent-ready criteria, self-assign, branch, and hand off to implementation. Triggers "pick next task", "what should I work on", "claim ticket". Not for doing or planning the work itself.
 ---
 
 # Pick Next Task

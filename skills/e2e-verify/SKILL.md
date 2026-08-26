@@ -1,6 +1,6 @@
 ---
 name: e2e-verify
-description: Verify UI changes with real Playwright automation: scripted user flows, web-first assertions, console-error capture, and screenshots at key states. Triggers "e2e check", "verify in browser", "test the UI", "screenshot verification". Use only for runtime UI verification, not static code review.
+description: "Verify UI changes with real Playwright automation: scripted user flows, web-first assertions, console-error capture, screenshots. Triggers \"e2e check\", \"verify in browser\", \"test the UI\". Not static code review."
 ---
 
 # E2E Verify

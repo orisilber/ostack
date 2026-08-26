@@ -1,6 +1,6 @@
 ---
 name: decompose-epic
-description: Split a Jira epic into atomic, conflict-free agent tickets with acceptance criteria and disjoint file scopes, and create them with acli as child work items. Triggers "decompose epic", "break down ticket", "create backlog", "split into tasks". Use only for epic→ticket decomposition, not for claiming or implementing tickets.
+description: Split a Jira epic into atomic, conflict-free tickets with acceptance criteria and disjoint file scopes. Triggers "decompose epic", "break down ticket", "split into tasks". Not for claiming or implementing tickets.
 ---
 
 # Decompose Epic

@@ -1,6 +1,6 @@
 ---
 name: babysit-gitlab-mr
-description: Babysit a GitLab merge request end-to-end using glab CLI: find or create the MR from a URL or current branch, drive the review bot by commenting "!review", fix or push back on review comments in a loop until the bot approves, verify all non-optional CI pipeline jobs pass, then optionally enter watch mode polling for human comments until approval. Triggers: "babysit mr", "babysit this mr", "run review loop", "!review", "watch my merge request", "gitlab pipeline check". Use only for GitLab MR babysitting workflows, not GitHub PRs.
+description: "Drive a GitLab MR to merge-ready: \"!review\" loop with the bot until it approves, then a CI pipeline gate, then optional watch mode for human comments. Triggers \"babysit mr\", \"!review\", \"watch my merge request\". GitLab MRs, not GitHub PRs."
 ---
 
 # Babysit GitLab MR

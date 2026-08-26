@@ -1,6 +1,6 @@
 ---
 name: unslop
-description: Cut AI tells from writing about to be published: MR descriptions, commit bodies, docs, ticket comments. Put a human voice back in. Triggers "unslop", "this reads like AI", "tighten this up". Applies to prose, never to code.
+description: "Cut AI tells from writing about to be published: MR descriptions, commit bodies, docs, ticket comments. Put a human voice back in. Triggers \"unslop\", \"this reads like AI\", \"tighten this up\". Applies to prose, never to code."
 ---
 
 # Unslop

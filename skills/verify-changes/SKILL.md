@@ -1,6 +1,6 @@
 ---
 name: verify-changes
-description: Pre-push quality gate. Discover and run a repo's lint, typecheck, and tests, and block pushing until they pass. Triggers "verify", "run checks", "gate before push". Called by pick-next-task, babysit-gitlab-mr, and any skill about to commit/push. Use only as a verification gate, not for fixing code or reviewing PRs.
+description: Pre-push quality gate. Discover and run a repo's lint, typecheck, and tests, and block pushing until they pass. Triggers "verify", "run checks", "gate before push". Not for fixing code or reviewing PRs.
 ---
 
 # Verify Changes

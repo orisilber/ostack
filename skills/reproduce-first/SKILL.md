@@ -1,6 +1,6 @@
 ---
 name: reproduce-first
-description: For bug tickets. Write a failing test that reproduces the reported behavior before attempting any fix, then fix against it. Triggers "reproduce the bug", "failing test first", "bug ticket". Use only for defect work, not features or refactors.
+description: For bug tickets. Write a failing test that reproduces the reported behavior before attempting any fix, then fix against it. Triggers "reproduce the bug", "failing test first", "bug ticket". Not for features or refactors.
 ---
 
 # Reproduce First

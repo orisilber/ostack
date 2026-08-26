@@ -1,6 +1,6 @@
 ---
 name: escalate
-description: Stop-and-ask policy for autonomous agents. Decides when to halt and ping the human instead of guessing. Triggers "escalate", "should I ask the user", "blocked". Called by every other ostack skill at decision points. Use only for escalation decisions and formatting the ask, not for general questions.
+description: "Stop-and-ask policy for autonomous agents: decides when to halt and ping the human instead of guessing. Triggers \"escalate\", \"should I ask the user\", \"blocked\". Not for general questions."
 ---
 
 # Escalate

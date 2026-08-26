@@ -1,6 +1,6 @@
 ---
 name: why
-description: Recover why code is the way it is: design rationale, regressions, where a number came from, by querying every reachable evidence source in parallel (git/GitLab, Jira via acli, Confluence, chat, observability, error tracking, analytics) and returning a cited read. Triggers "why does X work this way", "why did we pick Y", postmortems, data-backed thresholds. Use only for motivation and history; runtime behavior belongs to how.
+description: "Recover why code is the way it is: design rationale, regressions, where a number came from, by querying every reachable evidence source in parallel (git/GitLab, Jira via acli, Confluence, chat, observability, error tracking, analytics) and returning a cited read. Triggers \"why does X work this way\", \"why did we pick Y\", postmortems, data-backed thresholds. Use only for motivation and history; runtime behavior belongs to how."
 ---
 
 # Why

@@ -1,6 +1,6 @@
 ---
 name: blast-radius
-description: Find what a change breaks outside its own diff before it ships, and prove the one fact its safety depends on by running code instead of writing it up. Triggers "blast radius", "what could this break", "is this safe to ship", or a small diff you don't trust. Use only for impact analysis of a specific change: reviewing the diff itself is code review, and gating it is verify-changes.
+description: "Find what a change breaks outside its own diff before it ships, and prove the one fact its safety depends on by running code instead of writing it up. Triggers \"blast radius\", \"what could this break\", \"is this safe to ship\", or a small diff you don't trust. Use only for impact analysis of a specific change: reviewing the diff itself is code review, and gating it is verify-changes."
 disable-model-invocation: true
 ---
 

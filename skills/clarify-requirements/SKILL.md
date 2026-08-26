@@ -1,6 +1,6 @@
 ---
 name: clarify-requirements
-description: One batched round of upfront questions per ticket to eliminate mid-flight stalls: asks ambiguities with proposed defaults, then never interrupts again. Triggers "clarify requirements", "ask about ticket", "resolve ambiguity". Use only at task start; mid-flight blockers go through escalate.
+description: One batched round of upfront questions per ticket, defaults included, to eliminate mid-flight stalls. Triggers "clarify requirements", "ask about ticket", "resolve ambiguity". Only at task start; mid-flight blockers go through escalate.
 ---
 
 # Clarify Requirements
