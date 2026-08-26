@@ -89,6 +89,10 @@ echo NO_CHANGE
      technical justification (file paths, behavior, constraints — 1–3 sentences,
      no fluff), then resolve it:
      `glab api -X PUT "projects/$PID/merge_requests/$IID/discussions/$DISC_ID" -f resolved=true`
+   - **Every thread reply MUST open with an LLM identification line**, e.g.
+     `🤖 Automated reply — LLM agent working for @<me>:` followed by the
+     substance. Applies to REJECT justifications and FIX notifications alike —
+     never post as if a human wrote it.
    - Ambiguous/breaking user intent: batch ambiguous threads, ask the user ONCE
      per round (not per thread).
 4. Apply all FIXes in one pass. Run lint/typecheck/tests if the repo defines them.
