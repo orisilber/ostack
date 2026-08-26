@@ -34,6 +34,14 @@ for dir in "$SKILLS"/*/; do
 		err "$name: description ${desc_len}b > 600b (index bloat)"
 	fi
 
+	# whole-file token budget: SKILL.md is loaded in full whenever the skill
+	# fires, unlike references/ (loaded selectively). Cap well above today's
+	# largest (why, ~23KB) so it only trips on a real bloat regression.
+	body_bytes="$(wc -c < "$f" | tr -d ' ')"
+	if [ "$body_bytes" -gt 32000 ]; then
+		err "$name: SKILL.md ${body_bytes}b > 32000b token budget"
+	fi
+
 	# local file references must exist
 	while IFS= read -r ref; do
 		[ -e "$dir$ref" ] || err "$name: references missing file $ref"
@@ -53,8 +61,60 @@ for dir in "$SKILLS"/*/; do
 done
 
 # ----------------------------------------------------- CLI flag accuracy check
-# Extract glab/gh invocations from fenced bash blocks; join continuation lines;
-# verify subcommands exist and long flags appear in `--help` output.
+# Extract glab/gh/acli invocations from fenced bash blocks; join continuation
+# lines; verify subcommands exist and long flags appear in `--help` output.
+#
+# glab/gh/acli are all cobra-style: an unknown subcommand does NOT error, it
+# silently prints the nearest valid parent's help and exits 0 (verified by
+# hand: `glab issue note list --help` -> help for `glab issue note`, rc=0).
+# So checking the final `--help` output for an error marker never fires.
+# Instead walk the command tree one word at a time and confirm each word is
+# actually listed in its parent's help before descending.
+
+# print each subcommand name listed in a --help text (works across glab's
+# padded "COMMANDS" box, gh's "GENERAL/TARGETED COMMANDS", acli's
+# "Available/Additional Commands:"). glab pads a blank spacer line right
+# after its section header, so "blank line ends the section" is wrong; end
+# only on a known non-command header (also padded, so dedent can't be used
+# as an end signal either) or on the next commands-section header.
+commands_in_help() {
+	local insec=0 line low trimmed
+	local stopwords="usage|flags|flags:|examples|arguments|learn more|aliases|global flags|inherited flags|see also|additional help topics"
+	while IFS= read -r line; do
+		low="$(printf '%s' "$line" | tr '[:upper:]' '[:lower:]')"
+		trimmed="$(printf '%s' "$low" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+		if [[ "$trimmed" =~ ^.*commands:?$ ]]; then
+			insec=1
+			continue
+		fi
+		if [ "$insec" -eq 1 ]; then
+			if [[ "$trimmed" =~ ^($stopwords)$ ]]; then
+				insec=0
+				continue
+			fi
+			if [[ "$line" =~ ^[[:space:]]+([A-Za-z][A-Za-z0-9_-]*) ]]; then
+				echo "${BASH_REMATCH[1]}"
+			elif [ -n "$trimmed" ] && [[ ! "$line" =~ ^[[:space:]] ]]; then
+				insec=0
+			fi
+		fi
+	done <<< "$1"
+}
+
+# cached `$cli $level --help` output; $level is a space-joined word prefix
+# ("" for root, "jira workitem" etc).
+help_at() {
+	local cli="$1" level="$2"
+	local key="${cli}_${level// /_}"
+	[ -z "$level" ] && key="${cli}_ROOT"
+	local cache="$TMP/help_${key}.cache"
+	if [ ! -f "$cache" ]; then
+		# shellcheck disable=SC2086
+		"$cli" $level --help > "$cache" 2>&1 || true
+	fi
+	cat "$cache"
+}
+
 check_cli() {
 	local cli="$1"
 	command -v "$cli" >/dev/null 2>&1 || {
@@ -86,28 +146,39 @@ check_cli() {
 		rest="${line#$cli }"
 		for word in $rest; do
 			case "$word" in
-				-*|\"*|\`*|\$*|[A-Z_]+=*|*[/?]*) break ;;
+				-*|\"*|\`*|\$*|\#*|\<*|[A-Z_]+=*|*[/?]*) break ;;
 				*) subcmd="$subcmd $word" ;;
 			esac
 		done
 		subcmd="${subcmd# }"
 
-		local help_cache="$TMP/${cli}_${subcmd// /_}.help"
-		if [ ! -f "$help_cache" ]; then
-			# shellcheck disable=SC2086
-			if "$cli" $subcmd --help > "$help_cache" 2>&1; then :;
-			else echo "__NO_SUCH__" > "$help_cache"; fi
-		fi
-		if grep -q "__NO_SUCH__\|Unknown command\|unknown command" "$help_cache"; then
-			err "cli: '$cli $subcmd' is not a real command (line: ${line:0:80})"
+		# walk the tree: each word must be listed in its parent level's help.
+		# capture to a variable first, don't pipe live into `grep -q`: -q
+		# exits on first match and SIGPIPEs the producer, which pipefail
+		# then reports as a pipeline failure regardless of grep's verdict.
+		# stop after "api": it takes a raw REST endpoint/path, not a subcommand.
+		local level="" bad_word="" ok=1 avail
+		for word in $subcmd; do
+			avail="$(commands_in_help "$(help_at "$cli" "$level")")"
+			if ! grep -qxF "$word" <<< "$avail"; then
+				ok=0; bad_word="$word"; break
+			fi
+			level="${level:+$level }$word"
+			[ "$word" = "api" ] && break
+		done
+		if [ "$ok" -eq 0 ]; then
+			err "cli: '$cli $subcmd' -- '$bad_word' is not a real subcommand (line: ${line:0:80})"
 			continue
 		fi
-		# every long flag must appear in help text
+
+		# every long flag must appear in the leaf level's help text
+		local help_cache
+		help_cache="$(help_at "$cli" "$subcmd")"
 		for word in $rest; do
 			case "$word" in
 				--[a-zA-Z][a-zA-Z-]*)
 					flag="${word%%=*}"
-					grep -q -- "$flag" "$help_cache" || \
+					grep -q -- "$flag" <<< "$help_cache" || \
 						err "cli: flag '$flag' not in '$cli $subcmd --help' (line: ${line:0:70})"
 					;;
 			esac
@@ -116,6 +187,7 @@ check_cli() {
 }
 check_cli glab
 check_cli gh
+check_cli acli
 
 # ---------------------------------------------------------------------- style
 EMDASH="$(printf '\xe2\x80\x94')"
@@ -132,6 +204,15 @@ grep -q 'last_seen_note' "$SKILLS/babysit-gitlab-mr/SKILL.md" || \
 	err "contract: babysit cursor field renamed but doc still says otherwise"
 grep -qE 'declared budget|budget.*declared' "$SKILLS/escalate/SKILL.md" || \
 	err "contract: escalate must allow calling skills to declare their own budget"
+
+# verify-changes' retry loop must match escalate's soft-stop default, numerically
+escalate_n="$(grep -oE 'default N=[0-9]+' "$SKILLS/escalate/SKILL.md" | grep -oE '[0-9]+' | head -1)"
+verify_n="$(grep -oE 'Loop max [0-9]+ attempts' "$SKILLS/verify-changes/SKILL.md" | grep -oE '[0-9]+' | head -1)"
+if [ -z "${escalate_n:-}" ] || [ -z "${verify_n:-}" ]; then
+	err "contract: could not find escalate's default N or verify-changes' loop max to compare"
+elif [ "$escalate_n" != "$verify_n" ]; then
+	err "contract: verify-changes loop max ($verify_n) != escalate default N ($escalate_n)"
+fi
 
 # ------------------------------------------------------------------- summary
 echo

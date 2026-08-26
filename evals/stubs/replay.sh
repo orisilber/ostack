@@ -11,26 +11,25 @@ if [ $# -gt 0 ]; then
 fi
 echo "--- $CMD $args" >> "$LOG"
 
-# Pattern-matched responses: files named "<NN>__<ERE>.out". The ERE is matched
-# against the full argument string. Lowest NN that matches wins; no match -> {}
+# Pattern-matched responses: numbered pairs "<NN>.match" (one ERE per file,
+# matched against the full argument string) and "<NN>.out" (the canned
+# response). The pattern lives in its own file rather than the filename so
+# it can contain anything (slashes, quotes) without filesystem escaping.
+# Lowest NN that matches wins; no match -> {}
 shopt -s nullglob
 best=""
-for f in "$FIX"/[0-9]*__*.out; do
-	base="$(basename "$f")"
-	re="${base#*__}"      # <ERE>.out
-	re="${re%.out}"
+for m in "$FIX"/[0-9]*.match; do
+	re="$(head -n1 "$m")"
 	if [[ "$args" =~ ^.*${re}.*$ ]]; then
-		best="$f"
+		best="${m%.match}"
 		break
 	fi
 done
 
 if [ -n "$best" ]; then
-	cat "$best"
-	err_f="${best%.out}.err"
-	[ -f "$err_f" ] && cat "$err_f" >&2
-	code_f="${best%.out}.code"
-	exit "$( [ -f "$code_f" ] && cat "$code_f" || echo 0 )"
+	cat "$best.out" 2>/dev/null
+	[ -f "$best.err" ] && cat "$best.err" >&2
+	exit "$( [ -f "$best.code" ] && cat "$best.code" || echo 0 )"
 fi
 echo '{}'
 exit 0

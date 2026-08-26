@@ -1,1 +1,0 @@
-Pick my next task from the queue and claim it.

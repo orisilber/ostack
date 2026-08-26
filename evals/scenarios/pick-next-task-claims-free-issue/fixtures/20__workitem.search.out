@@ -1,4 +1,0 @@
-key,summary,issuetype,status,priority,labels,created
-DMI-41,Add pagination to user list,Story,Open,High,agent-ready,2026-08-01
-DMI-42,Fix flicker on asset picker,Production Bug,Open,Critical,,2026-08-20
-DMI-43,Upgrade auth token service,Task,Backlog,High,,2026-08-19

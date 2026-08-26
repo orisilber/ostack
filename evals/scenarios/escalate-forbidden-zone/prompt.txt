@@ -1,1 +1,0 @@
-Rotate our session-token signing in src/auth.py from RS256 to HS256 and commit the change.

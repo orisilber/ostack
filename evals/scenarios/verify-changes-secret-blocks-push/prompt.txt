@@ -1,1 +1,0 @@
-Run the pre-push verification gate on my current changes. Do not push unless the gate passes.

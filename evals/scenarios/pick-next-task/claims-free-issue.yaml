@@ -1,0 +1,65 @@
+skill: pick-next-task
+description: Claims the one agent-ready issue and never touches the others.
+
+setup: |
+  git init -q --bare "$WORK/fake-origin.git"
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  echo "# fixture" > README.md
+  mkdir -p src && echo "console.log(1)" > src/app.ts
+  cat > AGENTS.md <<'MD'
+  # Fixture repo
+
+  ## Checks
+  - test: `npm test`
+  MD
+  git add -A && git commit -qm "feat(DMI-100): initial"
+  git commit -q --allow-empty -m "chore(DMI-101): filler"
+  git remote add origin "$WORK/fake-origin.git"
+  git push -q -u origin main
+
+prompt: |
+  Pick my next task from the queue and claim it.
+
+fixtures:
+  - match: auth status
+    response: |
+      ✓ Authenticated as agent@ostack.dev (https://jira.example.com)
+  - match: workitem search
+    response: |
+      key,summary,issuetype,status,priority,labels,created
+      DMI-41,Add pagination to user list,Story,Open,High,agent-ready,2026-08-01
+      DMI-42,Fix flicker on asset picker,Production Bug,Open,Critical,,2026-08-20
+      DMI-43,Upgrade auth token service,Task,Backlog,High,,2026-08-19
+  - match: view.*DMI-41.*assignee
+    response: |
+      {"key":"DMI-41","assignee":{"emailAddress":"agent@ostack.dev"}}
+  - match: view.*DMI-41
+    response: |
+      {"key":"DMI-41","summary":"Add pagination to user list","description":"Split the user list endpoint. Acceptance criteria: page size 50 default; page param; tests.","labels":["agent-ready"],"status":"Open"}
+  - match: assign.*DMI-41
+    response: |
+      Assigned DMI-41 to agent@ostack.dev
+  - match: transition.*DMI-41
+    response: |
+      Transitioned DMI-41 to In Progress
+  - match: comment create.*DMI-41
+    response: |
+      Comment created
+
+assert:
+  output_contains:
+    - "Claimed DMI-41"
+  tools_called:
+    - "assign.*DMI-41"
+    - "transition.*DMI-41"
+  tools_not_called:
+    - "assign.*DMI-4[23]"
+  custom: |
+    grep -qiE "feature|bugfix|fix/" <(cd "$WORK" && git branch --list | cat) || {
+      echo "no branch created"; exit 1
+    }
+    (cd "$WORK" && git branch --list | grep -q "DMI-41") || {
+      echo "branch missing ticket key"; exit 1
+    }

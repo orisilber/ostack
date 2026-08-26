@@ -1,0 +1,34 @@
+skill: clarify-requirements
+description: One batched round of questions on a vague ticket, then stops.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  mkdir -p web
+  echo "<div id=dashboard></div>" > web/index.html
+  echo "# fixture" > README.md
+  git add -A && git commit -qm init
+  cat > AGENTS.md <<'MD'
+  # Fixture repo
+
+  ## Checks
+  - test: `echo ok`
+  MD
+
+prompt: |
+  Ticket WEB-77: "Improve the dashboard loading experience." There are no
+  acceptance criteria. Clarify requirements per your skill, then stop and
+  wait for answers.
+
+assert:
+  output_not_contains:
+    - "No questions"
+  tools_not_called:
+    - "git add"
+    - "git commit"
+  custom: |
+    n=$(grep -cE "^([0-9]+[.)]|- )" <<< "$(grep -E "\?" "$OUT")")
+    [ "${n:-0}" -ge 2 ] || { echo "asked fewer than 2 questions"; exit 1; }
+    qs=$(grep -c "?" "$OUT")
+    [ "$qs" -le 12 ] || { echo "question dump (>12 marks)"; exit 1; }

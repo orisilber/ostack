@@ -1,0 +1,16 @@
+name: lint
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  skills-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # gh ships preinstalled on GitHub-hosted runners. glab and acli don't;
+      # lint.sh already degrades their checks to a warning (not a failure)
+      # when the binary is missing, rather than us installing third-party
+      # CLIs from unpinned sources on every push.
+      - run: bash evals/lint.sh
