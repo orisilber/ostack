@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Delegating wrapper around real git: every call is logged to $CALLS_LOG so
+# scenarios can assert on (or forbid) operations like `git push`.
+REAL_GIT="/usr/bin/git"
+[ -x "$REAL_GIT" ] || REAL_GIT="$(command -v git)"
+
+LOG="${CALLS_LOG:-}"
+[ -n "$LOG" ] && echo "--- git $*" >> "$LOG"
+exec "$REAL_GIT" "$@"

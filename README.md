@@ -11,15 +11,14 @@ single-vendor hosts, so nothing silently no-ops in Claude Code.
 ## Install
 
 ```sh
-tmp=$(mktemp -d) && git clone -q git@github.com:orisilber/ostack.git "$tmp/ostack" && bash "$tmp/ostack/scripts/install.sh"; rm -rf "$tmp"
+git clone git@github.com:orisilber/ostack.git ~/dev/ostack -q && ~/dev/ostack/scripts/install.sh
 ```
 
-One line, nothing left behind but the skills: the script copies every skill
-into `~/.agents/skills`, `~/.claude/skills`, and `~/.cursor/skills`, then the
-clone is deleted. Run it again anytime to replace the installed skills with the
-latest versions. Foreign directories (not installed by ostack) are skipped and
-reported, never clobbered. Override the canonical home with `AGENTS_HOME`, or
-preview with `--dry-run`.
+One line. The script symlinks every skill directly into `~/.agents/skills`,
+`~/.claude/skills`, and `~/.cursor/skills`, skipping (and reporting) anything
+already there that isn't a symlink, so it's safe to re-run after a `git pull`.
+Override the canonical home with `AGENTS_HOME`, or preview first with
+`--dry-run`.
 
 ## Skills
 

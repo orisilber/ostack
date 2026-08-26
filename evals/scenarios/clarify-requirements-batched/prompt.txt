@@ -1,0 +1,1 @@
+Ticket WEB-77: "Improve the dashboard loading experience." Clarify requirements for this ticket before any implementation.

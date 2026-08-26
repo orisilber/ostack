@@ -34,7 +34,7 @@ rules below are not optional.
 
 Create/update it with a single `cat > .git/babysit-mr-state.json <<'EOF'` call.
 If resuming an interrupted run, rebuild missing fields from `glab mr view`.
-Capture `me` once via `glab api user --jq .username`.
+Capture `me` once via `glab api user | jq -r .username`.
 
 ## Phase 0: Resolve the MR
 
@@ -69,7 +69,7 @@ Round structure:
 # ME='orisilber'; LAST=123   # last_seen_note from state file
 for i in $(seq 1 20); do
   OUT=$(glab api "projects/$PROJECT_ID/merge_requests/$MR_IID/discussions?per_page=100&sort=asc" \
-    --jq "[.[] | select(any(.notes[]; .system | not)) | select(any(.notes[]; .author.username != \"$ME\" and .id > $LAST)) | {disc: .id, nid: ([.notes[].id] | max), by: (.notes | map(select(.author.username != \"$ME\" and .id > $LAST)) | last | .author.username), text: ((.notes | map(select(.id > $LAST) | .body)) | join(\" || \"))[0:400]}]")
+    | jq "[.[] | select(any(.notes[]; .system | not)) | select(any(.notes[]; .author.username != \"$ME\" and .id > $LAST)) | {disc: .id, nid: ([.notes[].id] | max), by: (.notes | map(select(.author.username != \"$ME\" and .id > $LAST)) | last | .author.username), text: ((.notes | map(select(.id > $LAST) | .body)) | join(\" || \"))[0:400]}]")
   [ -n "$OUT" ] && [ "$OUT" != "[]" ] && [ "$OUT" != "null" ] && { echo "$OUT"; exit 0; }
   sleep 30
 done
@@ -115,7 +115,7 @@ Do not trust the bot's word alone. Walk the pipeline:
 2. **Wait for completion** with the same one-blocking-call pattern:
    poll `--jq .status` every 30s until `success|failed|canceled`, 20 min budget.
 3. Enumerate jobs:
-   `glab api "projects/$PID/pipelines/$PIPE_ID/jobs?per_page=100" --jq '[.[] | {name,stage,status,allow_failure}] | map(select(.allow_failure | not))'`
+   `glab api "projects/$PID/pipelines/$PIPE_ID/jobs?per_page=100" | jq '[.[] | {name,stage,status,allow_failure}] | map(select(.allow_failure | not))'`
 4. Every non-optional job must be `success`. Any failure:
    pull only the tail of the log
    (`glab api "projects/$PID/jobs/$JOB_ID/trace" | tail -40`), diagnose, fix,

@@ -28,7 +28,7 @@ Read the ticket against the actual codebase. You are looking for:
 
 ```
 #<iid>, 3 clarifications before I start:
-1. <question>? 
+1. <question>?
    Default if unanswered: <assumption I will proceed with>
 2. ...
 Answer all at once, or reply "defaults" to accept everything.

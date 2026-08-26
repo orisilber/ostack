@@ -107,7 +107,7 @@ Pull PR bodies and discussion via `gh` for any substantive commits:
 gh pr view <number> --json title,body,author,createdAt,mergedAt,labels,closingIssuesReferences,comments,reviews
 
 # GitLab: the MR that carried the commit, plus its discussion
-glab mr list --state merged --search "<ticket-key-or-phrase>" -F json | head -40
+glab api "projects/$PROJECT_ID/merge_requests?state=merged&search=<ticket-key-or-phrase>&per_page=20" | jq '[.[] | {iid,title,web_url}]' | head -40
 glab mr view <iid> --comments
 ```
 
