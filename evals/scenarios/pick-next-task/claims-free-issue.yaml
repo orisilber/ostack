@@ -26,6 +26,13 @@ fixtures:
   - match: auth status
     response: |
       ✓ Authenticated as agent@ostack.dev (https://jira.example.com)
+  - match: currentUser
+    response: |
+      key
+      DMI-99
+  - match: view.*DMI-99
+    response: |
+      {"key":"DMI-99","fields":{"customfield_10057":{"id":"10199","self":"https://jira.example.com/rest/api/3/customFieldOption/10199","value":"Unicorns"}}}
   - match: workitem search
     response: |
       key,summary,issuetype,status,priority,labels,created

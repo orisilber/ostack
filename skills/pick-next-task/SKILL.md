@@ -28,6 +28,39 @@ The dominant prefix is the project key (`DMI`, `LNX`, …). Two keys close in
 count means the repo serves two teams. Take the one the user named, else the
 top one, and say which you picked in one line.
 
+Resolve your own team next. The base JQL in step 1 only pulls tickets your
+team owns.
+
+```bash
+acli jira workitem search --jql "assignee = currentUser() ORDER BY updated DESC" \
+  --fields "key" --limit 5 --csv | tail -n +2 | cut -d, -f1 \
+  | while read -r k; do acli jira workitem view "$k" --fields "*all" --json 2>/dev/null; done \
+  | jq -s '.' \
+  | python3 -c '
+import json, sys
+from collections import Counter
+
+squads = {"ravens", "llamas", "grizzlies", "owls", "lynx", "ducks", "unicorns"}
+counts = Counter()
+for item in json.load(sys.stdin):
+    for key, val in item.get("fields", {}).items():
+        if isinstance(val, dict) and str(val.get("value", "")).lower() in squads:
+            counts[(key, val["value"])] += 1
+if counts:
+    (field, team), _ = counts.most_common(1)[0]
+    tf = field.replace("customfield_", "cf[") + "]"
+    print(f"{tf}={team}")
+'
+```
+
+`search` rejects `--fields "*all"` (only `view` takes it), hence the two
+passes. Matching by value beats matching by field name, since custom field
+IDs differ per site. Cache the result as `$TEAM_FIELD` (`cf[10057]`) and
+`$TEAM` (`Unicorns`); use `cf[<id>]` in JQL, the bare field name errors.
+
+No assigned tickets to infer from: ask the user once. Don't fall back to no
+team filter.
+
 Host with the Atlassian MCP connected → use it for the *reads* in step 1 and
 `acli` for every *write* in step 2. Never mix: a read through one path and a
 write through the other is how you claim a ticket someone already took.
@@ -39,13 +72,17 @@ acli jira workitem search --jql "$JQL" \
   --fields "key,issuetype,status,priority,labels,summary" --limit 30 --csv
 ```
 
-Base `$JQL`, unassigned, actionable, mine to take:
+Base `$JQL`, unassigned, actionable, my team's, mine to take:
 
 ```
 project = DMI AND statusCategory != Done AND assignee IS EMPTY
   AND status IN (Open, Backlog) AND issuetype IN (Story, Task, "Production Bug", Sub-task)
+  AND $TEAM_FIELD = '$TEAM'
   ORDER BY priority DESC, created ASC
 ```
+
+`$TEAM_FIELD`/`$TEAM` come from step 0. A ticket outside your team doesn't
+qualify, no matter how well it fits everything below.
 
 Then pick, in order:
 
@@ -112,7 +149,7 @@ A `<KEY>/<slug>` variant (`fix/llamas/DMI-19024/negative-duration-url`) is equal
 fine; the Jira↔GitLab bot links the MR off the key either way.
 
 - `<type>`: `feature` for Story, `bugfix` for Production Bug, `fix`/`chore`/`test` otherwise. Use the commitlint types the repo actually allows.
-- `<squad>`: a squad label on the ticket (`llamas`, `ravens`, `grizzlies`, `owls`, `lynx`). No squad label → drop the segment, don't guess.
+- `<squad>`: a squad label on the ticket (`llamas`, `ravens`, `grizzlies`, `owls`, `lynx`, `ducks`, `unicorns`). No squad label → drop the segment, don't guess.
 - `<slug>`: 4–6 words, kebab-case, from the summary with `[FE]`/`[BE]` tags stripped.
 
 The ticket key goes in every commit subject too: `fix(DMI-1234): <subject>`.
@@ -137,9 +174,10 @@ Never skip 3. The gate runs before every push, no exceptions.
 
 ## 5. Failure to find anything
 
-Empty result set is a real answer. Report `No agent-ready work in <KEY>` plus the
-JQL you ran, and stop. Do not widen the filter until you find something
-claimable. That's how an agent ends up rewriting the auth layer at 3am.
+Empty result set is a real answer. Report `No agent-ready work for team <TEAM>
+in <KEY>` plus the JQL you ran, and stop. Do not widen the filter, team scope
+included, until you find something claimable. That's how an agent ends up
+rewriting the auth layer at 3am, or working another team's backlog uninvited.
 
 ## Batch mode
 
@@ -149,7 +187,8 @@ each claim their own.
 
 ## Fallback: repos whose queue is GitLab issues
 
-Same shape, different verbs: `glab issue list`, claim by
+Same shape, different verbs: `glab issue list --label "$TEAM"` (reuse `$TEAM`
+from step 0; GitLab tracks it as a label, not a field), claim by
 `glab api -X PUT "projects/$PID/issues/$IID" -f "assignee_ids[]=$MY_ID"`
 (first writer wins there), add labels with `add_labels=` and never `--label`,
 which replaces. Everything from step 3 on is identical.
