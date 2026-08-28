@@ -1,0 +1,21 @@
+skill: ostack-mode
+description: Routes a read-only behavior question to investigation.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  echo '# fixture' > README.md
+  git add -A && git commit -qm init
+
+prompt: |
+  Use ostack-mode to explain how the request pipeline handles retries. This is
+  read-only: do not edit files, open an MR, or contact GitLab.
+
+assert:
+  output_contains:
+    - "Route: investigation -> answer"
+  tools_not_called:
+    - "git add"
+    - "git commit"
+    - "glab mr"

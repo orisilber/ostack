@@ -1,0 +1,20 @@
+skill: ostack-mode
+description: Requires architect for a public cross-module feature boundary.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  mkdir -p src
+  echo '# fixture' > src/README.md
+  git add -A && git commit -qm init
+
+prompt: |
+  Use ostack-mode to add a public Parser type in src/parser.py and move the
+  public parse() function across modules. Keep this as a local feature change
+  and verify it. Do not open an MR.
+
+assert:
+  output_contains:
+    - "Route: feature -> local-change"
+    - "architect"

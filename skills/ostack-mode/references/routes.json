@@ -7,6 +7,27 @@
       "playbook": "playbooks/bug-fix.md",
       "defaultOutcome": "local-change",
       "allowedOutcomes": ["local-change", "mr-open", "merge-ready"]
+    },
+    {
+      "id": "investigation",
+      "match": "The user asks how behavior works or why a decision exists without requesting edits.",
+      "playbook": "playbooks/investigation.md",
+      "defaultOutcome": "answer",
+      "allowedOutcomes": ["answer"]
+    },
+    {
+      "id": "feature",
+      "match": "The user asks for new behavior or a new capability.",
+      "playbook": "playbooks/feature.md",
+      "defaultOutcome": "local-change",
+      "allowedOutcomes": ["local-change", "mr-open", "merge-ready"]
+    },
+    {
+      "id": "refactoring",
+      "match": "The user asks to restructure code without changing behavior.",
+      "playbook": "playbooks/refactoring.md",
+      "defaultOutcome": "local-change",
+      "allowedOutcomes": ["local-change", "mr-open", "merge-ready"]
     }
   ],
   "outcomeTails": {

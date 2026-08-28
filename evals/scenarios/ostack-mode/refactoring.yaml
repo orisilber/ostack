@@ -1,0 +1,19 @@
+skill: ostack-mode
+description: Routes behavior-preserving structural work to refactoring.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  echo 'def old_name(): return 1' > app.py
+  git add -A && git commit -qm init
+
+prompt: |
+  Use ostack-mode to rename old_name to new_name without changing behavior.
+  Pin the behavior, subtract dead wrappers, make the local change, and verify
+  it. Do not open an MR.
+
+assert:
+  output_contains:
+    - "Route: refactoring -> local-change"
+    - "Laziness Protocol"

@@ -1,0 +1,20 @@
+skill: ostack-mode
+description: Routes a small feature to local change and records skipped design fan-out.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  echo '# fixture' > README.md
+  git add -A && git commit -qm init
+
+prompt: |
+  Use ostack-mode to add a one-file helper following the existing local
+  pattern. Make the local change and verify it; do not open an MR.
+
+assert:
+  output_contains:
+    - "Route: feature -> local-change"
+    - "architect skipped"
+  tools_not_called:
+    - "glab mr create"
