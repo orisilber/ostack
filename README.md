@@ -34,7 +34,9 @@ not make the mode sticky by itself. The skill keeps
 
 The mode resolves two separate values before it chooses a playbook:
 
-- Task kind: `investigation`, `bug-fix`, `feature`, or `refactoring`.
+- Route: `investigation`, `bug-fix`, `feature`, `refactoring`, `eval`,
+  `authoring-a-skill`, `session-pickup`, `pause-safely`, `prototype`,
+  `visual-parity`, `multi-phase-plan`, or `worktree-cleanup`.
 - Outcome: `answer`, `local-change`, `mr-open`, or `merge-ready`.
 
 It reports the selected pair as `Route: <task-kind> -> <outcome>`. A read-only
@@ -42,7 +44,9 @@ question defaults to `answer`, and a code-change request defaults to
 `local-change`. The mode selects `mr-open` or `merge-ready` only when you ask
 for that outcome. It never infers an external write from a ticket, branch, or
 remote. If no implemented route matches, it uses the applicable leaf skills.
-The mode does not merge, deploy, or release.
+A code route runs its verification steps automatically. You do not need to ask
+the mode to verify a change or keep it local. The mode does not merge, deploy,
+or release.
 
 Use `setup-ostack-mode` to configure delegated model roles. It reads
 `~/.config/ostack/models.json`, or the directory named by `OSTACK_CONFIG_HOME`,
@@ -50,6 +54,67 @@ and falls back to `inherit` when the file is missing or invalid. The setup skill
 does not read or edit pstack's model configuration. See
 [`skills/ostack-mode/references/models.example.json`](skills/ostack-mode/references/models.example.json)
 for the configuration shape.
+
+## How skills participate
+
+Workflow membership and invocation policy are separate. A skill can be part of
+an `ostack-mode` workflow and still require explicit invocation when you use it
+outside the mode.
+
+### Workflow components
+
+When `ostack-mode` selects a route, its playbook selects these skills as needed.
+You do not need to name them in the prompt.
+
+| Skill | Workflow use |
+|---|---|
+| `architect` | Settle a boundary before a feature, bug fix, or refactor crosses it |
+| `arena` | Compare competing implementations or prototype artifacts |
+| `babysit-gitlab-mr` | Run only for the explicit `merge-ready` outcome |
+| `decompose-epic` | Split work only when the source is a real Jira epic |
+| `e2e-verify` | Verify UI behavior or visual parity on a real UI |
+| `escalate` | Stop a route at a safety or authority boundary |
+| `how` and `why` | Recover runtime structure and design history |
+| `principles` | Review the shape of implementation and refactoring work |
+| `recall` | Reconstruct context for `session-pickup` |
+| `reproduce-first` | Establish failing evidence before a bug fix |
+| `show-me-your-work` | Preserve decisions when a long run needs a trail |
+| `technical-writing` and `unslop` | Edit prose that a workflow publishes |
+| `verify-changes` | Discover and run repository checks after a code change |
+
+`ostack-mode` is the workflow entry point. `setup-ostack-mode` configures its
+model roles but does not run inside a task route.
+
+### Standalone skills
+
+These skills are not selected by any current `ostack-mode` route. Use them for
+their own task when the need arises.
+
+| Skill | Use |
+|---|---|
+| `blast-radius` | Check what a specific change can break outside its diff |
+| `clarify-requirements` | Resolve ticket ambiguity before implementation starts |
+| `deploy-watch` | Watch a deployment after release |
+| `interrogate` | Run an adversarial review over a diff |
+| `pick-next-task` | Claim the next ready Jira item |
+| `swarm` | Fan out bulk work across independent slices |
+| `typescript-best-practices` | Apply TypeScript type discipline when TypeScript files are in scope |
+
+### Explicit invocation
+
+Skills with `disable-model-invocation: true` do not start from a model-selected
+trigger. Invoke them by name or slash command when no active workflow already
+calls for them:
+
+`ostack-mode`, `setup-ostack-mode`, `architect`, `arena`, `blast-radius`,
+`interrogate`, `recall`, `show-me-your-work`, `swarm`, and
+`technical-writing`.
+
+For example, `/ostack-mode Fix the pagination bug` starts the workflow, while
+`/interrogate Review this diff` runs the standalone review directly. Inside
+`ostack-mode`, a selected playbook can include `architect`, `arena`, `recall`,
+`show-me-your-work`, or `technical-writing`; you do not need to invoke those
+skills again.
 
 ## Skills
 
