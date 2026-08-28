@@ -14,7 +14,7 @@ the headless runner or expose the Custom Mode UI.
 | Static result | `PASS` (`LINT: PASS (0 warnings)`) |
 | Route validator | `PASS` (`VALIDATE: PASS`) |
 | Validator fixtures | `PASS` (`OSTACK VALIDATOR FIXTURES: PASS`) |
-| YAML parse | `PASS` (20 scenario files) |
+| YAML parse | `PASS` (22 scenario files) |
 | Default CLI-help lint | `BLOCKED` in this host; the glab help probe did not return within two minutes |
 | Headless Cursor scenarios | `BLOCKED`; Cursor 3.17.19 requires `cursor agent login` or `CURSOR_API_KEY` |
 | Live Cursor matrix | `UNRUN`; see `evals/cursor/ostack-mode-core.md` |
