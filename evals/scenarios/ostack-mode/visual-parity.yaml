@@ -1,0 +1,21 @@
+skill: ostack-mode
+description: Gates visual parity on a UI surface and requires labeled baseline screenshots.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  mkdir -p web
+  echo '<button>Save</button>' > web/index.html
+  git add -A && git commit -qm init
+
+prompt: |
+  Use ostack-mode to make the Save button match the existing UI baseline.
+  Establish the untouched baseline, take labeled side-by-side screenshots,
+  then use e2e-verify for the UI states. Do not invent a pixel threshold and do
+  not open an MR.
+
+assert:
+  output_contains:
+    - "Route: visual-parity -> local-change"
+    - "e2e-verify"

@@ -56,6 +56,34 @@
       "playbook": "playbooks/refactoring.md",
       "defaultOutcome": "local-change",
       "allowedOutcomes": ["local-change", "mr-open", "merge-ready"]
+    },
+    {
+      "id": "prototype",
+      "match": "The user asks to prototype, mock up, or compare competing artifacts.",
+      "playbook": "playbooks/prototype.md",
+      "defaultOutcome": "local-change",
+      "allowedOutcomes": ["answer", "local-change"]
+    },
+    {
+      "id": "visual-parity",
+      "match": "The user asks to make a UI match an existing visual baseline.",
+      "playbook": "playbooks/visual-parity.md",
+      "defaultOutcome": "local-change",
+      "allowedOutcomes": ["answer", "local-change", "mr-open", "merge-ready"]
+    },
+    {
+      "id": "multi-phase-plan",
+      "match": "The user asks for a multi-phase plan or parallel work breakdown.",
+      "playbook": "playbooks/multi-phase-plan.md",
+      "defaultOutcome": "answer",
+      "allowedOutcomes": ["answer", "local-change"]
+    },
+    {
+      "id": "worktree-cleanup",
+      "match": "The user asks to inspect or clean up git worktrees.",
+      "playbook": "playbooks/worktree-cleanup.md",
+      "defaultOutcome": "answer",
+      "allowedOutcomes": ["answer", "local-change"]
     }
   ],
   "outcomeTails": {
