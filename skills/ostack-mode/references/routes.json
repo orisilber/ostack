@@ -9,6 +9,34 @@
       "allowedOutcomes": ["local-change", "mr-open", "merge-ready"]
     },
     {
+      "id": "eval",
+      "match": "The user asks to run the skill library or YAML evaluation scenarios.",
+      "playbook": "playbooks/eval.md",
+      "defaultOutcome": "local-change",
+      "allowedOutcomes": ["answer", "local-change"]
+    },
+    {
+      "id": "authoring-a-skill",
+      "match": "The user asks to create or update a repository skill.",
+      "playbook": "playbooks/authoring-a-skill.md",
+      "defaultOutcome": "local-change",
+      "allowedOutcomes": ["local-change", "mr-open", "merge-ready"]
+    },
+    {
+      "id": "session-pickup",
+      "match": "The user asks to resume work or reconstruct where a prior run stopped.",
+      "playbook": "playbooks/session-pickup.md",
+      "defaultOutcome": "answer",
+      "allowedOutcomes": ["answer", "local-change"]
+    },
+    {
+      "id": "pause-safely",
+      "match": "The user asks to pause or stop safely and leave work ready to resume.",
+      "playbook": "playbooks/pause-safely.md",
+      "defaultOutcome": "answer",
+      "allowedOutcomes": ["answer", "local-change"]
+    },
+    {
       "id": "investigation",
       "match": "The user asks how behavior works or why a decision exists without requesting edits.",
       "playbook": "playbooks/investigation.md",

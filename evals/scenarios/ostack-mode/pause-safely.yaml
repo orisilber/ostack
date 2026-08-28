@@ -1,0 +1,22 @@
+skill: ostack-mode
+description: Pauses at a boundary and leaves a durable resume note.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  echo '# fixture' > README.md
+  git add -A && git commit -qm init
+
+prompt: |
+  Use ostack-mode to pause this run safely. Stop at an atomic boundary and
+  leave a durable resume note with status, changed files, verification, and
+  the next action. Do not delete the worktree or contact GitLab.
+
+assert:
+  output_contains:
+    - "Route: pause-safely -> answer"
+    - "resume"
+  tools_not_called:
+    - "git push"
+    - "glab mr"

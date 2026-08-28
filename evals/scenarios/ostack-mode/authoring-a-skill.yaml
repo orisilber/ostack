@@ -1,0 +1,21 @@
+skill: ostack-mode
+description: Routes skill authoring through principles, writing, unslop, and evals.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  echo '# fixture' > README.md
+  git add -A && git commit -qm init
+
+prompt: |
+  Use ostack-mode to create a small skill for formatting changelog entries.
+  Apply principles, technical-writing, and unslop, add an eval scenario, and
+  run the local lint gate. Do not open an MR.
+
+assert:
+  output_contains:
+    - "Route: authoring-a-skill -> local-change"
+    - "principles"
+    - "technical-writing"
+    - "unslop"
