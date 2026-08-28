@@ -1,0 +1,41 @@
+skill: setup-ostack-mode
+description: Offers an advanced override only when an existing configuration already contains one.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  mkdir -p "$HOME/.config/ostack"
+  cat > "$HOME/.config/ostack/models.json" <<'JSON'
+  {
+    "version": 1,
+    "roles": {
+      "exploration": ["inherit"],
+      "implementation": ["inherit"],
+      "judgment": ["inherit"],
+      "prose": ["inherit"]
+    },
+    "overrides": {
+      "how.explorer": ["inherit"]
+    }
+  }
+  JSON
+  echo '# fixture' > README.md
+  git add -A && git commit -qm init
+
+prompt: |
+  Run setup-ostack-mode. An existing valid configuration already has an
+  advanced overrides object. Keep all four generic roles as `inherit`, retain
+  the existing `how.explorer` override, and show that advanced configuration
+  is available. Validate the complete candidate and atomically replace the
+  file. Do not edit pstack's model configuration.
+
+assert:
+  output_contains:
+    - "how.explorer"
+    - "atomic"
+  tools_not_called:
+    - "glab"
+    - "acli"
+  custom: |
+    jq -e '.version == 1 and .overrides["how.explorer"] == ["inherit"]' "$HOME/.config/ostack/models.json" >/dev/null

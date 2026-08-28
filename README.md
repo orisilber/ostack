@@ -24,6 +24,33 @@ without replacing them. Override the canonical home with `AGENTS_HOME`, or
 preview installs and removals with `--dry-run`. Set `OSTACK_INSTALL_HOME` to
 redirect all three targets to another user home.
 
+## Orchestration
+
+`ostack-mode` is the Cursor-first entry point when you want ostack to coordinate
+the work. Activate it as a Cursor Custom Mode when you want its instructions to
+remain active across follow-up turns. Slash invocation is explicit, but it does
+not make the mode sticky by itself. The skill keeps
+`disable-model-invocation: true`, so it never starts without your action.
+
+The mode resolves two separate values before it chooses a playbook:
+
+- Task kind: `investigation`, `bug-fix`, `feature`, or `refactoring`.
+- Outcome: `answer`, `local-change`, `mr-open`, or `merge-ready`.
+
+It reports the selected pair as `Route: <task-kind> -> <outcome>`. A read-only
+question defaults to `answer`, and a code-change request defaults to
+`local-change`. The mode selects `mr-open` or `merge-ready` only when you ask
+for that outcome. It never infers an external write from a ticket, branch, or
+remote. If no implemented route matches, it uses the applicable leaf skills.
+The mode does not merge, deploy, or release.
+
+Use `setup-ostack-mode` to configure delegated model roles. It reads
+`~/.config/ostack/models.json`, or the directory named by `OSTACK_CONFIG_HOME`,
+and falls back to `inherit` when the file is missing or invalid. The setup skill
+does not read or edit pstack's model configuration. See
+[`skills/ostack-mode/references/models.example.json`](skills/ostack-mode/references/models.example.json)
+for the configuration shape.
+
 ## Skills
 
 The **source** column says where a skill's content originates: `ostack` is
@@ -34,6 +61,8 @@ below for what changed).
 
 | Skill | Source | Purpose |
 |---|---|---|
+| `ostack-mode` | ostack | Cursor-first router for task kind, outcome, and implemented playbooks |
+| `setup-ostack-mode` | ostack | Configure ostack's delegated model roles and fallback behavior |
 | `pick-next-task` | ostack | Claim the next Jira work item with `acli`: JQL by agent-ready criteria, self-assign with read-back, transition, branch |
 | `decompose-epic` | ostack | Jira epic → atomic, conflict-free child tickets with acceptance criteria, disjoint file scopes, and real `Blocks` links |
 | `clarify-requirements` | ostack | One batched round of upfront questions per ticket, defaults included, then never interrupts |
@@ -102,12 +131,15 @@ step if you want the agent doing the mechanics under supervision.
 
 ## Provenance
 
-`principles`, `how`, `why`, `blast-radius`, `architect`, `arena`, `swarm`,
+`ostack-mode`, `principles`, `how`, `why`, `blast-radius`, `architect`, `arena`, `swarm`,
 `interrogate`, `recall`, `show-me-your-work`, `unslop`, `technical-writing`, and
 `typescript-best-practices` are adapted from
 [pstack](https://github.com/poteto/pstack) by Lauren Tan (MIT). See
 [`NOTICE`](NOTICE). Changes from upstream:
 
+- `ostack-mode` adapts the mode and playbook mechanism from pstack's
+  `poteto-mode`. Its route registry, outcome tails, and playbook text are
+  specific to ostack.
 - 21 standalone principle skills consolidated into one `principles` skill with
   grouped references, so the skill index costs one entry instead of twenty-one.
 - Cursor-specific hooks kept as the default path, with a fallback named for
@@ -118,10 +150,14 @@ step if you want the agent doing the mechanics under supervision.
 - `tdd`'s impractical-test guardrails folded into `reproduce-first` rather than
   shipped as a second, overlapping skill.
 
-Not adapted, deliberately: `poteto-mode` and `figure-it-out` (a mode skill with
-its own playbook set, tied to graphite and GitHub), `setup-pstack`,
+Not vendored as pstack workflows, deliberately: the full `poteto-mode` and
+`figure-it-out` playbook sets (tied to Graphite and GitHub), `setup-pstack`,
 `automate-me`, `reflect`, `teach`, `bro`, `no-comments`,
 `create-verification-skill`, `maintain-verification-skill`, `tdd`.
+
+`make-bot-ui` is also excluded. It depends on Cursor-team internals, including
+a Grok Bot webhook, `update_state`, and sender-key handling. Ostack does not
+ship that integration.
 
 If you run pstack as a Cursor plugin *and* symlink ostack into `~/.cursor/skills`,
 the shared names collide. Pick one: keep pstack for the upstream set, or keep

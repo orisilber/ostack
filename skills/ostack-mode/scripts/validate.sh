@@ -125,6 +125,10 @@ fi
 
 if [ -f "$MODELS" ] && jq empty "$MODELS" >/dev/null 2>&1; then
 	[ "$(jq -r '.version // empty' "$MODELS")" = 1 ] || usage_error 'model example version must be 1'
+	[ "$(jq -r '.roles | type' "$MODELS")" = object ] || usage_error 'model roles must be an object'
+	for role in exploration implementation judgment prose; do
+		[ "$(jq -r --arg r "$role" '.roles[$r] | type' "$MODELS")" = array ] || usage_error "model roles.$role must be an array"
+	done
 	for section in roles overrides; do
 		[ "$(jq -r --arg s "$section" '.[$s] | type' "$MODELS")" = object ] || { usage_error "model '$section' must be an object"; continue; }
 		while IFS= read -r key; do
@@ -144,9 +148,23 @@ if [ -f "$MODELS" ] && jq empty "$MODELS" >/dev/null 2>&1; then
 	done
 fi
 
-if [ -d "$OSTACK_SKILLS" ] && find "$OSTACK_SKILLS" -type f -name '*.md' -print0 | xargs -0 grep -n 'pstack-models\.mdc' >/dev/null 2>&1; then
-	usage_error 'ostack-mode still references pstack-models.mdc'
+# These are the ostack-managed coordinator and callers that previously
+# consumed pstack's model roster. Keep this check scoped to those paths rather
+# than the setup skill, whose contract explicitly says not to edit pstack's
+# file.
+ostack_model_files=()
+if [ -d "$OSTACK_SKILLS" ]; then
+	while IFS= read -r file; do ostack_model_files+=("$file"); done < <(find "$OSTACK_SKILLS" -type f -name '*.md' -print)
 fi
+for caller in architect arena how interrogate swarm why; do
+	caller_file="$ROOT/skills/$caller/SKILL.md"
+	[ -f "$caller_file" ] && ostack_model_files+=("$caller_file")
+done
+for file in "${ostack_model_files[@]}"; do
+	if grep -n 'pstack-models\.mdc' "$file" >/dev/null 2>&1; then
+		usage_error "ostack skill still references pstack-models.mdc: ${file#"$ROOT/"}"
+	fi
+done
 
 if [ "$fail" -gt 0 ]; then
 	printf 'VALIDATE: FAIL (%d errors)\n' "$fail" >&2

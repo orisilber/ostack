@@ -1,0 +1,39 @@
+skill: setup-ostack-mode
+description: Rejects an invalid empty array without truncating the previous valid configuration.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  mkdir -p "$HOME/.config/ostack"
+  cat > "$HOME/.config/ostack/models.json" <<'JSON'
+  {
+    "version": 1,
+    "roles": {
+      "exploration": ["inherit"],
+      "implementation": ["inherit"],
+      "judgment": ["inherit"],
+      "prose": ["inherit"]
+    },
+    "overrides": {}
+  }
+  JSON
+  echo '# fixture' > README.md
+  git add -A && git commit -qm init
+
+prompt: |
+  Run setup-ostack-mode's validation step against a candidate that sets the
+  implementation role to an empty array. This candidate is invalid. Reject it,
+  explain the validation error, and preserve the existing valid
+  ~/.config/ostack/models.json byte-for-byte. Do not write a partial file and
+  do not edit pstack's model configuration.
+
+assert:
+  output_contains:
+    - "invalid"
+    - "preserve"
+  tools_not_called:
+    - "glab"
+    - "acli"
+  custom: |
+    jq -e '.version == 1 and .roles.implementation == ["inherit"]' "$HOME/.config/ostack/models.json" >/dev/null

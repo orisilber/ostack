@@ -8,22 +8,22 @@ disable-model-invocation: true
 
 Fan out N parallel attempts at the same task. Read every candidate end to end. Pick the strongest as the base. Graft the best ideas from the others into it. Verify the synthesized result.
 
-## Model panel
+## Model resolution
 
-pstack's `~/.cursor/rules/pstack-models.mdc` is the roster whenever it exists.
-Read it and don't define a competing config. Without it:
+Read the canonical ostack configuration at
+`$OSTACK_CONFIG_HOME/models.json`, or `~/.config/ostack/models.json` when the
+variable is unset. Resolve `arena.runners` and `arena.cross-judge` from the
+exact override first, then the generic `judgment` role, then `inherit`. A
+missing, invalid, or empty configuration is recoverable: report the fallback
+once and use `inherit`.
 
-- **Cursor (default)**: `claude-fable-5-thinking-max`, `gpt-5.6-sol-max`,
-  `grok-4.6-fast-xhigh`, `claude-opus-5-thinking-xhigh`. Cheap mechanical fan-out
-  goes to grok; judgment and prose go to fable.
-- **Single-vendor host** (Claude Code, opencode): the panel collapses to one
-  family. Diversity then comes from the lens, not the model: one agent per
-  distinct angle on the best model available, and say in the output that model
-  diversity was unavailable. Agreement between same-family agents is weaker
-  evidence than cross-vendor agreement; don't report it as consensus.
-- **Rejected slug**: never a reason to skip the panel. Drop to the nearest valid
-  slug in the same family, note the substitution, keep going. `inherit-parent` and
-  `auto` are not broken slugs. Omit the model instead.
+The runners are a panel, so launch each resolved entry once. The cross-judge
+pool is also a list; choose one entry that differs from the parent model family
+when the host makes that possible. `inherit` must be the only entry when it is
+selected. If the host rejects a configured entry, remove it and continue with
+the remaining entries; use `inherit` only when none remain. Do not pick a
+nearby model ID. A successful subagent call does not prove which model ran,
+because the host may silently substitute it.
 
 ## Start
 
@@ -42,7 +42,7 @@ The N candidates will receive the same prompt, so the prompt is the contract. Ge
 
 1. State the artifact each candidate is producing.
 2. Derive the rubric. State what success looks like for *this* task, then turn it into 3-6 concrete gradeable criteria. Concrete: `Adds a --dry-run flag that skips writes`. Vague: `code is correct`. The rubric is the picker's tool in Phase D; candidates only see the task.
-3. Pick the runners per Model panel (`arena runners` when the roster names them). Spawn more when the arena covers multiple design directions. Same model N times when the work is generation-bound rather than judgment-sensitive.
+3. Pick the runners from the resolved `arena.runners` panel. Spawn more when the arena covers multiple design directions. Same model N times when the work is generation-bound rather than judgment-sensitive.
 4. Assign output paths. Each candidate writes to its own location (a git worktree where possible, otherwise `/tmp/arena-<slug>/candidate-<n>/`). N candidates writing to the same path is shared mutable state and fails the the **separate-before-serializing-shared-state** principle test.
 
 ## Phase B: Fan out
@@ -55,7 +55,15 @@ If a candidate fails to produce output, proceed with N-1 and note the dropout in
 
 ## Phase C: Cross-judge
 
-After all Phase B candidates complete, choose one judge model per Model panel (`arena cross-judge pool` when the roster names it). Prefer a different family from the parent's; on a single-vendor host, prefer a different reasoning tier and say the judge shares the parent's family. Spawn one readonly judge subagent on that model. It sees the rubric and the candidates by path label, scores each criterion, and recommends a base with rationale. It runs in parallel with the parent's reading in Phase D, not with the candidates themselves. Spawning while candidates are still writing means the judge sees partial or empty outputs and reports them as dropouts.
+After all Phase B candidates complete, choose one judge from the resolved
+`arena.cross-judge` pool, preferring a different family from the parent when
+possible. On a single-vendor host, prefer a different reasoning tier and say
+the judge shares the parent's family. Spawn one readonly judge subagent on that
+model. It sees the rubric and the candidates by path label, scores each
+criterion, and recommends a base with rationale. It runs in parallel with the
+parent's reading in Phase D, not with the candidates themselves. Spawning while
+the candidates are still writing means the judge sees partial or empty outputs
+and reports them as dropouts.
 
 ## Phase D: Pick a base
 

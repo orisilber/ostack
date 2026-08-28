@@ -9,22 +9,20 @@ Investigate the motivation and intent behind code. Why was it built this way? Wh
 
 Companion to the `how` skill. `how` answers what the code does and how it works. `why` answers what forces led to its shape.
 
-## Model panel
+## Model resolution
 
-pstack's `~/.cursor/rules/pstack-models.mdc` is the roster whenever it exists.
-Read it and don't define a competing config. Without it:
+Resolve `why.investigators` and `why.synthesizer` from the canonical ostack
+configuration at `$OSTACK_CONFIG_HOME/models.json`, or
+`~/.config/ostack/models.json` when the variable is unset. Use the exact
+override first, then the generic role (`exploration` or `prose`), then
+`inherit`. A missing, invalid, or empty configuration is recoverable: report
+the fallback once and use `inherit`.
 
-- **Cursor (default)**: `claude-fable-5-thinking-max`, `gpt-5.6-sol-max`,
-  `grok-4.6-fast-xhigh`, `claude-opus-5-thinking-xhigh`. Cheap mechanical fan-out
-  goes to grok; judgment and prose go to fable.
-- **Single-vendor host** (Claude Code, opencode): the panel collapses to one
-  family. Diversity then comes from the lens, not the model: one agent per
-  distinct angle on the best model available, and say in the output that model
-  diversity was unavailable. Agreement between same-family agents is weaker
-  evidence than cross-vendor agreement; don't report it as consensus.
-- **Rejected slug**: never a reason to skip the panel. Drop to the nearest valid
-  slug in the same family, note the substitution, keep going. `inherit-parent` and
-  `auto` are not broken slugs. Omit the model instead.
+Each investigator uses the first resolved entry, and the synthesizer is a
+single-agent role that also uses its first entry. If a configured entry is
+rejected, use `inherit` for that subagent; never select a nearby model ID. A
+successful subagent call does not prove which model ran because the host may
+silently substitute it.
 
 ## How this skill works
 
@@ -139,7 +137,7 @@ Launch all matching investigators in a single message so they run concurrently. 
 
 Subagent config (each):
 - `subagent_type`: `generalPurpose` in Cursor; `Explore` (read-only) or `general-purpose` in Claude Code
-- `model`: your configured why-investigators model (default `grok-4.6-fast-xhigh`)
+- `model`: the first entry resolved for `why.investigators`
 - `readonly`: `false` (agent mode). **Do not use readonly/Ask mode.** It strips MCP access, which disables MCP-backed investigators entirely. The source control investigator would be safe in readonly, but keep modes uniform. Investigators still shouldn't write anything. That's a posture, not a sandbox.
 
 Each investigator gets:
@@ -185,7 +183,7 @@ If your scope assessment suggests a single-commit trivial target where the PR de
 Spawn one synthesizer subagent:
 
 - `subagent_type`: `generalPurpose` in Cursor; `Explore` (read-only) or `general-purpose` in Claude Code
-- `model`: your configured why-synthesizer model (default `claude-fable-5-thinking-max`)
+- `model`: the first entry resolved for `why.synthesizer`
 - `readonly`: `false` (agent mode). The synthesizer's quality check spot-verifies citations, which can require MCP access. Readonly/Ask mode strips MCPs and defeats that.
 
 The synthesizer gets:
