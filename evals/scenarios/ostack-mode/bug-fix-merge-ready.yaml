@@ -1,5 +1,5 @@
 skill: ostack-mode
-description: Selects the explicit MR tail only after the bug-fix work.
+description: Selects merge-ready only when the user explicitly asks for it.
 
 setup: |
   git init -q -b main
@@ -15,9 +15,9 @@ setup: |
   git add -A && git commit -qm init
 
 prompt: |
-  Use ostack-mode to fix this bug: app.txt must contain "fixed". Reproduce it,
-  implement the fix, run the repository checks, and then explicitly open an MR.
+  Use ostack-mode to fix the bug in app.txt, open the MR, and babysit it until
+  it is merge-ready. Do not stop at a local change.
 
 assert:
   output_contains:
-    - "Route: bug-fix -> mr-open"
+    - "Route: bug-fix -> merge-ready"
