@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "routes": [
+    {
+      "id": "bug-fix",
+      "match": "The user reports a defect and asks to change code.",
+      "playbook": "playbooks/bug-fix.md",
+      "defaultOutcome": "local-change",
+      "allowedOutcomes": ["local-change", "mr-open", "merge-ready"]
+    }
+  ],
+  "outcomeTails": {
+    "answer": [],
+    "local-change": [],
+    "mr-open": ["playbooks/opening-an-mr.md"],
+    "merge-ready": ["playbooks/opening-an-mr.md", "skill:babysit-gitlab-mr"]
+  }
+}

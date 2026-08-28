@@ -1,0 +1,47 @@
+skill: ostack-mode
+description: Selects the explicit MR tail only after the bug-fix work.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  cat > AGENTS.md <<'MD'
+  # Fixture repo
+
+  ## Checks
+  - test: `echo checks ok`
+  MD
+  echo 'broken' > app.txt
+  git add -A && git commit -qm init
+
+prompt: |
+  Use ostack-mode to fix this bug: app.txt must contain "fixed". Reproduce it,
+  implement the fix, run the repository checks, and then explicitly open an MR.
+
+assert:
+  output_contains:
+    - "Route: bug-fix -> mr-open"
+*** Add File: /Users/ori.silber/.t3/worktrees/ostack/t3code-eec24f35/evals/scenarios/ostack-mode/bug-fix-merge-ready.yaml
+skill: ostack-mode
+description: Selects merge-ready only when the user explicitly asks for it.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  cat > AGENTS.md <<'MD'
+  # Fixture repo
+
+  ## Checks
+  - test: `echo checks ok`
+  MD
+  echo 'broken' > app.txt
+  git add -A && git commit -qm init
+
+prompt: |
+  Use ostack-mode to fix the bug in app.txt, open the MR, and babysit it until
+  it is merge-ready. Do not stop at a local change.
+
+assert:
+  output_contains:
+    - "Route: bug-fix -> merge-ready"

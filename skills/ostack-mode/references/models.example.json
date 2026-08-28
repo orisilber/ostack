@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "roles": {
+    "exploration": ["inherit"],
+    "implementation": ["inherit"],
+    "judgment": ["inherit"],
+    "prose": ["inherit"]
+  },
+  "overrides": {
+    "how.explorer": ["inherit"],
+    "how.explainer": ["inherit"],
+    "how.critics": ["inherit"]
+  }
+}

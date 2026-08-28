@@ -1,0 +1,44 @@
+skill: verify-changes
+description: Discovers a Go check declared by a Makefile alongside go.mod without adding a frontend command.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  mkdir -p scripts
+  cat > go.mod <<'MOD'
+  module example.test/fixture
+
+  go 1.22
+  MOD
+  cat > main.go <<'GO'
+  package main
+
+  func main() {}
+  GO
+  cat > scripts/checks.sh <<'SH'
+  #!/usr/bin/env bash
+  set -eu
+  touch "$WORK/.go-check-ran"
+  SH
+  chmod +x scripts/checks.sh
+  cat > Makefile <<'MAKE'
+  .PHONY: check
+  check:
+  	./scripts/checks.sh
+  MAKE
+  git add -A && git commit -qm init
+  echo '// changed' >> main.go
+
+prompt: |
+  Run the pre-push verification gate on my current changes. Discover the
+  repository-declared Go check from go.mod and its Makefile. Run that exact
+  check; do not add frontend checks or invent commands.
+
+assert:
+  output_contains:
+    - "VERIFY: PASS"
+  output_not_contains:
+    - "npm test"
+  custom: |
+    test -e "$WORK/.go-check-ran" && test ! -e package.json

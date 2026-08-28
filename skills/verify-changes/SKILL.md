@@ -22,9 +22,32 @@ Priority order, first source that names a command wins:
 
 1. `AGENTS.md` (repo root or nearest parent): look for a **Checks** /
    **Verification** section listing lint/typecheck/test commands.
-2. Manifests: `package.json` scripts (`lint`, `typecheck`/`tsc --noEmit`,
-   `test`), `Makefile` targets, `justfile`, `pyproject.toml` (`ruff`, `mypy`,
-   `pytest`), `Cargo.toml`.
+2. Manifests. Use the repository's files to find the declared checks; a
+   manifest tells you where to inspect, but it never authorizes a guessed
+   command. In addition to the common manifests, inspect:
+
+   - Common repositories: `package.json` scripts (`lint`, `typecheck`/`tsc
+     --noEmit`, `test`), `Makefile` targets, `justfile`, `pyproject.toml`
+     (`ruff`, `mypy`, `pytest`), and `Cargo.toml`.
+   - JVM/Scala: `pom.xml`, `build.gradle`, `build.gradle.kts`, and `build.sbt`.
+     Check the Maven/Gradle/SBT wrapper and project or CI documentation for
+     the exact check before running it.
+   - Go: `go.mod` and `go.work`. Look for the check in a `Makefile`,
+     `justfile`, `Taskfile.yml`, repository documentation, or CI configuration.
+   - .NET: `*.sln`, `*.slnx`, `*.csproj`, `global.json`, and
+     `Directory.Build.*`. Confirm the exact `dotnet` invocation in project
+     documentation or CI.
+   - Ruby: `Gemfile`, `*.gemspec`, and `Rakefile`. Confirm the exact Bundler or
+     Rake task in project documentation or CI.
+   - PHP: `composer.json`, `phpunit.xml*`, `phpstan.neon*`, and `psalm.xml*`.
+     Confirm the exact Composer or analysis task in project documentation or
+     CI.
+
+   `Makefile` targets, `justfile` recipes, package scripts, and equivalent
+   task definitions are declarations when they name the check directly. Do
+   not turn the mere presence of a language manifest into an invented command
+   such as `npm test`, `go test ./...`, `dotnet test`, `bundle exec`, or
+   `composer test`.
 3. CI config as ground truth of what must pass: `.gitlab-ci.yml` / GitHub
    workflows job names → map to local equivalents.
 

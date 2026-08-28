@@ -185,9 +185,11 @@ check_cli() {
 		done
 	done < "$joined.j"
 }
-check_cli glab
-check_cli gh
-check_cli acli
+if [ "${OSTACK_LINT_SKIP_CLI_CHECKS:-0}" != 1 ]; then
+	check_cli glab
+	check_cli gh
+	check_cli acli
+fi
 
 # ---------------------------------------------------------------------- style
 EMDASH="$(printf '\xe2\x80\x94')"
@@ -215,6 +217,10 @@ elif [ "$escalate_n" != "$verify_n" ]; then
 fi
 
 bash "$ROOT/tests/install-upgrade.sh" || err "installer upgrade fixtures failed"
+
+# ---------------------------------------------------- ostack-mode contracts
+bash "$SKILLS/ostack-mode/scripts/validate.sh" --root "$ROOT" || err "ostack-mode validator failed"
+bash "$ROOT/evals/fixtures/ostack-mode-validator/run.sh" || err "ostack-mode validator fixtures failed"
 
 # ------------------------------------------------------------------- summary
 echo

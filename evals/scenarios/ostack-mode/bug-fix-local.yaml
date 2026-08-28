@@ -1,0 +1,30 @@
+skill: ostack-mode
+description: Selects the local-change bug-fix route and does not infer an MR.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  cat > AGENTS.md <<'MD'
+  # Fixture repo
+
+  ## Checks
+  - test: `echo checks ok`
+  MD
+  cat > app.py <<'PY'
+  def value():
+      return 1
+  PY
+  git add -A && git commit -qm init
+
+prompt: |
+  Use ostack-mode for this bug fix. The value() function returns 1 but should
+  return 2. Reproduce the bug, make the local code change, and verify it. Do
+  not open an MR or contact GitLab.
+
+assert:
+  output_contains:
+    - "Route: bug-fix -> local-change"
+  tools_not_called:
+    - "git push"
+    - "glab mr create"

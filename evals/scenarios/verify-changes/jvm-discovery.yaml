@@ -1,0 +1,50 @@
+skill: verify-changes
+description: Discovers the declared JVM check from a Gradle manifest and CI without adding a frontend command.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  mkdir -p src/main/java .github/workflows
+  cat > build.gradle.kts <<'KTS'
+  plugins {
+      java
+  }
+  KTS
+  cat > src/main/java/App.java <<'JAVA'
+  class App {}
+  JAVA
+  cat > gradlew <<'SH'
+  #!/usr/bin/env bash
+  set -eu
+  printf '%s\n' "$*" > "$WORK/.jvm-check-args"
+  case "${1:-}" in
+    test|check) touch "$WORK/.jvm-check-ran" ;;
+    *) exit 2 ;;
+  esac
+  SH
+  chmod +x gradlew
+  cat > .github/workflows/checks.yml <<'YAML'
+  name: checks
+  on: [push]
+  jobs:
+    test:
+      runs-on: ubuntu-latest
+      steps:
+        - run: ./gradlew test
+  YAML
+  git add -A && git commit -qm init
+  echo '// changed' >> src/main/java/App.java
+
+prompt: |
+  Run the pre-push verification gate on my current changes. Discover the
+  checks from this repository's JVM manifest and CI declaration. Run the exact
+  repository-declared command; do not add frontend checks or invent commands.
+
+assert:
+  output_contains:
+    - "VERIFY: PASS"
+  output_not_contains:
+    - "npm test"
+  custom: |
+    test -e "$WORK/.jvm-check-ran" && test "$(cat "$WORK/.jvm-check-args")" = "test" && test ! -e package.json
