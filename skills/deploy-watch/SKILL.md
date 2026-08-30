@@ -32,7 +32,7 @@ projects on this same skill can watch completely different stacks:
 
 No contract found → this is a soft stop, not a hard escalate. Ask the human
 once, batched: (a) run first-time setup now (§0a) and produce a contract, or
-(b) stop until one exists. Never assume (a) silently — the contract encodes
+(b) stop until one exists. Never assume (a) silently: the contract encodes
 a trust boundary (auto-rollback authorization) that only a human can grant.
 Watching without defined triggers produces noise, not safety either way:
 never invent a threshold, and never invent a metric a trigger doesn't name.
@@ -41,30 +41,30 @@ never invent a threshold, and never invent a metric a trigger doesn't name.
 
 Run only after the human picked (a) above. Exploring the repo first (CI
 config, existing monitoring code, README/AGENTS.md) to pre-fill or
-smart-guess answers is encouraged — it makes the ask shorter — but always
+smart-guess answers is encouraged, since it makes the ask shorter, but always
 show what was found and let the human confirm or correct it. Never answer
 one of these for them and skip the question; a silently-guessed source is
 the same failure the "never invent a metric" rule already forbids.
 
 Ask once, batched, free text (this is intentionally open-ended, not
-multiple-choice — "I don't know" is a valid answer for 1-4, and just leaves
+multiple-choice: "I don't know" is a valid answer for 1-4, and just leaves
 that category to fresh discovery per run instead of a fixed source):
 
 ```
-Setting up deploy-watch for this project — five questions, answer what you can:
+Setting up deploy-watch for this project, five questions, answer what you can:
 
 1. Deploy: how does this reach <env>, and how would I check whether a given
    commit/SHA is currently live there? (CI system name, a CLI, a dashboard
-   URL, an MCP tool — whatever you actually use)
+   URL, an MCP tool, whatever you actually use)
 2. Rollback: is there a command I'm authorized to run automatically if a
-   trigger fires? Give the exact command, or say "no" — if no, I will always
+   trigger fires? Give the exact command, or say "no"; if no, I will always
    alert/escalate instead of auto-rolling-back.
 3. Metrics: where do I check error rate, latency, and uptime? Name the tool
    (Datadog, Grafana, Prometheus, CloudWatch, an internal CLI, an HTTP
    endpoint, an MCP server) and the exact query/command/URL if you know it.
 4. Logs: where should I pull evidence from when something looks wrong?
    Same detail level as above.
-5. Defaults — say "defaults" to accept all, or override any:
+5. Defaults, say "defaults" to accept all, or override any:
    - thresholds: error_rate >2x baseline -> auto_rollback (if authorized)
      else alert; p95_latency >2x baseline -> alert; uptime <99% ->
      auto_rollback (if authorized) else alert
@@ -73,7 +73,7 @@ Setting up deploy-watch for this project — five questions, answer what you can
 
 Write the answers to `deploy-watch.json` at the repo root (or beside the
 relevant service's own `AGENTS.md` in a monorepo with more than one watched
-service — ask which if that's ambiguous), extending the step 0 schema with a
+service, ask which if that's ambiguous), extending the step 0 schema with a
 `sources` block:
 
 ```json
@@ -99,7 +99,7 @@ service — ask which if that's ambiguous), extending the step 0 schema with a
 
 `type` is whichever of `cli` / `http` / `mcp` / `other` matches the answer.
 A category the human answered "I don't know" to is simply omitted from
-`sources` — step 1 falls back to live discovery for that category only, same
+`sources`, step 1 falls back to live discovery for that category only, same
 as a contract with no `sources` block at all.
 
 Keep it untracked without touching the project's own `.gitignore` (that file
@@ -110,8 +110,8 @@ adjacent artifact):
 grep -qxF 'deploy-watch.json' .git/info/exclude || echo 'deploy-watch.json' >> .git/info/exclude
 ```
 
-`.git/info/exclude` is git's local-only ignore file — never committed, never
-seen by other clones — which is exactly "don't track this" without editing a
+`.git/info/exclude` is git's local-only ignore file: never committed, never
+seen by other clones, which is exactly "don't track this" without editing a
 file every other contributor sees. If the contract lives somewhere other than
 repo root, use that path relative to the repo root in the exclude line
 instead.
