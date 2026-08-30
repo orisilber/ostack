@@ -1,0 +1,24 @@
+skill: ostack-mode
+description: Uses arena when one feature implementation would lock in a consequential choice.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  mkdir -p src
+  echo '# fixture' > src/README.md
+  git add -A && git commit -qm init
+
+prompt: |
+  Use ostack-mode to add request deduplication. Both a shared in-flight registry
+  and a queue-owned design fit the current code, but choosing the wrong ownership
+  model would force a costly rewrite. Explore the viable implementations, select
+  the best one with evidence, implement it locally, and verify it. Do not open an
+  MR.
+
+assert:
+  output_contains:
+    - "Route: feature -> local-change"
+    - "arena"
+  tools_not_called:
+    - "glab mr"

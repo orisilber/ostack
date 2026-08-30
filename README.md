@@ -34,8 +34,8 @@ not make the mode sticky by itself. The skill keeps
 
 The mode resolves two separate values before it chooses a playbook:
 
-- Route: `investigation`, `bug-fix`, `feature`, `refactoring`, `eval`,
-  `authoring-a-skill`, `session-pickup`, `pause-safely`, `prototype`,
+- Route: `investigation`, `bug-fix`, `large-feature`, `feature`, `refactoring`,
+  `eval`, `authoring-a-skill`, `session-pickup`, `pause-safely`, `prototype`,
   `visual-parity`, `multi-phase-plan`, or `worktree-cleanup`.
 - Outcome: `answer`, `local-change`, `mr-open`, or `merge-ready`.
 
@@ -47,6 +47,17 @@ remote. If no implemented route matches, it uses the applicable leaf skills.
 A code route runs its verification steps automatically. You do not need to ask
 the mode to verify a change or keep it local. The mode does not merge, deploy,
 or release.
+
+The mode selects `large-feature` when implementation has at least two
+independently verifiable scopes after shared foundations are separated, or when
+the complete change cannot fit one agent session. It creates a local task DAG
+by default. If at least two ready tasks have disjoint write scopes, it invokes
+`swarm` and integrates the results. It uses `decompose-epic` only for a real
+Jira epic when you authorize Jira work.
+
+For uncertain implementation choices, the mode uses `arena` when at least two
+viable approaches exist and a wrong choice would cause substantial rework. It
+uses `how` without an arena when only the current system is unclear.
 
 Use `setup-ostack-mode` to configure delegated model roles. It reads
 `~/.config/ostack/models.json`, or the directory named by `OSTACK_CONFIG_HOME`,
@@ -69,7 +80,7 @@ You do not need to name them in the prompt.
 | Skill | Workflow use |
 |---|---|
 | `architect` | Settle a boundary before a feature, bug fix, or refactor crosses it |
-| `arena` | Compare competing implementations or prototype artifacts |
+| `arena` | Compare viable implementations when one choice would lock in the wrong shape |
 | `babysit-gitlab-mr` | Run only for the explicit `merge-ready` outcome |
 | `decompose-epic` | Split work only when the source is a real Jira epic |
 | `e2e-verify` | Verify UI behavior or visual parity on a real UI |
@@ -79,6 +90,7 @@ You do not need to name them in the prompt.
 | `recall` | Reconstruct context for `session-pickup` |
 | `reproduce-first` | Establish failing evidence before a bug fix |
 | `show-me-your-work` | Preserve decisions when a long run needs a trail |
+| `swarm` | Implement disjoint ready tasks for a large feature in parallel |
 | `technical-writing` and `unslop` | Edit prose that a workflow publishes |
 | `verify-changes` | Discover and run repository checks after a code change |
 
@@ -97,7 +109,6 @@ their own task when the need arises.
 | `deploy-watch` | Watch a deployment after release |
 | `interrogate` | Run an adversarial review over a diff |
 | `pick-next-task` | Claim the next ready Jira item |
-| `swarm` | Fan out bulk work across independent slices |
 | `typescript-best-practices` | Apply TypeScript type discipline when TypeScript files are in scope |
 
 ### Explicit invocation
@@ -113,8 +124,8 @@ calls for them:
 For example, `/ostack-mode Fix the pagination bug` starts the workflow, while
 `/interrogate Review this diff` runs the standalone review directly. Inside
 `ostack-mode`, a selected playbook can include `architect`, `arena`, `recall`,
-`show-me-your-work`, or `technical-writing`; you do not need to invoke those
-skills again.
+`show-me-your-work`, `swarm`, or `technical-writing`; you do not need to invoke
+those skills again.
 
 ## Skills
 

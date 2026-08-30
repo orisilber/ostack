@@ -14,4 +14,5 @@ changes.
 
 The deliverable is a reviewable local plan. It does not create tickets or
 external links unless the user explicitly supplied a Jira epic and asked for
-that operation.
+that operation. Do not invoke `swarm` for a plan-only request. If the user also
+asks to implement a large feature, select the `large-feature` route instead.

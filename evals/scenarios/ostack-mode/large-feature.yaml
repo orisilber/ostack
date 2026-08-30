@@ -1,0 +1,27 @@
+skill: ostack-mode
+description: Decomposes a large feature locally and swarms only disjoint ready work.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  mkdir -p src/import src/validate src/render
+  echo '# fixture' > README.md
+  git add -A && git commit -qm init
+
+prompt: |
+  Use ostack-mode to implement an import pipeline. Add parsing under src/import,
+  validation under src/validate, and rendering under src/render. The three parts
+  have independent acceptance checks after their shared input type is defined,
+  and the complete feature is too large for one agent session. Keep the
+  decomposition local, implement every part, integrate it, and verify the
+  result. Do not use Jira or open an MR.
+
+assert:
+  output_contains:
+    - "Route: large-feature -> local-change"
+    - "swarm"
+    - "verify"
+  tools_not_called:
+    - "acli jira"
+    - "glab mr"

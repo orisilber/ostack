@@ -7,8 +7,9 @@ Use this route when the user asks for new behavior.
 3. Run `architect` when a public function, class, type, or ownership boundary
    crosses modules. Record `architect skipped: <reason>` for a small change
    that follows an existing local pattern.
-4. Run `arena` only when the user requests competing implementations or the
-   task exposes incompatible boundaries or interactions. Otherwise record why
+4. Run `arena` when the user requests competing implementations, the task
+   exposes incompatible boundaries or interactions, or one attempt would lock
+   in a consequential choice between viable approaches. Otherwise record why
    it was not needed.
 5. Implement the smallest complete vertical slice and its focused tests.
 6. Run `verify-changes` and report the exact checks and result.

@@ -89,6 +89,23 @@ if [ -f "$ROUTES" ] && jq empty "$ROUTES" >/dev/null 2>&1; then
 		fi
 	done < <(jq -c '.routes[]?' "$ROUTES")
 
+	feature_index="$(jq -r '[.routes[].id] | index("feature") // -1' "$ROUTES")"
+	large_feature_index="$(jq -r '[.routes[].id] | index("large-feature") // -1' "$ROUTES")"
+	if [ "$feature_index" -ge 0 ]; then
+		[ "$large_feature_index" -ge 0 ] || usage_error "feature route requires a large-feature route"
+		if [ "$large_feature_index" -ge 0 ] && [ "$large_feature_index" -ge "$feature_index" ]; then
+			usage_error "large-feature route must appear before feature"
+		fi
+	fi
+	if [ "$large_feature_index" -ge 0 ]; then
+		large_feature_playbook="$(jq -r '.routes[] | select(.id == "large-feature") | .playbook' "$ROUTES")"
+		for required_skill in decompose-epic swarm verify-changes; do
+			if ! grep -q "\`$required_skill\`" "$OSTACK_SKILLS/$large_feature_playbook"; then
+				usage_error "large-feature playbook must reference $required_skill"
+			fi
+		done
+	fi
+
 	for outcome in answer local-change mr-open merge-ready; do
 		tail_type="$(jq -r --arg o "$outcome" '.outcomeTails[$o] | type' "$ROUTES")"
 		[ "$tail_type" = array ] || { usage_error "outcome tail '$outcome' must be an array"; continue; }

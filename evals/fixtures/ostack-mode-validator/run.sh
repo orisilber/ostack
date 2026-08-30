@@ -42,6 +42,8 @@ expect_fail no-allowed '.routes[0].allowedOutcomes = []'
 expect_fail bad-default '.routes[0].defaultOutcome = "answer"'
 expect_fail bad-tail '.outcomeTails["local-change"] = ["playbooks/missing.md"]'
 expect_fail unknown-skill '.outcomeTails["local-change"] = ["skill:not-a-skill"]'
+expect_fail missing-large-feature '.routes[0].id = "feature"'
+expect_fail large-feature-after-feature '.routes[0] as $route | .routes = [($route | .id = "feature"), ($route | .id = "large-feature")]'
 
 cp -R "$VALID" "$TMP/unreachable"
 printf '# Unreachable\n' > "$TMP/unreachable/skills/ostack-mode/playbooks/unreachable.md"

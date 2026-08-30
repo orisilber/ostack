@@ -44,6 +44,13 @@
       "allowedOutcomes": ["answer"]
     },
     {
+      "id": "large-feature",
+      "match": "The user asks to implement new behavior that has at least two independently verifiable scopes after shared foundations are separated, or cannot reasonably finish in one agent session.",
+      "playbook": "playbooks/large-feature.md",
+      "defaultOutcome": "local-change",
+      "allowedOutcomes": ["local-change", "mr-open", "merge-ready"]
+    },
+    {
       "id": "feature",
       "match": "The user asks for new behavior or a new capability.",
       "playbook": "playbooks/feature.md",

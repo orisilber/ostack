@@ -16,5 +16,6 @@ assert:
   output_contains:
     - "Route: feature -> local-change"
     - "architect skipped"
+    - "arena skipped"
   tools_not_called:
     - "glab mr create"
