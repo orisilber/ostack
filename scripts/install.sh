@@ -52,7 +52,12 @@ for skill_dir in "$REPO_DIR"/skills/*/; do
 
 	for target in "${TARGETS[@]}"; do
 		dest="$target/$name"
-		if [ -e "$dest" ] && [ ! -L "$dest" ] && [ ! -f "$dest/.ostack" ]; then
+		if [ -L "$dest" ]; then
+			echo "skip $name in $target: symlink is not owned by ostack" >&2
+			skipped=$((skipped + 1))
+			continue
+		fi
+		if [ -e "$dest" ] && [ ! -f "$dest/.ostack" ]; then
 			echo "skip $name in $target: exists but was not installed by ostack" >&2
 			skipped=$((skipped + 1))
 			continue
@@ -98,5 +103,5 @@ if [ "$removed" -gt 0 ]; then
 	echo "Removed $removed retired skill(s)."
 fi
 if [ "$skipped" -gt 0 ]; then
-	echo "Skipped $skipped (see warnings above); those exist as foreign real directories."
+	echo "Skipped $skipped foreign path(s) (see warnings above)."
 fi
