@@ -10,10 +10,13 @@ pre-granted limits.
 
 ## 0. Load the watch contract (required before watching anything)
 
-Per-project config in `AGENTS.md` or `.gitlab-ci.yml`-adjacent
-`deploy-watch.json`. The contract defines the trigger policy, not the
-tooling; tooling is discovered fresh every run (step 1), because two
-projects on this same skill can watch completely different stacks:
+Per-project config in `AGENTS.md`, or a `deploy-watch.json` adjacent to
+`.gitlab-ci.yml`, or (in a monorepo) adjacent to the specific service's own
+`AGENTS.md`. Check all three locations relevant to the thing being watched
+before concluding no contract exists. The contract defines the trigger
+policy, not the tooling; tooling is discovered fresh every run (step 1),
+because two projects on this same skill can watch completely different
+stacks:
 
 ```json
 {
@@ -53,9 +56,10 @@ that category to fresh discovery per run instead of a fixed source):
 ```
 Setting up deploy-watch for this project, five questions, answer what you can:
 
-1. Deploy: how does this reach <env>, and how would I check whether a given
-   commit/SHA is currently live there? (CI system name, a CLI, a dashboard
-   URL, an MCP tool, whatever you actually use)
+1. Deploy: which environment should I watch (e.g. production, staging)? How
+   does a change reach that environment, and how would I check whether a
+   given commit/SHA is currently live there? (CI system name, a CLI, a
+   dashboard URL, an MCP tool, whatever you actually use)
 2. Rollback: is there a command I'm authorized to run automatically if a
    trigger fires? Give the exact command, or say "no"; if no, I will always
    alert/escalate instead of auto-rolling-back.
@@ -74,11 +78,14 @@ Setting up deploy-watch for this project, five questions, answer what you can:
 Write the answers to `deploy-watch.json` at the repo root (or beside the
 relevant service's own `AGENTS.md` in a monorepo with more than one watched
 service, ask which if that's ambiguous), extending the step 0 schema with a
-`sources` block:
+`sources` block. `env` is always the literal environment named in the
+answer to question 1, never assumed: a setup run for staging must record
+`"env": "staging"`, not default to production because that's the usual
+target.
 
 ```json
 {
-  "env": "production",
+  "env": "<the environment named in question 1, e.g. production>",
   "baseline_minutes": 30,
   "watch_minutes": 60,
   "poll_seconds": 120,
@@ -104,17 +111,24 @@ as a contract with no `sources` block at all.
 
 Keep it untracked without touching the project's own `.gitignore` (that file
 is shared and committed; this contract is a local, possibly credential-
-adjacent artifact):
+adjacent artifact). Resolve the exclude file with `git rev-parse`, never a
+literal `.git/info/exclude` path: in a linked worktree `.git` is a file, not
+a directory, so that literal path fails with "Not a directory", and running
+from a subdirectory of the repo (e.g. a service folder in a monorepo)
+means a relative `.git/...` path from cwd is wrong too. Compute the entry
+relative to the repo root regardless of where `deploy-watch.json` landed or
+where this command runs from:
 
 ```bash
-grep -qxF 'deploy-watch.json' .git/info/exclude || echo 'deploy-watch.json' >> .git/info/exclude
+exclude="$(git rev-parse --git-path info/exclude)"
+entry="$(git rev-parse --show-prefix)deploy-watch.json"
+grep -qxF "$entry" "$exclude" 2>/dev/null || echo "$entry" >> "$exclude"
 ```
 
-`.git/info/exclude` is git's local-only ignore file: never committed, never
-seen by other clones, which is exactly "don't track this" without editing a
-file every other contributor sees. If the contract lives somewhere other than
-repo root, use that path relative to the repo root in the exclude line
-instead.
+Only report the contract as untracked after this command exits 0. If it
+fails, say so explicitly instead of claiming success; a written contract
+that `git add -A` can still pick up is worse than one you flagged as still
+tracked.
 
 Close with one line: `Wrote deploy-watch.json (untracked via .git/info/exclude). Re-run deploy-watch now?`
 
