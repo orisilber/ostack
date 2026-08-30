@@ -9,8 +9,9 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-AGENTS_HOME="${AGENTS_HOME:-$HOME/.agents}"
-TARGETS=("$AGENTS_HOME/skills" "$HOME/.claude/skills" "$HOME/.cursor/skills")
+INSTALL_HOME="${OSTACK_INSTALL_HOME:-$HOME}"
+AGENTS_HOME="${AGENTS_HOME:-$INSTALL_HOME/.agents}"
+TARGETS=("$AGENTS_HOME/skills" "$INSTALL_HOME/.claude/skills" "$INSTALL_HOME/.cursor/skills")
 DRY_RUN=0
 
 for arg in "$@"; do
@@ -19,6 +20,7 @@ for arg in "$@"; do
 	-h | --help)
 		echo "Usage: $0 [--dry-run]"
 		echo "  AGENTS_HOME env var overrides the default ~/.agents"
+		echo "  OSTACK_INSTALL_HOME env var overrides the user home for all targets"
 		exit 0
 		;;
 	*)

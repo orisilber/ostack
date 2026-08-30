@@ -214,6 +214,8 @@ elif [ "$escalate_n" != "$verify_n" ]; then
 	err "contract: verify-changes loop max ($verify_n) != escalate default N ($escalate_n)"
 fi
 
+bash "$ROOT/tests/install-upgrade.sh" || err "installer upgrade fixtures failed"
+
 # ------------------------------------------------------------------- summary
 echo
 if [ "$fail" -gt 0 ]; then
