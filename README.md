@@ -17,9 +17,12 @@ tmp=$(mktemp -d) && git clone -q git@github.com:orisilber/ostack.git "$tmp/ostac
 One line, nothing left behind but the skills: the script copies every skill
 into `~/.agents/skills`, `~/.claude/skills`, and `~/.cursor/skills`, then the
 clone is deleted. Run it again anytime to replace the installed skills with
-the latest versions. Foreign directories (not installed by ostack) are
-skipped and reported, never clobbered. Override the canonical home with
-`AGENTS_HOME`, or preview with `--dry-run`.
+the latest versions. An upgrade also removes a retired skill when its installed
+directory contains ostack's `.ostack` ownership marker. The installer preserves
+unmarked directories and all symlinks. It reports current-name conflicts
+without replacing them. Override the canonical home with `AGENTS_HOME`, or
+preview installs and removals with `--dry-run`. Set `OSTACK_INSTALL_HOME` to
+redirect all three targets to another user home.
 
 ## Skills
 

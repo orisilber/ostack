@@ -86,4 +86,10 @@ assert_installed "$DRY_ROOT" retired
 	exit 1
 }
 
+CLEAN_ROOT="$TEST_ROOT/clean-installed"
+if ! OSTACK_INSTALL_HOME="$CLEAN_ROOT" bash "$TEST_ROOT/v2/scripts/install.sh" >/dev/null; then
+	echo 'clean install returned a failure status' >&2
+	exit 1
+fi
+
 echo 'INSTALL UPGRADE: PASS'
