@@ -6,6 +6,11 @@ INSTALLER="$ROOT/scripts/install.sh"
 TEST_ROOT="$(mktemp -d)"
 trap 'rm -rf "$TEST_ROOT"' EXIT
 
+# Simulate a caller with a custom canonical skills directory. Fixture installs
+# must override this value rather than escaping their temporary install root.
+CALLER_AGENTS_HOME="$TEST_ROOT/caller-agents"
+export AGENTS_HOME="$CALLER_AGENTS_HOME"
+
 make_release() {
 	local version="$1"
 	shift
@@ -42,9 +47,14 @@ make_release v2 keep occupied
 
 INSTALL_ROOT="$TEST_ROOT/installed"
 mkdir -p "$INSTALL_ROOT/.agents/skills/occupied"
-OSTACK_INSTALL_HOME="$INSTALL_ROOT" bash "$TEST_ROOT/v1/scripts/install.sh" >/dev/null
+AGENTS_HOME="$INSTALL_ROOT/.agents" OSTACK_INSTALL_HOME="$INSTALL_ROOT" \
+	bash "$TEST_ROOT/v1/scripts/install.sh" >/dev/null
 assert_installed "$INSTALL_ROOT" keep
 assert_installed "$INSTALL_ROOT" retired
+[ ! -e "$CALLER_AGENTS_HOME/skills/keep" ] || {
+	echo 'fixture installer escaped into the caller AGENTS_HOME' >&2
+	exit 1
+}
 
 mkdir -p "$TEST_ROOT/foreign-source"
 for target in \
@@ -56,7 +66,8 @@ for target in \
 	ln -s "$TEST_ROOT/foreign-source" "$target/foreign-link"
 done
 
-OSTACK_INSTALL_HOME="$INSTALL_ROOT" bash "$TEST_ROOT/v2/scripts/install.sh" >/dev/null
+AGENTS_HOME="$INSTALL_ROOT/.agents" OSTACK_INSTALL_HOME="$INSTALL_ROOT" \
+	bash "$TEST_ROOT/v2/scripts/install.sh" >/dev/null
 for target in \
 	"$INSTALL_ROOT/.agents/skills" \
 	"$INSTALL_ROOT/.claude/skills" \
@@ -78,16 +89,41 @@ assert_installed "$INSTALL_ROOT" keep
 
 DRY_ROOT="$TEST_ROOT/dry-installed"
 mkdir -p "$DRY_ROOT/.agents/skills/occupied"
-OSTACK_INSTALL_HOME="$DRY_ROOT" bash "$TEST_ROOT/v1/scripts/install.sh" >/dev/null
-dry_output="$(OSTACK_INSTALL_HOME="$DRY_ROOT" bash "$TEST_ROOT/v2/scripts/install.sh" --dry-run)"
+AGENTS_HOME="$DRY_ROOT/.agents" OSTACK_INSTALL_HOME="$DRY_ROOT" \
+	bash "$TEST_ROOT/v1/scripts/install.sh" >/dev/null
+dry_output="$(AGENTS_HOME="$DRY_ROOT/.agents" OSTACK_INSTALL_HOME="$DRY_ROOT" \
+	bash "$TEST_ROOT/v2/scripts/install.sh" --dry-run)"
 assert_installed "$DRY_ROOT" retired
 [ "$(grep -c 'would remove retired' <<< "$dry_output")" -eq 3 ] || {
 	echo 'dry run did not report all retired skills' >&2
 	exit 1
 }
 
+SYMLINK_ROOT="$TEST_ROOT/symlink-installed"
+SYMLINK_SOURCE="$TEST_ROOT/current-skill-source"
+mkdir -p "$SYMLINK_SOURCE"
+for target in \
+	"$SYMLINK_ROOT/.agents/skills" \
+	"$SYMLINK_ROOT/.claude/skills" \
+	"$SYMLINK_ROOT/.cursor/skills"; do
+	mkdir -p "$target"
+	ln -s "$SYMLINK_SOURCE" "$target/keep"
+done
+AGENTS_HOME="$SYMLINK_ROOT/.agents" OSTACK_INSTALL_HOME="$SYMLINK_ROOT" \
+	bash "$TEST_ROOT/v2/scripts/install.sh" >/dev/null
+for target in \
+	"$SYMLINK_ROOT/.agents/skills" \
+	"$SYMLINK_ROOT/.claude/skills" \
+	"$SYMLINK_ROOT/.cursor/skills"; do
+	[ -L "$target/keep" ] || {
+		echo "current-skill symlink was replaced in $target" >&2
+		exit 1
+	}
+done
+
 CLEAN_ROOT="$TEST_ROOT/clean-installed"
-if ! OSTACK_INSTALL_HOME="$CLEAN_ROOT" bash "$TEST_ROOT/v2/scripts/install.sh" >/dev/null; then
+if ! AGENTS_HOME="$CLEAN_ROOT/.agents" OSTACK_INSTALL_HOME="$CLEAN_ROOT" \
+	bash "$TEST_ROOT/v2/scripts/install.sh" >/dev/null; then
 	echo 'clean install returned a failure status' >&2
 	exit 1
 fi
