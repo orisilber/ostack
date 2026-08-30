@@ -82,6 +82,14 @@ if [ -f "$ROUTES" ] && jq empty "$ROUTES" >/dev/null 2>&1; then
 		[ "$allowed_type" = array ] || usage_error "route '$id' allowedOutcomes must be an array"
 		allowed_count="$(jq -r '(.allowedOutcomes // []) | length' <<< "$route")"
 		[ "$allowed_count" -gt 0 ] || usage_error "route '$id' has no allowed outcome"
+		if [ "$allowed_type" = array ]; then
+			while IFS= read -r allowed; do
+				case "$allowed" in
+					answer|local-change|mr-open|merge-ready) ;;
+					*) usage_error "route '$id' has an unsupported outcome: $allowed" ;;
+				esac
+			done < <(jq -r '.allowedOutcomes[]' <<< "$route")
+		fi
 		default="$(jq -r '.defaultOutcome // empty' <<< "$route")"
 		[ -n "$default" ] || usage_error "route '$id' has no default outcome"
 		if [ -n "$default" ] && ! jq -e --arg d "$default" '(.allowedOutcomes // []) | index($d)' <<< "$route" >/dev/null; then
@@ -146,7 +154,11 @@ if [ -f "$MODELS" ] && jq empty "$MODELS" >/dev/null 2>&1; then
 	for role in exploration implementation judgment prose; do
 		[ "$(jq -r --arg r "$role" '.roles[$r] | type' "$MODELS")" = array ] || usage_error "model roles.$role must be an array"
 	done
-	for section in roles overrides; do
+	model_sections=(roles)
+	if jq -e 'has("overrides")' "$MODELS" >/dev/null; then
+		model_sections+=(overrides)
+	fi
+	for section in "${model_sections[@]}"; do
 		[ "$(jq -r --arg s "$section" '.[$s] | type' "$MODELS")" = object ] || { usage_error "model '$section' must be an object"; continue; }
 		while IFS= read -r key; do
 			values="$(jq -c --arg s "$section" --arg k "$key" '.[$s][$k]' "$MODELS")"

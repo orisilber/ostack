@@ -1,0 +1,35 @@
+skill: ostack-mode
+description: Reuses the current branch MR instead of creating a duplicate.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  cat > AGENTS.md <<'MD'
+  # Fixture repo
+
+  ## Checks
+  - test: `echo checks ok`
+  MD
+  echo 'broken' > app.txt
+  git add -A && git commit -qm init
+  git checkout -qb fix/existing-mr
+
+prompt: |
+  Use ostack-mode to fix this bug: app.txt must contain "fixed". Reproduce it,
+  implement the fix, run the repository checks, and open an MR. This branch may
+  already have one, so follow the normal MR tail and report the resulting URL.
+
+fixtures:
+  - match: mr view
+    response: |
+      {"id":7,"web_url":"https://gitlab.example.com/ostack/-/merge_requests/7"}
+
+assert:
+  output_contains:
+    - "Route: bug-fix -> mr-open"
+    - "https://gitlab.example.com/ostack/-/merge_requests/7"
+  tools_called:
+    - "glab mr view"
+  tools_not_called:
+    - "glab mr create"

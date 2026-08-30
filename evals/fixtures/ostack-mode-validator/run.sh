@@ -40,6 +40,7 @@ expect_fail empty-match '.routes[0].match = ""'
 expect_fail missing-playbook '.routes[0].playbook = "playbooks/missing.md"'
 expect_fail no-allowed '.routes[0].allowedOutcomes = []'
 expect_fail bad-default '.routes[0].defaultOutcome = "answer"'
+expect_fail unsupported-outcome '.routes[0].allowedOutcomes = ["locla-change"] | .routes[0].defaultOutcome = "locla-change"'
 expect_fail bad-tail '.outcomeTails["local-change"] = ["playbooks/missing.md"]'
 expect_fail unknown-skill '.outcomeTails["local-change"] = ["skill:not-a-skill"]'
 expect_fail missing-large-feature '.routes[0].id = "feature"'
@@ -64,6 +65,15 @@ expect_model_fail model-empty '.roles.exploration = []'
 expect_model_fail model-duplicates '.roles.exploration = ["foo", "foo"]'
 expect_model_fail model-inherit-mixed '.roles.exploration = ["inherit", "foo"]'
 expect_model_fail model-empty-string '.roles.exploration = [""]'
+expect_model_fail model-overrides-type '.overrides = []'
+
+cp -R "$VALID" "$TMP/model-no-overrides"
+jq 'del(.overrides)' "$TMP/model-no-overrides/skills/ostack-mode/references/models.example.json" > "$TMP/model-no-overrides/models.tmp"
+mv "$TMP/model-no-overrides/models.tmp" "$TMP/model-no-overrides/skills/ostack-mode/references/models.example.json"
+if ! "$VALIDATOR" --root "$TMP/model-no-overrides" >/dev/null 2>&1; then
+	echo 'expected roles-only model config to pass' >&2
+	exit 1
+fi
 
 cp -R "$VALID" "$TMP/pstack"
 printf '\nSee pstack-models.mdc\n' >> "$TMP/pstack/skills/ostack-mode/SKILL.md"
