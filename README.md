@@ -14,63 +14,32 @@ single-vendor hosts, so nothing silently no-ops in Claude Code.
 tmp=$(mktemp -d) && git clone -q git@github.com:orisilber/ostack.git "$tmp/ostack" && bash "$tmp/ostack/scripts/install.sh"; rm -rf "$tmp"
 ```
 
-Nushell has no `&&`, so the nushell version drops the short-circuiting and just runs each step:
+Nushell:
 
 ```nu
 let tmp = (mktemp -d); git clone -q git@github.com:orisilber/ostack.git $"($tmp)/ostack"; bash $"($tmp)/ostack/scripts/install.sh"; rm -rf $tmp
 ```
 
-One line, nothing left behind but the skills: the script copies every skill
-into `~/.agents/skills`, `~/.claude/skills`, and `~/.cursor/skills`, then the
-clone is deleted. Run it again anytime to replace the installed skills with
-the latest versions. An upgrade also removes a retired skill when its installed
-directory contains ostack's `.ostack` ownership marker. The installer preserves
-unmarked directories and all symlinks. It reports current-name conflicts
-without replacing them. Override the canonical home with `AGENTS_HOME`, or
-preview installs and removals with `--dry-run`. Set `OSTACK_INSTALL_HOME` to
-redirect all three targets to another user home.
+One line, nothing left behind but the skills: copies everything into
+`~/.agents/skills`, `~/.claude/skills`, and `~/.cursor/skills`, then deletes
+the clone. Re-run anytime to upgrade or drop retired skills. `--dry-run`
+previews; `AGENTS_HOME` or `OSTACK_INSTALL_HOME` redirect the target.
 
 ## Orchestration
 
-`ostack-mode` is the Cursor-first entry point when you want ostack to coordinate
-the work. Activate it as a Cursor Custom Mode when you want its instructions to
-remain active across follow-up turns. Slash invocation is explicit, but it does
-not make the mode sticky by itself. The skill keeps
-`disable-model-invocation: true`, so it never starts without your action.
+`ostack-mode` is the Cursor-first entry point: activate it as a Custom Mode to
+keep it active across turns, or invoke `/ostack-mode` per turn. It picks a
+route (`investigation`, `bug-fix`, `large-feature`, `feature`, `refactoring`,
+`eval`, `authoring-a-skill`, `session-pickup`, `pause-safely`, `prototype`,
+`visual-parity`, `multi-phase-plan`, `worktree-cleanup`) and an outcome
+(`answer`, `local-change`, `mr-open`, `merge-ready`), reports the pair as
+`Route: <task-kind> -> <outcome>`, and runs the matching playbook. It never
+opens an MR, merges, or releases unless you ask for that outcome.
 
-The mode resolves two separate values before it chooses a playbook:
-
-- Route: `investigation`, `bug-fix`, `large-feature`, `feature`, `refactoring`,
-  `eval`, `authoring-a-skill`, `session-pickup`, `pause-safely`, `prototype`,
-  `visual-parity`, `multi-phase-plan`, or `worktree-cleanup`.
-- Outcome: `answer`, `local-change`, `mr-open`, or `merge-ready`.
-
-It reports the selected pair as `Route: <task-kind> -> <outcome>`. A read-only
-question defaults to `answer`, and a code-change request defaults to
-`local-change`. The mode selects `mr-open` or `merge-ready` only when you ask
-for that outcome. It never infers an external write from a ticket, branch, or
-remote. If no implemented route matches, it uses the applicable leaf skills.
-A code route runs its verification steps automatically. You do not need to ask
-the mode to verify a change or keep it local. The mode does not merge, deploy,
-or release.
-
-The mode selects `large-feature` when implementation has at least two
-independently verifiable scopes after shared foundations are separated, or when
-the complete change cannot fit one agent session. It creates a local task DAG
-by default. If at least two ready tasks have disjoint write scopes, it invokes
-`swarm` and integrates the results. It uses `decompose-epic` only for a real
-Jira epic when you authorize Jira work.
-
-For uncertain implementation choices, the mode uses `arena` when at least two
-viable approaches exist and a wrong choice would cause substantial rework. It
-uses `how` without an arena when only the current system is unclear.
-
-Use `setup-ostack-mode` to configure delegated model roles. It reads
-`~/.config/ostack/models.json`, or the directory named by `OSTACK_CONFIG_HOME`,
-and falls back to `inherit` when the file is missing or invalid. The setup skill
-does not read or edit pstack's model configuration. See
+Configure delegated model roles with `setup-ostack-mode`, which reads
+`~/.config/ostack/models.json` (override with `OSTACK_CONFIG_HOME`). See
 [`skills/ostack-mode/references/models.example.json`](skills/ostack-mode/references/models.example.json)
-for the configuration shape.
+for the shape.
 
 ## How skills participate
 
