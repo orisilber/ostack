@@ -227,6 +227,8 @@ for skill in create-verification-skill maintain-verification-skill verify-change
 done
 grep -qF 'maintain-verification-skill' "$SKILLS/verify-changes/SKILL.md" || \
 	err "contract: verify-changes must report project-local verifier drift"
+grep -qF 'unmapped affected' "$SKILLS/verify-changes/SKILL.md" || \
+	err "contract: verify-changes must reject unmapped affected behavior"
 grep -qF 'project-local verifier' "$SKILLS/e2e-verify/SKILL.md" || \
 	err "contract: e2e-verify must prefer repository-specific instructions"
 grep -qF 'disable-model-invocation: true' "$SKILLS/create-verification-skill/SKILL.md" || \

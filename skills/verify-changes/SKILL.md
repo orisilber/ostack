@@ -101,8 +101,16 @@ gap to `escalate` for a non-trivial change.
 After the repository checks pass, decide whether the diff can change mapped
 user behavior.
 
-- With a matching project-local verifier, read its feature index and drive only
-  the affected features. Run its launch, doctor, evidence, and cleanup steps.
+- With a matching project-local verifier, use its source anchors and feature
+  index to identify the affected features. Drive every matching feature. Run
+  its launch, doctor, evidence, and cleanup steps.
+- If a changed path cannot be classified from those anchors, treat it as
+  affected user behavior instead of assuming that it is internal.
+- If changed user-facing code has no mapped feature, use the repository's
+  existing integration or end-to-end tool. Invoke `e2e-verify` for a browser.
+  If no executable fallback exists, report `Behavior: FAIL unmapped affected
+  user behavior` and emit `VERIFY: FAIL project-local verifier has no recipe
+  for affected user behavior`. Point to `maintain-verification-skill`.
 - For browser behavior, invoke `e2e-verify`. The project-local verifier owns
   launch, authentication, exact feature recipes, and evidence locations.
   `e2e-verify` owns browser assertions, console errors, traces, and retries.

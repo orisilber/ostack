@@ -61,8 +61,11 @@ ordinary task workflows can select it.
 Ground these sections in repository evidence. Leave no placeholders.
 
 - **Source anchors.** List the files that define check commands, startup,
-  routes or commands, authentication, and the existing control harness. These
-  paths let `maintain-verification-skill` detect drift.
+  routes or commands, authentication, and the existing control harness. Map
+  each user-facing source path to one or more feature IDs. Mark known
+  user-facing paths that are not mapped. These paths let
+  `verify-changes` find affected recipes and let `maintain-verification-skill`
+  detect drift.
 - **Repository checks.** List the exact static and integration commands, their
   working directories, and safe focused forms. State which repository file
   declares each command.
