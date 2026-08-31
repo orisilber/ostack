@@ -216,6 +216,28 @@ elif [ "$escalate_n" != "$verify_n" ]; then
 	err "contract: verify-changes loop max ($verify_n) != escalate default N ($escalate_n)"
 fi
 
+# Project-local verification is one layered contract. The generator writes the
+# repository knowledge, verify-changes selects it, and e2e-verify supplies the
+# browser mechanics. Keep all supported local skill roots discoverable.
+for skill in create-verification-skill maintain-verification-skill verify-changes e2e-verify; do
+	for root in .agents/skills .cursor/skills .claude/skills; do
+		grep -qF "$root" "$SKILLS/$skill/SKILL.md" || \
+			err "contract: $skill does not discover project-local root $root"
+	done
+done
+grep -qF 'maintain-verification-skill' "$SKILLS/verify-changes/SKILL.md" || \
+	err "contract: verify-changes must report project-local verifier drift"
+grep -qF 'project-local verifier' "$SKILLS/e2e-verify/SKILL.md" || \
+	err "contract: e2e-verify must prefer repository-specific instructions"
+grep -qF 'disable-model-invocation: true' "$SKILLS/create-verification-skill/SKILL.md" || \
+	err "contract: create-verification-skill must remain explicitly invoked"
+grep -qF 'disable-model-invocation: true' "$SKILLS/maintain-verification-skill/SKILL.md" || \
+	err "contract: maintain-verification-skill must remain explicitly invoked"
+for skill in create-verification-skill maintain-verification-skill; do
+	grep -qF 'allow_implicit_invocation: false' "$SKILLS/$skill/agents/openai.yaml" || \
+		err "contract: $skill must remain explicitly invoked in Codex"
+done
+
 bash "$ROOT/tests/install-upgrade.sh" || err "installer upgrade fixtures failed"
 
 # ---------------------------------------------------- ostack-mode contracts
