@@ -11,9 +11,9 @@ setup: |
 
 prompt: |
   Use ostack-mode to prototype two competing empty-state layouts. Use arena
-  because the decision needs competing artifacts, write both candidates only
-  under a scratch directory, label them disposable, and recommend one. Do not
-  edit production source or open an MR.
+  because the decision needs competing artifacts. Write the candidates to
+  $SANDBOX/prototypes/layout-a.html and layout-b.html, label them disposable,
+  and recommend one. Do not edit production source or open an MR.
 
 assert:
   output_contains:
@@ -22,3 +22,9 @@ assert:
   tools_not_called:
     - "git add"
     - "glab mr"
+  custom: |
+    set -eu
+    test -s "$SANDBOX/prototypes/layout-a.html"
+    test -s "$SANDBOX/prototypes/layout-b.html"
+    git diff --quiet
+    test -z "$(git status --porcelain)"

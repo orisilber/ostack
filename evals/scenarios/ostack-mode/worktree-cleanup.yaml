@@ -19,3 +19,7 @@ assert:
   tools_not_called:
     - "git worktree remove"
     - "rm -rf"
+  custom: |
+    set -eu
+    git diff --quiet
+    test -z "$(git status --porcelain)"

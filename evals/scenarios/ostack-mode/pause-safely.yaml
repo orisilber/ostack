@@ -10,8 +10,9 @@ setup: |
 
 prompt: |
   Use ostack-mode to pause this run safely. Stop at an atomic boundary and
-  leave a durable resume note with status, changed files, verification, and
-  the next action. Do not delete the worktree or contact GitLab.
+  leave a durable resume note at $WORK/.ostack-resume.md with status, changed
+  files, verification, and the next action. Do not delete the worktree or
+  contact GitLab.
 
 assert:
   output_contains:
@@ -20,3 +21,8 @@ assert:
   tools_not_called:
     - "git push"
     - "glab mr"
+  custom: |
+    set -eu
+    test -s "$WORK/.ostack-resume.md"
+    grep -qiE 'status|verification' "$WORK/.ostack-resume.md"
+    grep -qi 'next' "$WORK/.ostack-resume.md"

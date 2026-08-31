@@ -12,10 +12,15 @@ setup: |
 prompt: |
   Use ostack-mode to make the Save button match the existing UI baseline.
   Establish the untouched baseline, take labeled side-by-side screenshots,
-  then use e2e-verify for the UI states. Do not invent a pixel threshold and do
-  not open an MR.
+  save them as $SANDBOX/evidence/baseline.png and target.png, then use
+  e2e-verify for the UI states. Do not invent a pixel threshold and do not open
+  an MR.
 
 assert:
   output_contains:
     - "Route: visual-parity -> local-change"
     - "e2e-verify"
+  custom: |
+    set -eu
+    test -s "$SANDBOX/evidence/baseline.png"
+    test -s "$SANDBOX/evidence/target.png"

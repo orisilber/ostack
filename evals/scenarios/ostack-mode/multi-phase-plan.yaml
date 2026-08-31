@@ -19,3 +19,7 @@ assert:
     - "parallel"
   tools_not_called:
     - "acli jira"
+  custom: |
+    set -eu
+    git diff --quiet
+    test -z "$(git status --porcelain)"

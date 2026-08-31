@@ -19,3 +19,7 @@ assert:
     - "git add"
     - "git commit"
     - "glab mr"
+  custom: |
+    set -eu
+    git diff --quiet
+    test -z "$(git status --porcelain)"

@@ -5,19 +5,54 @@ setup: |
   git init -q -b main
   git config user.email dev@ostack.dev
   git config user.name dev
+  mkdir -p tests
   cat > AGENTS.md <<'MD'
   # Fixture repo
 
   ## Checks
-  - test: `echo checks ok`
+  - test: `bash tests/check.sh`
   MD
   echo 'broken' > app.txt
+  cat > tests/check.sh <<'SH'
+  #!/usr/bin/env bash
+  set -eu
+  if grep -qx fixed app.txt; then
+    echo '--- repo verify pass' >> "$CALLS_LOG"
+    touch "$WORK/.verify-ran"
+  else
+    echo '--- repo reproduce fail' >> "$CALLS_LOG"
+    exit 1
+  fi
+  SH
+  chmod +x tests/check.sh
   git add -A && git commit -qm init
 
 prompt: |
   Use ostack-mode to fix this bug: app.txt must contain "fixed". Reproduce it,
-  implement the fix, run the repository checks, and then explicitly open an MR.
+  with bash tests/check.sh, implement the fix, run the repository checks, and
+  then explicitly open an MR.
+
+fixtures:
+  - match: mr view
+    response: |
+      null
+  - match: mr create
+    response: |
+      {"id":8,"web_url":"https://gitlab.example.com/ostack/-/merge_requests/8"}
 
 assert:
   output_contains:
     - "Route: bug-fix -> mr-open"
+    - "https://gitlab.example.com/ostack/-/merge_requests/8"
+  tools_called:
+    - "glab mr view"
+    - "glab mr create"
+  custom: |
+    set -eu
+    grep -qx fixed app.txt
+    test -e "$WORK/.verify-ran"
+    reproduce_line="$(grep -n '^--- repo reproduce fail' "$CALLS_LOG" | head -1 | cut -d: -f1)"
+    verify_line="$(grep -n '^--- repo verify pass' "$CALLS_LOG" | head -1 | cut -d: -f1)"
+    mr_line="$(grep -n '^--- glab mr create' "$CALLS_LOG" | head -1 | cut -d: -f1)"
+    test -n "$reproduce_line" && test -n "$verify_line" && test -n "$mr_line"
+    test "$reproduce_line" -lt "$verify_line" && test "$verify_line" -lt "$mr_line"

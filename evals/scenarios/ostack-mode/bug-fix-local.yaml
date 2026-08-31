@@ -5,22 +5,36 @@ setup: |
   git init -q -b main
   git config user.email dev@ostack.dev
   git config user.name dev
+  mkdir -p tests
   cat > AGENTS.md <<'MD'
   # Fixture repo
 
   ## Checks
-  - test: `echo checks ok`
+  - test: `bash tests/check.sh`
   MD
   cat > app.py <<'PY'
   def value():
       return 1
   PY
+  cat > tests/check.sh <<'SH'
+  #!/usr/bin/env bash
+  set -eu
+  if grep -q 'return 2' app.py; then
+    echo pass >> "$WORK/.repro-log"
+    touch "$WORK/.verify-ran"
+  else
+    echo fail >> "$WORK/.repro-log"
+    exit 1
+  fi
+  SH
+  chmod +x tests/check.sh
   git add -A && git commit -qm init
 
 prompt: |
   Use ostack-mode for this bug fix. The value() function returns 1 but should
-  return 2. Reproduce the bug, make the local code change, and verify it. Do
-  not open an MR or contact GitLab.
+  return 2. First reproduce it with bash tests/check.sh, make the local code
+  change, and then run the repository check. Do not open an MR or contact
+  GitLab.
 
 assert:
   output_contains:
@@ -28,3 +42,9 @@ assert:
   tools_not_called:
     - "git push"
     - "glab mr create"
+  custom: |
+    set -eu
+    grep -q 'return 2' app.py
+    test "$(head -n 1 "$WORK/.repro-log")" = fail
+    grep -q '^pass$' "$WORK/.repro-log"
+    test -e "$WORK/.verify-ran"
