@@ -14,6 +14,12 @@ single-vendor hosts, so nothing silently no-ops in Claude Code.
 tmp=$(mktemp -d) && git clone -q git@github.com:orisilber/ostack.git "$tmp/ostack" && bash "$tmp/ostack/scripts/install.sh"; rm -rf "$tmp"
 ```
 
+Nushell has no `&&`, so the nushell version drops the short-circuiting and just runs each step:
+
+```nu
+let tmp = (mktemp -d); git clone -q git@github.com:orisilber/ostack.git $"($tmp)/ostack"; bash $"($tmp)/ostack/scripts/install.sh"; rm -rf $tmp
+```
+
 One line, nothing left behind but the skills: the script copies every skill
 into `~/.agents/skills`, `~/.claude/skills`, and `~/.cursor/skills`, then the
 clone is deleted. Run it again anytime to replace the installed skills with
