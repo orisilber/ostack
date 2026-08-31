@@ -8,22 +8,20 @@ disable-model-invocation: true
 
 Design before implementing. Sketch types, function signatures, class shapes, and module boundaries with `not implemented` bodies and pseudocode. Synthesize across multiple model perspectives, then fill in code against the chosen sketch. If implementation proves the sketch wrong, throw it out and redesign.
 
-## Model panel
+## Model resolution
 
-pstack's `~/.cursor/rules/pstack-models.mdc` is the roster whenever it exists.
-Read it and don't define a competing config. Without it:
+Resolve `architect.runners` from the canonical ostack configuration at
+`$OSTACK_CONFIG_HOME/models.json`, or `~/.config/ostack/models.json` when the
+variable is unset. Use the exact override when present, then the generic
+`judgment` role, then `inherit`. A missing, invalid, or empty configuration is
+recoverable: report the fallback once and use `inherit`.
 
-- **Cursor (default)**: `claude-fable-5-thinking-max`, `gpt-5.6-sol-max`,
-  `grok-4.6-fast-xhigh`, `claude-opus-5-thinking-xhigh`. Cheap mechanical fan-out
-  goes to grok; judgment and prose go to fable.
-- **Single-vendor host** (Claude Code, opencode): the panel collapses to one
-  family. Diversity then comes from the lens, not the model: one agent per
-  distinct angle on the best model available, and say in the output that model
-  diversity was unavailable. Agreement between same-family agents is weaker
-  evidence than cross-vendor agreement; don't report it as consensus.
-- **Rejected slug**: never a reason to skip the panel. Drop to the nearest valid
-  slug in the same family, note the substitution, keep going. `inherit-parent` and
-  `auto` are not broken slugs. Omit the model instead.
+This is a panel. Run each resolved entry once; `inherit` must be the only entry
+when it is selected. If the host rejects one configured entry, remove that
+entry and continue with the remaining entries. Use `inherit` only if none
+remain. Never select a nearby model ID, and never claim that a successful
+subagent call proves which model actually ran because the host may silently
+substitute it.
 
 ## Start
 
@@ -47,7 +45,7 @@ Skip Phase A only when the work is genuinely greenfield with no surrounding syst
 
 Run the **arena** skill with the design-sketch task and the Phase A grounding artifacts. Pass `references/runner-prompt.md` as each runner's prompt. Each candidate produces a design package shaped per `references/rationale-template.md`: the caller's usage written first, then the type sketch, function signatures, module map, and prose rationale derived from it.
 
-Use your configured architect runners per Model panel.
+Use the resolved `architect.runners` panel for the design candidates.
 
 Design it twice. Require at least two structurally distinct candidates before synthesis, even when the first looks sufficient. This is the **exhaust-the-design-space** principle made concrete. Whole-shape alternatives, not point fixes inside one shape.
 

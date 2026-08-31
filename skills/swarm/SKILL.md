@@ -8,22 +8,18 @@ disable-model-invocation: true
 
 Fan out N parallel workers, cloud where the host has them, local otherwise. They may cover separate slices, race the same brief, or mix both. The parent waits, aggregates, and returns one report.
 
-## Model panel
+## Model resolution
 
-pstack's `~/.cursor/rules/pstack-models.mdc` is the roster whenever it exists.
-Read it and don't define a competing config. Without it:
+Resolve `swarm.workers` from the canonical ostack configuration at
+`$OSTACK_CONFIG_HOME/models.json`, or `~/.config/ostack/models.json` when the
+variable is unset. Use the exact override first, then the generic
+`implementation` role, then `inherit`. A missing, invalid, or empty
+configuration is recoverable: report the fallback once and use `inherit`.
 
-- **Cursor (default)**: `claude-fable-5-thinking-max`, `gpt-5.6-sol-max`,
-  `grok-4.6-fast-xhigh`, `claude-opus-5-thinking-xhigh`. Cheap mechanical fan-out
-  goes to grok; judgment and prose go to fable.
-- **Single-vendor host** (Claude Code, opencode): the panel collapses to one
-  family. Diversity then comes from the lens, not the model: one agent per
-  distinct angle on the best model available, and say in the output that model
-  diversity was unavailable. Agreement between same-family agents is weaker
-  evidence than cross-vendor agreement; don't report it as consensus.
-- **Rejected slug**: never a reason to skip the panel. Drop to the nearest valid
-  slug in the same family, note the substitution, keep going. `inherit-parent` and
-  `auto` are not broken slugs. Omit the model instead.
+Workers use the first resolved entry unless a race or comparison explicitly
+assigns another configured entry. If the host rejects an entry, use `inherit`
+for that worker; never pick a nearby model ID. Do not claim that a successful
+worker call proves which model ran because the host may silently substitute it.
 
 ## Start
 
@@ -39,7 +35,9 @@ Open a todolist with one entry per phase before launching anything.
 1. State the done predicate and the artifact or report the swarm must return.
 2. Choose the shape. Partition into slices, race N workers on identical briefs, or mix both. For a race or mixed shape, declare `first pass`, `rank all`, or `best-of` before spawning.
 3. Set N from the user or derive it from the shape. N is total workers, not the cloud concurrency limit.
-4. Pick the worker model per Model panel (`swarm workers` when the roster names it); workers are bulk labor, so take the cheap fast tier. For a model race, name each arm's model up front.
+4. Pick the worker model from the resolved `swarm.workers` role; workers are
+   bulk labor, so use the first configured entry. For a model race, name each
+   arm's model up front and use only configured entries.
 5. Give each worker its own writable output when it writes. Use a worktree, branch, or `/tmp/swarm-<slug>/worker-<n>/`.
 
 ## Phase B: Fan out

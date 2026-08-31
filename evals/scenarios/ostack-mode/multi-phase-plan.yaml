@@ -1,0 +1,25 @@
+skill: ostack-mode
+description: Produces a local parallel todo plan without touching Jira.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  echo '# fixture' > README.md
+  git add -A && git commit -qm init
+
+prompt: |
+  Use ostack-mode to make a local todo plan with phases for this generic
+  feature. Put independent jobs in parallel, add acceptance checks and a final
+  gate, and do not search for or create Jira tickets.
+
+assert:
+  output_contains:
+    - "Route: multi-phase-plan -> answer"
+    - "parallel"
+  tools_not_called:
+    - "acli jira"
+  custom: |
+    set -eu
+    git diff --quiet
+    test -z "$(git status --porcelain)"

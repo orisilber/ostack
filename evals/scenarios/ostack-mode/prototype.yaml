@@ -1,0 +1,30 @@
+skill: ostack-mode
+description: Uses arena only for a throwaway comparison and keeps candidates outside production.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  mkdir -p src
+  echo '# production' > src/README.md
+  git add -A && git commit -qm init
+
+prompt: |
+  Use ostack-mode to prototype two competing empty-state layouts. Use arena
+  because the decision needs competing artifacts. Write the candidates to
+  $SANDBOX/prototypes/layout-a.html and layout-b.html, label them disposable,
+  and recommend one. Do not edit production source or open an MR.
+
+assert:
+  output_contains:
+    - "Route: prototype -> local-change"
+    - "disposable"
+  tools_not_called:
+    - "git add"
+    - "glab mr"
+  custom: |
+    set -eu
+    test -s "$SANDBOX/prototypes/layout-a.html"
+    test -s "$SANDBOX/prototypes/layout-b.html"
+    git diff --quiet
+    test -z "$(git status --porcelain)"

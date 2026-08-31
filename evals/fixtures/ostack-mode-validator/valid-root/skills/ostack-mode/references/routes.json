@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "routes": [
+    {
+      "id": "sample",
+      "match": "a sample route",
+      "playbook": "playbooks/sample.md",
+      "defaultOutcome": "local-change",
+      "allowedOutcomes": ["local-change"]
+    }
+  ],
+  "outcomeTails": {
+    "answer": [],
+    "local-change": ["skill:verify-changes"],
+    "mr-open": [],
+    "merge-ready": []
+  }
+}

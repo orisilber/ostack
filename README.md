@@ -24,6 +24,109 @@ without replacing them. Override the canonical home with `AGENTS_HOME`, or
 preview installs and removals with `--dry-run`. Set `OSTACK_INSTALL_HOME` to
 redirect all three targets to another user home.
 
+## Orchestration
+
+`ostack-mode` is the Cursor-first entry point when you want ostack to coordinate
+the work. Activate it as a Cursor Custom Mode when you want its instructions to
+remain active across follow-up turns. Slash invocation is explicit, but it does
+not make the mode sticky by itself. The skill keeps
+`disable-model-invocation: true`, so it never starts without your action.
+
+The mode resolves two separate values before it chooses a playbook:
+
+- Route: `investigation`, `bug-fix`, `large-feature`, `feature`, `refactoring`,
+  `eval`, `authoring-a-skill`, `session-pickup`, `pause-safely`, `prototype`,
+  `visual-parity`, `multi-phase-plan`, or `worktree-cleanup`.
+- Outcome: `answer`, `local-change`, `mr-open`, or `merge-ready`.
+
+It reports the selected pair as `Route: <task-kind> -> <outcome>`. A read-only
+question defaults to `answer`, and a code-change request defaults to
+`local-change`. The mode selects `mr-open` or `merge-ready` only when you ask
+for that outcome. It never infers an external write from a ticket, branch, or
+remote. If no implemented route matches, it uses the applicable leaf skills.
+A code route runs its verification steps automatically. You do not need to ask
+the mode to verify a change or keep it local. The mode does not merge, deploy,
+or release.
+
+The mode selects `large-feature` when implementation has at least two
+independently verifiable scopes after shared foundations are separated, or when
+the complete change cannot fit one agent session. It creates a local task DAG
+by default. If at least two ready tasks have disjoint write scopes, it invokes
+`swarm` and integrates the results. It uses `decompose-epic` only for a real
+Jira epic when you authorize Jira work.
+
+For uncertain implementation choices, the mode uses `arena` when at least two
+viable approaches exist and a wrong choice would cause substantial rework. It
+uses `how` without an arena when only the current system is unclear.
+
+Use `setup-ostack-mode` to configure delegated model roles. It reads
+`~/.config/ostack/models.json`, or the directory named by `OSTACK_CONFIG_HOME`,
+and falls back to `inherit` when the file is missing or invalid. The setup skill
+does not read or edit pstack's model configuration. See
+[`skills/ostack-mode/references/models.example.json`](skills/ostack-mode/references/models.example.json)
+for the configuration shape.
+
+## How skills participate
+
+Workflow membership and invocation policy are separate. A skill can be part of
+an `ostack-mode` workflow and still require explicit invocation when you use it
+outside the mode.
+
+### Workflow components
+
+When `ostack-mode` selects a route, its playbook selects these skills as needed.
+You do not need to name them in the prompt.
+
+| Skill | Workflow use |
+|---|---|
+| `architect` | Settle a boundary before a feature, bug fix, or refactor crosses it |
+| `arena` | Compare viable implementations when one choice would lock in the wrong shape |
+| `babysit-gitlab-mr` | Run only for the explicit `merge-ready` outcome |
+| `decompose-epic` | Split work only when the source is a real Jira epic |
+| `e2e-verify` | Verify UI behavior or visual parity on a real UI |
+| `escalate` | Stop a route at a safety or authority boundary |
+| `how` and `why` | Recover runtime structure and design history |
+| `principles` | Review the shape of implementation and refactoring work |
+| `recall` | Reconstruct context for `session-pickup` |
+| `reproduce-first` | Establish failing evidence before a bug fix |
+| `show-me-your-work` | Preserve decisions when a long run needs a trail |
+| `swarm` | Implement disjoint ready tasks for a large feature in parallel |
+| `technical-writing` and `unslop` | Edit prose that a workflow publishes |
+| `verify-changes` | Discover and run repository checks after a code change |
+
+`ostack-mode` is the workflow entry point. `setup-ostack-mode` configures its
+model roles but does not run inside a task route.
+
+### Standalone skills
+
+These skills are not selected by any current `ostack-mode` route. Use them for
+their own task when the need arises.
+
+| Skill | Use |
+|---|---|
+| `blast-radius` | Check what a specific change can break outside its diff |
+| `clarify-requirements` | Resolve ticket ambiguity before implementation starts |
+| `deploy-watch` | Watch a deployment after release |
+| `interrogate` | Run an adversarial review over a diff |
+| `pick-next-task` | Claim the next ready Jira item |
+| `typescript-best-practices` | Apply TypeScript type discipline when TypeScript files are in scope |
+
+### Explicit invocation
+
+Skills with `disable-model-invocation: true` do not start from a model-selected
+trigger. Invoke them by name or slash command when no active workflow already
+calls for them:
+
+`ostack-mode`, `setup-ostack-mode`, `architect`, `arena`, `blast-radius`,
+`interrogate`, `recall`, `show-me-your-work`, `swarm`, and
+`technical-writing`.
+
+For example, `/ostack-mode Fix the pagination bug` starts the workflow, while
+`/interrogate Review this diff` runs the standalone review directly. Inside
+`ostack-mode`, a selected playbook can include `architect`, `arena`, `recall`,
+`show-me-your-work`, `swarm`, or `technical-writing`; you do not need to invoke
+those skills again.
+
 ## Skills
 
 The **source** column says where a skill's content originates: `ostack` is
@@ -34,6 +137,8 @@ below for what changed).
 
 | Skill | Source | Purpose |
 |---|---|---|
+| `ostack-mode` | ostack | Cursor-first router for task kind, outcome, and implemented playbooks |
+| `setup-ostack-mode` | ostack | Configure ostack's delegated model roles and fallback behavior |
 | `pick-next-task` | ostack | Claim the next Jira work item with `acli`: JQL by agent-ready criteria, self-assign with read-back, transition, branch |
 | `decompose-epic` | ostack | Jira epic → atomic, conflict-free child tickets with acceptance criteria, disjoint file scopes, and real `Blocks` links |
 | `clarify-requirements` | ostack | One batched round of upfront questions per ticket, defaults included, then never interrupts |
@@ -102,12 +207,15 @@ step if you want the agent doing the mechanics under supervision.
 
 ## Provenance
 
-`principles`, `how`, `why`, `blast-radius`, `architect`, `arena`, `swarm`,
+`ostack-mode`, `principles`, `how`, `why`, `blast-radius`, `architect`, `arena`, `swarm`,
 `interrogate`, `recall`, `show-me-your-work`, `unslop`, `technical-writing`, and
 `typescript-best-practices` are adapted from
 [pstack](https://github.com/poteto/pstack) by Lauren Tan (MIT). See
 [`NOTICE`](NOTICE). Changes from upstream:
 
+- `ostack-mode` adapts the mode and playbook mechanism from pstack's
+  `poteto-mode`. Its route registry, outcome tails, and playbook text are
+  specific to ostack.
 - 21 standalone principle skills consolidated into one `principles` skill with
   grouped references, so the skill index costs one entry instead of twenty-one.
 - Cursor-specific hooks kept as the default path, with a fallback named for
@@ -118,10 +226,14 @@ step if you want the agent doing the mechanics under supervision.
 - `tdd`'s impractical-test guardrails folded into `reproduce-first` rather than
   shipped as a second, overlapping skill.
 
-Not adapted, deliberately: `poteto-mode` and `figure-it-out` (a mode skill with
-its own playbook set, tied to graphite and GitHub), `setup-pstack`,
+Not vendored as pstack workflows, deliberately: the full `poteto-mode` and
+`figure-it-out` playbook sets (tied to Graphite and GitHub), `setup-pstack`,
 `automate-me`, `reflect`, `teach`, `bro`, `no-comments`,
 `create-verification-skill`, `maintain-verification-skill`, `tdd`.
+
+`make-bot-ui` is also excluded. It depends on Cursor-team internals, including
+a Grok Bot webhook, `update_state`, and sender-key handling. Ostack does not
+ship that integration.
 
 If you run pstack as a Cursor plugin *and* symlink ostack into `~/.cursor/skills`,
 the shared names collide. Pick one: keep pstack for the upstream set, or keep

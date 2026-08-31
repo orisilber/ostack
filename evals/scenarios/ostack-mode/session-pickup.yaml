@@ -1,0 +1,26 @@
+skill: ostack-mode
+description: Delegates context reconstruction to recall before resuming.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  echo '# fixture' > README.md
+  git add -A && git commit -qm init
+
+prompt: |
+  Use ostack-mode to pick up the previous session. Delegate reconstruction to
+  recall, reconcile it with the current worktree, and tell me the next atomic
+  action. Do not repeat recall's procedure and do not edit files.
+
+assert:
+  output_contains:
+    - "Route: session-pickup -> answer"
+    - "recall"
+  tools_not_called:
+    - "git commit"
+    - "glab mr"
+  custom: |
+    set -eu
+    git diff --quiet
+    test -z "$(git status --porcelain)"

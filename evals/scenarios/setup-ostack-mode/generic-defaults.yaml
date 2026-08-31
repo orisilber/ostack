@@ -1,0 +1,32 @@
+skill: setup-ostack-mode
+description: Writes the four generic roles to the default config path without opening advanced settings.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  echo '# fixture' > README.md
+  git add -A && git commit -qm init
+
+prompt: |
+  Run setup-ostack-mode non-interactively for this test. The host model list is
+  unavailable, so choose `inherit` for exploration, implementation, judgment,
+  and prose in one batch. Do not ask for advanced overrides. Write the complete
+  configuration to ~/.config/ostack/models.json, validate it before replacing
+  anything, and report the resolved path. Do not read or edit pstack's model
+  configuration.
+
+assert:
+  output_contains:
+    - "models.json"
+    - "inherit"
+  tools_not_called:
+    - "glab"
+    - "acli"
+  custom: |
+    test -f "$HOME/.config/ostack/models.json"
+    jq -e '
+      .version == 1 and
+      (.roles | keys | sort) == ["exploration", "implementation", "judgment", "prose"] and
+      ([.roles[]] | all(. == ["inherit"]))
+    ' "$HOME/.config/ostack/models.json" >/dev/null

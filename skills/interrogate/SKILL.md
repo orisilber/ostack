@@ -10,22 +10,19 @@ Spawn one reviewer per configured model to adversarially review code changes. Ea
 
 The deliverable is a synthesized verdict. Do not auto-apply changes.
 
-## Model panel
+## Model resolution
 
-pstack's `~/.cursor/rules/pstack-models.mdc` is the roster whenever it exists.
-Read it and don't define a competing config. Without it:
+Resolve `interrogate.reviewers` from the canonical ostack configuration at
+`$OSTACK_CONFIG_HOME/models.json`, or `~/.config/ostack/models.json` when the
+variable is unset. Use the exact override first, then the generic `judgment`
+role, then `inherit`. A missing, invalid, or empty configuration is
+recoverable: report the fallback once and use `inherit`.
 
-- **Cursor (default)**: `claude-fable-5-thinking-max`, `gpt-5.6-sol-max`,
-  `grok-4.6-fast-xhigh`, `claude-opus-5-thinking-xhigh`. Cheap mechanical fan-out
-  goes to grok; judgment and prose go to fable.
-- **Single-vendor host** (Claude Code, opencode): the panel collapses to one
-  family. Diversity then comes from the lens, not the model: one agent per
-  distinct angle on the best model available, and say in the output that model
-  diversity was unavailable. Agreement between same-family agents is weaker
-  evidence than cross-vendor agreement; don't report it as consensus.
-- **Rejected slug**: never a reason to skip the panel. Drop to the nearest valid
-  slug in the same family, note the substitution, keep going. `inherit-parent` and
-  `auto` are not broken slugs. Omit the model instead.
+This is a panel. Run each resolved entry once. `inherit` must be the only entry
+when selected. If the host rejects one configured entry, remove it and
+continue with the remaining entries; use `inherit` only when none remain. Do
+not select a nearby model ID. A successful subagent call does not prove which
+model ran because the host may silently substitute it.
 
 ## Step 1, Determine Scope
 
@@ -50,21 +47,20 @@ Write one clear paragraph. Reviewers challenge whether the work achieves the int
 
 ## Step 3, Spawn Reviewers
 
-Launch all reviewers in a single message. One reviewer per Model panel entry (`interrogate reviewers` when the roster names them), extending or shrinking the Reviewer A/B/C/D labels below to the entry count; otherwise the table defaults.
-
-| Subagent | Default model |
-|----------|---------------|
-| Reviewer A | `claude-fable-5-thinking-max` |
-| Reviewer B | `gpt-5.6-sol-max` |
-| Reviewer C | `grok-4.6-fast-xhigh` |
-| Reviewer D | `claude-opus-5-thinking-xhigh` |
+Launch all reviewers in a single message. Create one reviewer per entry in the
+resolved `interrogate.reviewers` panel and label them in spawn order (Reviewer
+A, Reviewer B, and so on). The resolved entries, not an inline default table,
+define the panel's size and requested models.
 
 For each reviewer:
 - `subagent_type`: `generalPurpose` in Cursor; `Explore` (read-only) or `general-purpose` in Claude Code
-- `model`: the configured `interrogate reviewers` entry, or the table default with no configured line
+- `model`: one entry from the resolved `interrogate.reviewers` panel
 - `readonly`: `true`
 
-If a model slug is rejected as unresolvable when you try to spawn the subagent, check the valid slugs in the Task tool's error message, pick the closest equivalent (prefer the highest-reasoning tier of the same family), spawn with the valid slug, and open a separate PR to update the configured value or default table. Do not block the review on the slug issue. If the configured value is `inherit-parent` or `auto`, omit `model` instead; never treat those aliases as broken slugs or enter this fallback for them.
+If a configured model entry is rejected, remove that entry from this panel and
+continue with the remaining entries. Use `inherit` only when no entries
+remain. Do not pick a nearby slug or edit the model configuration as part of a
+review.
 
 Read `references/reviewer-prompt.md` and fill in the template with:
 1. The stated intent

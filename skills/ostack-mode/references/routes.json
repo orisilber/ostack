@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "routes": [
+    {
+      "id": "bug-fix",
+      "match": "The user reports a defect and asks to change code.",
+      "playbook": "playbooks/bug-fix.md",
+      "defaultOutcome": "local-change",
+      "allowedOutcomes": ["local-change", "mr-open", "merge-ready"]
+    },
+    {
+      "id": "eval",
+      "match": "The user asks to run the skill library or YAML evaluation scenarios.",
+      "playbook": "playbooks/eval.md",
+      "defaultOutcome": "local-change",
+      "allowedOutcomes": ["answer", "local-change"]
+    },
+    {
+      "id": "authoring-a-skill",
+      "match": "The user asks to create or update a repository skill.",
+      "playbook": "playbooks/authoring-a-skill.md",
+      "defaultOutcome": "local-change",
+      "allowedOutcomes": ["local-change", "mr-open", "merge-ready"]
+    },
+    {
+      "id": "session-pickup",
+      "match": "The user asks to resume work or reconstruct where a prior run stopped.",
+      "playbook": "playbooks/session-pickup.md",
+      "defaultOutcome": "answer",
+      "allowedOutcomes": ["answer", "local-change"]
+    },
+    {
+      "id": "pause-safely",
+      "match": "The user asks to pause or stop safely and leave work ready to resume.",
+      "playbook": "playbooks/pause-safely.md",
+      "defaultOutcome": "answer",
+      "allowedOutcomes": ["answer", "local-change"]
+    },
+    {
+      "id": "investigation",
+      "match": "The user asks how behavior works or why a decision exists without requesting edits.",
+      "playbook": "playbooks/investigation.md",
+      "defaultOutcome": "answer",
+      "allowedOutcomes": ["answer"]
+    },
+    {
+      "id": "large-feature",
+      "match": "The user asks to implement new behavior that has at least two independently verifiable scopes after shared foundations are separated, or cannot reasonably finish in one agent session.",
+      "playbook": "playbooks/large-feature.md",
+      "defaultOutcome": "local-change",
+      "allowedOutcomes": ["local-change", "mr-open", "merge-ready"]
+    },
+    {
+      "id": "feature",
+      "match": "The user asks for new behavior or a new capability.",
+      "playbook": "playbooks/feature.md",
+      "defaultOutcome": "local-change",
+      "allowedOutcomes": ["local-change", "mr-open", "merge-ready"]
+    },
+    {
+      "id": "refactoring",
+      "match": "The user asks to restructure code without changing behavior.",
+      "playbook": "playbooks/refactoring.md",
+      "defaultOutcome": "local-change",
+      "allowedOutcomes": ["local-change", "mr-open", "merge-ready"]
+    },
+    {
+      "id": "prototype",
+      "match": "The user asks to prototype, mock up, or compare competing artifacts.",
+      "playbook": "playbooks/prototype.md",
+      "defaultOutcome": "local-change",
+      "allowedOutcomes": ["answer", "local-change"]
+    },
+    {
+      "id": "visual-parity",
+      "match": "The user asks to make a UI match an existing visual baseline.",
+      "playbook": "playbooks/visual-parity.md",
+      "defaultOutcome": "local-change",
+      "allowedOutcomes": ["answer", "local-change", "mr-open", "merge-ready"]
+    },
+    {
+      "id": "multi-phase-plan",
+      "match": "The user asks for a multi-phase plan or parallel work breakdown.",
+      "playbook": "playbooks/multi-phase-plan.md",
+      "defaultOutcome": "answer",
+      "allowedOutcomes": ["answer", "local-change"]
+    },
+    {
+      "id": "worktree-cleanup",
+      "match": "The user asks to inspect or clean up git worktrees.",
+      "playbook": "playbooks/worktree-cleanup.md",
+      "defaultOutcome": "answer",
+      "allowedOutcomes": ["answer", "local-change"]
+    }
+  ],
+  "outcomeTails": {
+    "answer": [],
+    "local-change": [],
+    "mr-open": ["playbooks/opening-an-mr.md"],
+    "merge-ready": ["playbooks/opening-an-mr.md", "skill:babysit-gitlab-mr"]
+  }
+}
