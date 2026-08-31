@@ -1,28 +1,48 @@
 ---
 name: e2e-verify
-description: "Verify UI changes with real Playwright automation: scripted user flows, web-first assertions, console-error capture, screenshots. Triggers \"e2e check\", \"verify in browser\", \"test the UI\". Not static code review."
+description: "Verify UI changes through a repository's project-local verifier or a Playwright fallback, with web-first assertions, console-error capture, screenshots, and traces. Triggers \"e2e check\", \"verify in browser\", or \"test the UI\". Not static code review."
 ---
 
-# E2E Verify
+# E2E verify
 
 Static checks can't see a broken UI. For user-facing changes, drive the real
 thing before pushing. The deliverable is a script a reviewer can re-run, not a
 description of what you clicked.
 
-## 0. Browser MCP vs. Playwright
+## 0. Prefer the project-local verifier
 
-If the host has a browser MCP (Playwright MCP, chrome-devtools MCP), use it to
-*explore*: find the real selectors, watch the flow, confirm the change is even
-reachable. Then encode what you learned as a Playwright script and run that.
-The MCP session proves nothing to the next person; the script does.
+From the repository root, search `.agents/skills/verify-*`,
+`.cursor/skills/verify-*`, and `.claude/skills/verify-*`. If a verifier maps the
+changed UI, read its `SKILL.md`, feature index, and affected feature files.
 
-## 1. Reuse the repo's setup, don't import your own
+The project-local verifier owns the launch command, doctor check,
+authentication, stable handles, feature recipe, evidence location, and
+cleanup. This skill owns browser assertions, console-error capture, traces,
+and the flake protocol. Do not install or create a second browser tool when the
+local verifier provides one.
 
-- Existing `playwright.config.*` or e2e dir → follow its conventions exactly
+If a local instruction disagrees with current source or fails before reaching
+the changed behavior, report the drift and point to
+`maintain-verification-skill`. Do not hide stale instructions with an unrelated
+fallback.
+
+## 1. Choose browser control
+
+If the project-local verifier supplies a rerunnable browser command, use it. If
+not, use a browser MCP to explore real selectors and confirm that the flow is
+reachable. Then encode what you learned as a Playwright or Cypress script and
+run it. An interactive browser session is not rerunnable evidence.
+
+## 2. Reuse the repository setup
+
+- A project-local verifier comes first. Follow its commands and feature recipe.
+- Existing `playwright.config.*` or e2e directory: follow its conventions
+  exactly
   (fixtures, auth helpers, base URL, projects) and run through its own command:
   `npx playwright test <path> --reporter=line`.
-- Cypress-only repo → use Cypress rather than adding a second framework.
-- Neither → run Playwright out-of-tree so the repo stays clean:
+- Cypress-only repository: use Cypress instead of adding a second framework.
+- No local verifier or browser tool: run Playwright out of tree so the
+  repository stays clean:
 
 ```bash
 E2E=~/.cache/ostack-e2e; mkdir -p "$E2E" && cd "$E2E"
@@ -36,10 +56,10 @@ Write specs to `$E2E/<ticket>.spec.ts` and run
 Keep the script. Mention its path in the verdict, and offer to land it in the
 repo's e2e dir when the flow is worth regression coverage.
 
-## 2. Base URL and auth from the repo, never hardcoded
+## 3. Get the base URL and authentication from the repository
 
-The dev URL comes from the repo's own run/dev-env skill or its `vite`/`dev`
-script. Read it; don't assume `localhost:3000`.
+Use the project-local verifier first. Otherwise, read the repository's run or
+development instructions. Do not assume `localhost:3000`.
 
 Login once, headed, and save the session:
 
@@ -61,7 +81,7 @@ test.use({ storageState: process.env.E2E_STATE! });
 contents into a report. Credentials come from env or the repo's existing config.
 If neither exists, `escalate` rather than inventing a test user.
 
-## 3. Deterministic by construction
+## 4. Make the run deterministic
 
 - Fixed viewport (`{ width: 1280, height: 800 }` default).
 - UI shows time or relative dates → freeze it: `await page.clock.install({ time: new Date('2026-01-15T10:00:00Z') })`. `page.clock` needs Playwright 1.45+; on an older pin (check `npx playwright --version`) stub `Date` yourself with `page.addInitScript` and say which you used.
@@ -75,7 +95,7 @@ If neither exists, `escalate` rather than inventing a test user.
   a CSS chain, add a `data-testid` in the product code. That's a real fix, not
   test scaffolding.
 
-## 4. The pass
+## 5. Run the pass
 
 Script the ticket's acceptance criteria as one user journey:
 
@@ -102,10 +122,15 @@ expected 4xx that the app already tolerates is noise; a new one is the bug.
 A screenshot is evidence only if you looked at it. Read every capture before
 declaring PASS; a blank page passes a lazy gate.
 
-## 5. Verdict format
+If an intentional change alters a mapped UI route, entry point, or result,
+update only the affected feature-map file before the final run. Leave a full
+map audit to `maintain-verification-skill`.
+
+## 6. Verdict format
 
 ```
 E2E: PASS|FAIL
+Verifier: <project-local path | fallback>
 Flows: <what was driven>
 Script: <path, re-runnable command>
 Screenshots: <paths>
@@ -117,14 +142,14 @@ On FAIL: the failing assertion, the last screenshot path, and the trace
 (`npx playwright show-trace <path>`). Fix product code, adjust selectors freely
 when the UI intentionally changed, re-run max 3 times, then `escalate`.
 
-## 6. Flake protocol
+## 7. Flake protocol
 
 One automatic re-run for a transient failure (a timeout with no assertion
 mismatch). A step that fails twice is a real bug or a bad selector: open the
 trace and diagnose. Never retry a third time, and never mark a flaky pass as
 PASS.
 
-## 7. Cleanup
+## 8. Cleanup
 
 Kill any dev server or browser you started. Leave `artifacts/` and the trace for
 the caller to inspect, gitignored, never committed. Leave `state.json` in place

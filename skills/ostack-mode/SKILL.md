@@ -80,10 +80,12 @@ an error.
 
 ## Verification boundary
 
-Use `verify-changes` for repository checks when work changes files. Discover the
-repository's own commands first; do not copy a command from this coordinator
-into a playbook. If a requested outcome would require an external write that is
-not authorized, stop at the safe boundary and explain what remains.
+Use `verify-changes` when work changes files. It runs declared repository checks
+and prefers a matching project-local `verify-*` skill for affected user
+behavior. It delegates browser mechanics to `e2e-verify`. Do not copy commands
+or feature recipes into this coordinator. If a requested outcome would require
+an unauthorized external write, stop at the safe boundary and explain what
+remains.
 
 ## Model configuration (reserved contract)
 

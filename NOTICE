@@ -6,7 +6,8 @@ Adapted skills: ostack-mode (the mode and playbook mechanism from pstack's
 poteto-mode; the route registry, outcome tails, and playbook text are specific
 to ostack), principles (consolidated from the 21 principle-* skills), how, why,
 blast-radius, architect, arena, swarm, interrogate, recall, show-me-your-work,
-unslop, technical-writing, typescript-best-practices.
+unslop, technical-writing, typescript-best-practices,
+create-verification-skill, maintain-verification-skill.
 
 MIT License
 

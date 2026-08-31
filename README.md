@@ -92,10 +92,15 @@ You do not need to name them in the prompt.
 | `show-me-your-work` | Preserve decisions when a long run needs a trail |
 | `swarm` | Implement disjoint ready tasks for a large feature in parallel |
 | `technical-writing` and `unslop` | Edit prose that a workflow publishes |
-| `verify-changes` | Discover and run repository checks after a code change |
+| `verify-changes` | Run repository checks and affected project-local verification after a code change |
 
 `ostack-mode` is the workflow entry point. `setup-ostack-mode` configures its
 model roles but does not run inside a task route.
+
+When a repository contains a project-local `verify-*` skill, `verify-changes`
+uses it automatically for affected user behavior. Creating or auditing that
+skill remains explicit through `create-verification-skill` or
+`maintain-verification-skill`.
 
 ### Standalone skills
 
@@ -108,6 +113,8 @@ their own task when the need arises.
 | `clarify-requirements` | Resolve ticket ambiguity before implementation starts |
 | `deploy-watch` | Watch a deployment after release |
 | `interrogate` | Run an adversarial review over a diff |
+| `create-verification-skill` | Generate a project-local verifier and feature map |
+| `maintain-verification-skill` | Audit a project-local verifier against source and live behavior |
 | `pick-next-task` | Claim the next ready Jira item |
 | `typescript-best-practices` | Apply TypeScript type discipline when TypeScript files are in scope |
 
@@ -118,8 +125,8 @@ trigger. Invoke them by name or slash command when no active workflow already
 calls for them:
 
 `ostack-mode`, `setup-ostack-mode`, `architect`, `arena`, `blast-radius`,
-`interrogate`, `recall`, `show-me-your-work`, `swarm`, and
-`technical-writing`.
+`create-verification-skill`, `interrogate`, `maintain-verification-skill`,
+`recall`, `show-me-your-work`, `swarm`, and `technical-writing`.
 
 For example, `/ostack-mode Fix the pagination bug` starts the workflow, while
 `/interrogate Review this diff` runs the standalone review directly. Inside
@@ -143,8 +150,10 @@ below for what changed).
 | `decompose-epic` | ostack | Jira epic → atomic, conflict-free child tickets with acceptance criteria, disjoint file scopes, and real `Blocks` links |
 | `clarify-requirements` | ostack | One batched round of upfront questions per ticket, defaults included, then never interrupts |
 | `reproduce-first` | ostack | Bug tickets: an executable failing check before any fix, and the honest path when a unit test is the wrong tool |
-| `verify-changes` | ostack | Pre-push gate: discover and run lint/typecheck/tests, block on failure |
-| `e2e-verify` | ostack | Playwright verification of UI changes: web-first assertions, console-error capture, screenshots, trace on failure |
+| `create-verification-skill` | pstack | Generate and prove a project-local verifier with exact checks, control instructions, and a user-facing feature map |
+| `maintain-verification-skill` | pstack | Audit a project-local verifier against source and live behavior without changing product code |
+| `verify-changes` | ostack | Pre-push gate: run declared checks and affected project-local verification, block on failure |
+| `e2e-verify` | ostack | Browser verification through a project-local verifier or Playwright fallback |
 | `babysit-gitlab-mr` | ostack | Drive a GitLab MR end-to-end: `!review` loop with the review bot, pipeline gate, optional comment watch mode |
 
 ### Understanding code
@@ -207,9 +216,10 @@ step if you want the agent doing the mechanics under supervision.
 
 ## Provenance
 
-`ostack-mode`, `principles`, `how`, `why`, `blast-radius`, `architect`, `arena`, `swarm`,
-`interrogate`, `recall`, `show-me-your-work`, `unslop`, `technical-writing`, and
-`typescript-best-practices` are adapted from
+`ostack-mode`, `principles`, `how`, `why`, `blast-radius`, `architect`, `arena`,
+`swarm`, `interrogate`, `recall`, `show-me-your-work`, `unslop`,
+`technical-writing`, `typescript-best-practices`, `create-verification-skill`,
+and `maintain-verification-skill` are adapted from
 [pstack](https://github.com/poteto/pstack) by Lauren Tan (MIT). See
 [`NOTICE`](NOTICE). Changes from upstream:
 
@@ -225,11 +235,17 @@ step if you want the agent doing the mechanics under supervision.
 - `never-block-on-the-human` scoped by `escalate`, which owns the hard stops.
 - `tdd`'s impractical-test guardrails folded into `reproduce-first` rather than
   shipped as a second, overlapping skill.
+- Project-local verification defaults to `.agents/skills`, detects existing
+  Cursor and Claude roots, records declared repository checks, and keeps
+  external writes behind the selected ostack outcome.
+- `verify-changes` runs affected project-local recipes after static checks.
+  `e2e-verify` supplies browser mechanics without duplicating the repository's
+  launch, authentication, and feature knowledge.
 
 Not vendored as pstack workflows, deliberately: the full `poteto-mode` and
 `figure-it-out` playbook sets (tied to Graphite and GitHub), `setup-pstack`,
 `automate-me`, `reflect`, `teach`, `bro`, `no-comments`,
-`create-verification-skill`, `maintain-verification-skill`, `tdd`.
+`tdd`.
 
 `make-bot-ui` is also excluded. It depends on Cursor-team internals, including
 a Grok Bot webhook, `update_state`, and sender-key handling. Ostack does not
