@@ -10,18 +10,20 @@ Design before implementing. Sketch types, function signatures, class shapes, and
 
 ## Model resolution
 
-Resolve `architect.runners` from the canonical ostack configuration at
-`$OSTACK_CONFIG_HOME/models.json`, or `~/.config/ostack/models.json` when the
-variable is unset. Use the exact override when present, then the generic
-`judgment` role, then `inherit`. A missing, invalid, or empty configuration is
-recoverable: report the fallback once and use `inherit`.
+Resolve `architect runners`, generic role `judgment`, from
+`~/.cursor/rules/ostack-models.mdc`. Use the skill-role line first, then the
+generic role line, then `inherit`.
 
-This is a panel. Run each resolved entry once; `inherit` must be the only entry
-when it is selected. If the host rejects one configured entry, remove that
-entry and continue with the remaining entries. Use `inherit` only if none
-remain. Never select a nearby model ID, and never claim that a successful
-subagent call proves which model actually ran because the host may silently
-substitute it.
+This is a panel. Run one subagent per resolved entry, so the entry count sets
+the fan-out. If the host rejects an entry, drop it and run the rest. Fall back
+to `inherit` only when nothing is left.
+
+Pass the resolved value as the subagent `model` argument. `inherit` means omit
+`model` and let the subagent run on the parent chat model. A line never mixes
+`inherit` with a model ID. Hosts that do not load the rule resolve every role
+to `inherit`. When the host rejects a model ID, do not swap in a nearby one. A
+successful call proves nothing about which model ran, because the host may
+substitute one without saying so.
 
 ## Start
 
@@ -45,7 +47,7 @@ Skip Phase A only when the work is genuinely greenfield with no surrounding syst
 
 Run the **arena** skill with the design-sketch task and the Phase A grounding artifacts. Pass `references/runner-prompt.md` as each runner's prompt. Each candidate produces a design package shaped per `references/rationale-template.md`: the caller's usage written first, then the type sketch, function signatures, module map, and prose rationale derived from it.
 
-Use the resolved `architect.runners` panel for the design candidates.
+Use the resolved `architect runners` panel for the design candidates.
 
 Design it twice. Require at least two structurally distinct candidates before synthesis, even when the first looks sufficient. This is the **exhaust-the-design-space** principle made concrete. Whole-shape alternatives, not point fixes inside one shape.
 

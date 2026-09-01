@@ -10,20 +10,23 @@ Fan out N parallel attempts at the same task. Read every candidate end to end. P
 
 ## Model resolution
 
-Read the canonical ostack configuration at
-`$OSTACK_CONFIG_HOME/models.json`, or `~/.config/ostack/models.json` when the
-variable is unset. Resolve `arena.runners` and `arena.cross-judge` from the
-exact override first, then the generic `judgment` role, then `inherit`. A
-missing, invalid, or empty configuration is recoverable: report the fallback
-once and use `inherit`.
+Resolve `arena runners` and `arena cross-judge`, both generic role `judgment`,
+from `~/.cursor/rules/ostack-models.mdc`. For each role use its skill-role
+line first, then its generic role line, then `inherit`.
 
-The runners are a panel, so launch each resolved entry once. The cross-judge
-pool is also a list; choose one entry that differs from the parent model family
-when the host makes that possible. `inherit` must be the only entry when it is
-selected. If the host rejects a configured entry, remove it and continue with
-the remaining entries; use `inherit` only when none remain. Do not pick a
-nearby model ID. A successful subagent call does not prove which model ran,
-because the host may silently substitute it.
+`arena runners` is a panel. Run one subagent per resolved entry, so the entry
+count sets the fan-out. If the host rejects an entry, drop it and run the
+rest. Fall back to `inherit` only when nothing is left.
+
+`arena cross-judge` is a pool rather than a panel. Pick one entry from it, and
+prefer a different model family from the parent's when the host allows it.
+
+Pass the resolved value as the subagent `model` argument. `inherit` means omit
+`model` and let the subagent run on the parent chat model. A line never mixes
+`inherit` with a model ID. Hosts that do not load the rule resolve every role
+to `inherit`. When the host rejects a model ID, do not swap in a nearby one. A
+successful call proves nothing about which model ran, because the host may
+substitute one without saying so.
 
 ## Start
 
@@ -42,7 +45,7 @@ The N candidates will receive the same prompt, so the prompt is the contract. Ge
 
 1. State the artifact each candidate is producing.
 2. Derive the rubric. State what success looks like for *this* task, then turn it into 3-6 concrete gradeable criteria. Concrete: `Adds a --dry-run flag that skips writes`. Vague: `code is correct`. The rubric is the picker's tool in Phase D; candidates only see the task.
-3. Pick the runners from the resolved `arena.runners` panel. Spawn more when the arena covers multiple design directions. Same model N times when the work is generation-bound rather than judgment-sensitive.
+3. Pick the runners from the resolved `arena runners` panel. Spawn more when the arena covers multiple design directions. Same model N times when the work is generation-bound rather than judgment-sensitive.
 4. Assign output paths. Each candidate writes to its own location (a git worktree where possible, otherwise `/tmp/arena-<slug>/candidate-<n>/`). N candidates writing to the same path is shared mutable state and fails the the **separate-before-serializing-shared-state** principle test.
 
 ## Phase B: Fan out
@@ -56,7 +59,7 @@ If a candidate fails to produce output, proceed with N-1 and note the dropout in
 ## Phase C: Cross-judge
 
 After all Phase B candidates complete, choose one judge from the resolved
-`arena.cross-judge` pool, preferring a different family from the parent when
+`arena cross-judge` pool, preferring a different family from the parent when
 possible. On a single-vendor host, prefer a different reasoning tier and say
 the judge shares the parent's family. Spawn one readonly judge subagent on that
 model. It sees the rubric and the candidates by path label, scores each

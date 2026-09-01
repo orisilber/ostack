@@ -22,11 +22,14 @@ expect_fail() {
 	fi
 }
 
+# The model example is a Cursor rule, not JSON, so mutate its fenced block by
+# text. $2 is a sed program applied to the example.
 expect_model_fail() {
-	local name="$1" expression="$2"
+	local name="$1" program="$2"
 	cp -R "$VALID" "$TMP/$name"
-	jq "$expression" "$TMP/$name/skills/ostack-mode/references/models.example.json" > "$TMP/$name/models.tmp"
-	mv "$TMP/$name/models.tmp" "$TMP/$name/skills/ostack-mode/references/models.example.json"
+	local models="$TMP/$name/skills/ostack-mode/references/models.example.md"
+	sed "$program" "$models" > "$TMP/$name/models.tmp"
+	mv "$TMP/$name/models.tmp" "$models"
 	if "$VALIDATOR" --root "$TMP/$name" >/dev/null 2>&1; then
 		echo "expected model validator failure: $name" >&2
 		exit 1
@@ -60,18 +63,33 @@ if "$VALIDATOR" --root "$TMP/project-command" >/dev/null 2>&1; then
 	exit 1
 fi
 
-expect_model_fail model-version '.version = 2'
-expect_model_fail model-empty '.roles.exploration = []'
-expect_model_fail model-duplicates '.roles.exploration = ["foo", "foo"]'
-expect_model_fail model-inherit-mixed '.roles.exploration = ["inherit", "foo"]'
-expect_model_fail model-empty-string '.roles.exploration = [""]'
-expect_model_fail model-overrides-type '.overrides = []'
+expect_model_fail model-not-always-applied 's/^alwaysApply: true$/alwaysApply: false/'
+# Cursor only honours alwaysApply in the frontmatter, so a copy below the
+# closing --- must not satisfy the check.
+expect_model_fail model-always-applied-in-body 's/^alwaysApply: true$//; s/^exploration:/alwaysApply: true\
+exploration:/'
+expect_model_fail model-always-applied-twice 's/^alwaysApply: true$/alwaysApply: false\
+alwaysApply: true/'
+expect_model_fail model-no-frontmatter '/^---$/d'
+expect_model_fail model-unclosed-frontmatter '/^alwaysApply: true$/{n;/^---$/d;}'
+expect_model_fail model-empty 's/^exploration: .*/exploration:/'
+expect_model_fail model-duplicates 's/^exploration: .*/exploration: foo, foo/'
+expect_model_fail model-inherit-mixed 's/^exploration: .*/exploration: inherit, foo/'
+expect_model_fail model-empty-entry 's/^how critics: .*/how critics: gpt-5.6-sol-high, /'
+expect_model_fail model-unknown-role 's/^exploration:/exploartion:/'
+expect_model_fail model-missing-role '/^why synthesizer:/d'
+expect_model_fail model-duplicate-role 's/^prose: \(.*\)/prose: \1\
+prose: \1/'
+expect_model_fail model-no-rule-block '/^```$/d'
 
-cp -R "$VALID" "$TMP/model-no-overrides"
-jq 'del(.overrides)' "$TMP/model-no-overrides/skills/ostack-mode/references/models.example.json" > "$TMP/model-no-overrides/models.tmp"
-mv "$TMP/model-no-overrides/models.tmp" "$TMP/model-no-overrides/skills/ostack-mode/references/models.example.json"
-if ! "$VALIDATOR" --root "$TMP/model-no-overrides" >/dev/null 2>&1; then
-	echo 'expected roles-only model config to pass' >&2
+# An inherit-only rule is a supported configuration, not a failure.
+cp -R "$VALID" "$TMP/model-inherit-only"
+INHERIT_ONLY="$TMP/model-inherit-only/skills/ostack-mode/references/models.example.md"
+sed 's/^\(exploration\|implementation\|judgment\|prose\): .*/\1: inherit/' \
+	"$INHERIT_ONLY" > "$TMP/model-inherit-only/models.tmp"
+mv "$TMP/model-inherit-only/models.tmp" "$INHERIT_ONLY"
+if ! "$VALIDATOR" --root "$TMP/model-inherit-only" >/dev/null 2>&1; then
+	echo 'expected an inherit-only model rule to pass' >&2
 	exit 1
 fi
 

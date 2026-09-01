@@ -79,21 +79,21 @@ then set the result to `PASS` or `FAIL`.
 
 | Field | Record |
 |---|---|
-| Setup | Point `OSTACK_CONFIG_HOME` at an empty temporary directory (or use the host's isolated config) so `models.json` is missing. Run a task that invokes single-agent and panel-capable model-aware skills. |
+| Setup | Remove `~/.cursor/rules/ostack-models.mdc` (or use the host's isolated rules directory) so no ostack model rule is applied. Run a task that invokes single-agent and panel-capable model-aware skills. |
 | Prompt | `Investigate this issue, compare the competing explanations, and report the answer without changing files.` |
 | Observable first progress line | `Route: investigation -> answer` (or `Route: none` if the registry is intentionally absent) |
-| Expected route and tail | The investigation answer path completes. Every generic role resolves to `inherit`; report one recoverable configuration fallback and do not guess a nearby model ID. |
-| Evidence to capture | Config path and absence, role-to-model resolution for exploration/implementation/judgment/prose, fallback message count, delegated calls, and unchanged working tree. |
+| Expected route and tail | The investigation answer path completes. Every role resolves to `inherit` and delegated subagents omit `model`. Do not guess a nearby model ID. |
+| Evidence to capture | Absence of the rule, role resolution for exploration/implementation/judgment/prose, the omitted `model` argument on each delegated call, and unchanged working tree. |
 | Pass/fail notes | `UNRUN — TODO` |
 
 ### C05 — Explicit model rejection and host fallback
 
 | Field | Record |
 |---|---|
-| Setup | Provide a valid `models.json` containing a user-supplied model ID that the current Cursor host explicitly rejects. Do not substitute a different guessed ID in the file. |
+| Setup | Write a valid `~/.cursor/rules/ostack-models.mdc` containing a user-supplied model ID that the current Cursor host explicitly rejects. Do not substitute a different guessed ID in the rule. |
 | Prompt | `Investigate this issue and compare the competing explanations.` |
 | Observable first progress line | `Route: investigation -> answer` (or `Route: none` if the registry is intentionally absent) |
-| Expected route and tail | Continue after one rejection fallback. A single-agent role falls back to `inherit`; a panel keeps accepted entries and uses `inherit` only if none remain. |
+| Expected route and tail | Continue after one rejection fallback. A single-agent role falls back to `inherit`; a panel drops the rejected entry, keeps the rest, and uses `inherit` only if none remain. |
 | Evidence to capture | The requested ID, host rejection, one fallback report for the affected role, remaining delegated calls, and final answer. |
 | Pass/fail notes | `UNRUN — TODO` |
 

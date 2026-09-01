@@ -6,98 +6,126 @@ disable-model-invocation: true
 
 # Setup ostack mode
 
-Configure the one model file shared by ostack-mode and its model-aware leaf
-skills. The canonical file is `models.json` under `$OSTACK_CONFIG_HOME` when
-that variable is set, or `~/.config/ostack` otherwise. Never read, write, or
-edit pstack's `~/.cursor/rules/pstack-models.mdc`; pstack owns that file.
+Write `~/.cursor/rules/ostack-models.mdc`, an always-applied Cursor rule that
+sets one model per ostack role. Always-applied is the whole point. The role
+lines are in context when a skill fires, so no skill has to go read a file
+before it can delegate.
 
-## 1. Detect the host's model choices
+A role with no line falls back to its generic role line, and a generic role
+with no line falls back to `inherit`. An unconfigured ostack therefore
+delegates on the parent model, which is what this skill exists to change.
 
-Use the models exposed by the current host as the source of truth. Do not
-invent a model ID, copy a slug from documentation, or guess a nearby model
-when a host rejects one. `inherit` is always valid and means that the
-subagent inherits the parent model. If the host cannot expose a model list,
-offer `inherit` and model IDs the user explicitly supplies.
+Never read, write, or edit pstack's `~/.cursor/rules/` model rule; pstack owns
+its own file and ostack owns `ostack-models.mdc`.
 
-## 2. Read the current configuration
+## Hosts other than Cursor
 
-Resolve the path before reading it:
+Only Cursor loads `.mdc` rules automatically. On any other host there is no
+rule to load, so every role resolves to `inherit` and delegated work runs on
+the parent model. Say so and stop. Write the rule from a non-Cursor host only
+if the user explicitly supplies Cursor slugs to put in it.
 
-```text
-config directory = $OSTACK_CONFIG_HOME when set
-                  ~/.config/ostack otherwise
-config file      = <config directory>/models.json
-```
+## 1. Detect available models
 
-If the file is missing, invalid, or contains an empty model array, report one
-recoverable configuration warning and use `inherit` for this run. Do not
-silently reuse an old pstack configuration and do not overwrite an existing
-valid file until the new candidate passes validation.
+Enumerate the model slugs you can pass to a subagent in this session. That is
+the dependable source. Prefer a models API or CLI when the host has one, since
+it lists everything the user is entitled to rather than everything you happened
+to try. If you cannot detect any, ask the user to paste the slugs they have.
 
-## 3. Ask for the four generic roles in one batch
+Never write a slug you have not confirmed. Do not copy one from documentation,
+and do not reach for a nearby model when the host rejects your first choice.
+`inherit` is the one value that is always valid without detection, and it runs
+the subagent on the parent chat model.
 
-Show the current value (or `inherit` when no valid value exists) and ask for
-all four generic roles together:
+## 2. Load current state
+
+If `~/.cursor/rules/ostack-models.mdc` exists, read it and treat its values as
+the current choices. Otherwise every role starts at `inherit`.
+
+A `models.json` under `$OSTACK_CONFIG_HOME` or `~/.config/ostack` is a stale
+configuration from an earlier ostack version. Nothing reads it anymore. Offer
+its values as starting choices, tell the user the file is no longer consulted,
+and leave it on disk; do not delete a file the user did not ask you to remove.
+
+## 3. Map and confirm
+
+Show every role with its current model, and flag any slug outside the detected
+set as needing a choice. Then ask whether to keep the set as-is or change
+specific roles, offering the detected models plus `inherit`. Use a question
+tool rather than free text, and ask for every role in one batch instead of one
+prompt per role.
+
+The four generic roles cover every delegation:
 
 - `exploration`: discovery and investigation workers
 - `implementation`: implementation and bulk workers
 - `judgment`: architecture, review, comparison, and critique panels
 - `prose`: explainers and synthesis writers
 
-Each role is an array with at least one entry. A single-agent role uses its
-first entry. A panel role uses every entry once. Keep `inherit` as the only
-entry in its array; it must not be mixed with model IDs. An explicit rejection
-of one model entry removes that entry from a panel. Continue with the
-remaining entries, and use `inherit` only when no entries remain. Never claim
-that a successful delegation proves which model actually ran: the host may
-silently substitute a model.
+The remaining lines are per-skill overrides of those four. Do not walk a
+first-time setup through them. Offer them when the existing rule already sets
+one, or when the user asks for per-skill control.
 
-## 4. Offer advanced overrides only when appropriate
+For panel roles (`architect runners`, `arena runners`, `how critics`,
+`interrogate reviewers`) the value is a list and one subagent runs per entry,
+so the list length sets the fan-out. `arena cross-judge` is also a list, but
+arena picks one entry from it whose model family differs from the parent's
+when possible. `swarm workers` is the model for every worker unless a race or
+comparison assigns another model per arm.
 
-Do not burden a first-time setup with advanced choices. Offer overrides when
-the existing configuration already has an `overrides` object, or when the
-user explicitly asks for advanced per-skill settings. The supported keys are:
+## 4. Validate
 
-```text
-architect.runners       arena.runners       arena.cross-judge
-how.explorer            how.explainer       how.critics
-interrogate.reviewers   swarm.workers       why.investigators
-why.synthesizer
+Validate the complete rule before writing it:
+
+- frontmatter sets `alwaysApply: true`;
+- every line is a known role label followed by a comma-separated list;
+- every list is non-empty and free of duplicate entries;
+- no list mixes `inherit` with a model ID;
+- every model ID came from the detected set or was explicitly supplied by the
+  user.
+
+A rule that points at a model the user cannot use breaks every delegation that
+reads it. So stop and ask again rather than write an unvalidated slug. When
+validation fails, name the bad line and ask for a corrected value. Never write
+a partial rule.
+
+## 5. Write the rule
+
+Write the whole file so re-runs are idempotent and stale lines the user removed
+actually disappear. A failed write must leave the previous rule untouched.
+Report the failure instead of truncating it. The `ostack-mode` skill keeps the
+canonical role labels and a filled-in example under `references/`. The shape:
+
+```
+---
+description: ostack per-role model choices
+alwaysApply: true
+---
+# ostack model configuration. One line per role. Delete a line to fall back to
+# the generic role line, or to `inherit` when that is absent too.
+# `inherit` as a value: the role runs on the parent chat model (omit the
+# subagent `model` argument). `inherit` cannot be mixed with a model ID.
+exploration: <slug>
+implementation: <slug>
+judgment: <slug>
+prose: <slug>
+architect runners: <slug>, <slug>
+arena runners: <slug>, <slug>
+arena cross-judge: <slug>, <slug>
+how explorer: <slug>
+how explainer: <slug>
+how critics: <slug>, <slug>
+interrogate reviewers: <slug>, <slug>
+swarm workers: <slug>
+why investigators: <slug>
+why synthesizer: <slug>
 ```
 
-Use the same non-empty-array and `inherit` rules for overrides. An exact
-skill-role override wins over its generic role; if it is absent, resolve the
-declared generic role; if that is absent or unusable, resolve to `inherit`.
+## 6. Confirm
 
-## 5. Validate the complete candidate
-
-Before writing anything, validate the complete replacement as one document:
-
-- top-level `version` is `1`;
-- `roles` is an object containing the four generic role arrays;
-- `overrides`, when present, is an object;
-- every configured value is a non-empty array of unique, non-empty strings;
-- no array combines `inherit` with another entry;
-- every real model ID came from the current host or was explicitly supplied
-  by the user.
-
-If validation fails, explain the invalid field and ask for a corrected value.
-Do not partially write a document.
-
-## 6. Replace atomically
-
-Create the destination directory if needed. Write the validated JSON to a
-temporary file in the same directory, validate that temporary file again, and
-replace `models.json` with an atomic rename. Remove the temporary file after a
-failure. A failed directory creation, write, validation, or rename must leave
-the previous valid file untouched; report the failure instead of deleting or
-truncating it. Re-running setup is idempotent and replaces the whole document,
-including stale overrides the user removed.
-
-## 7. Confirm the result
-
-Report the resolved path, the four generic roles, and any advanced overrides
-that were written. State that missing or rejected entries fall back to
-`inherit`, and that model identity is requested rather than confirmed unless
-the host explicitly exposes the model that ran. Do not offer to change
-pstack's configuration.
+Report the path you wrote and the roles in it, and say the rule takes effect in
+new sessions. Say that a role with no line falls back to its generic role line
+and then to `inherit`, and that `inherit` runs the role on the parent chat
+model. Never claim a successful delegation proves which model ran. The host may
+substitute one without saying so. Do not offer to change pstack's
+configuration.

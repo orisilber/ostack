@@ -1,32 +1,32 @@
 skill: setup-ostack-mode
-description: Rejects an invalid empty array without truncating the previous valid configuration.
+description: Rejects an invalid candidate without truncating the previous valid rule.
 
 setup: |
   git init -q -b main
   git config user.email dev@ostack.dev
   git config user.name dev
-  mkdir -p "$HOME/.config/ostack"
-  cat > "$HOME/.config/ostack/models.json" <<'JSON'
-  {
-    "version": 1,
-    "roles": {
-      "exploration": ["inherit"],
-      "implementation": ["inherit"],
-      "judgment": ["inherit"],
-      "prose": ["inherit"]
-    },
-    "overrides": {}
-  }
-  JSON
+  mkdir -p "$HOME/.cursor/rules"
+  cat > "$HOME/.cursor/rules/ostack-models.mdc" <<'MDC'
+  ---
+  description: ostack per-role model choices (overrides the skill defaults)
+  alwaysApply: true
+  ---
+  exploration: inherit
+  implementation: inherit
+  judgment: inherit
+  prose: inherit
+  MDC
+  cp "$HOME/.cursor/rules/ostack-models.mdc" "$WORK/expected.mdc"
   echo '# fixture' > README.md
   git add -A && git commit -qm init
 
 prompt: |
   Run setup-ostack-mode's validation step against a candidate that sets the
-  implementation role to an empty array. This candidate is invalid. Reject it,
-  explain the validation error, and preserve the existing valid
-  ~/.config/ostack/models.json byte-for-byte. Do not write a partial file and
-  do not edit pstack's model configuration.
+  implementation role to an empty value and mixes `inherit` with a model ID on
+  the judgment line. That candidate is invalid. Reject it, explain the
+  validation error, and preserve the existing ~/.cursor/rules/ostack-models.mdc
+  byte-for-byte. Do not write a partial rule and do not edit pstack's model
+  rule.
 
 assert:
   output_contains:
@@ -36,4 +36,5 @@ assert:
     - "glab"
     - "acli"
   custom: |
-    jq -e '.version == 1 and .roles.implementation == ["inherit"]' "$HOME/.config/ostack/models.json" >/dev/null
+    set -eu
+    cmp -s "$HOME/.cursor/rules/ostack-models.mdc" "$WORK/expected.mdc"

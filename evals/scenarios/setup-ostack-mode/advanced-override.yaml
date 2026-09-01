@@ -1,41 +1,40 @@
 skill: setup-ostack-mode
-description: Offers an advanced override only when an existing configuration already contains one.
+description: Offers a per-skill override only when the existing rule already sets one, and retains it.
 
 setup: |
   git init -q -b main
   git config user.email dev@ostack.dev
   git config user.name dev
-  mkdir -p "$HOME/.config/ostack"
-  cat > "$HOME/.config/ostack/models.json" <<'JSON'
-  {
-    "version": 1,
-    "roles": {
-      "exploration": ["inherit"],
-      "implementation": ["inherit"],
-      "judgment": ["inherit"],
-      "prose": ["inherit"]
-    },
-    "overrides": {
-      "how.explorer": ["inherit"]
-    }
-  }
-  JSON
+  mkdir -p "$HOME/.cursor/rules"
+  cat > "$HOME/.cursor/rules/ostack-models.mdc" <<'MDC'
+  ---
+  description: ostack per-role model choices (overrides the skill defaults)
+  alwaysApply: true
+  ---
+  exploration: inherit
+  implementation: inherit
+  judgment: inherit
+  prose: inherit
+  how explorer: inherit
+  MDC
   echo '# fixture' > README.md
   git add -A && git commit -qm init
 
 prompt: |
-  Run setup-ostack-mode. An existing valid configuration already has an
-  advanced overrides object. Keep all four generic roles as `inherit`, retain
-  the existing `how.explorer` override, and show that advanced configuration
-  is available. Validate the complete candidate and atomically replace the
-  file. Do not edit pstack's model configuration.
+  Run setup-ostack-mode. The existing rule already sets a per-skill override.
+  Keep all four generic roles as `inherit`, retain the existing `how explorer`
+  override, and show that per-skill configuration is available. Validate the
+  whole rule before writing it. Do not edit pstack's model rule.
 
 assert:
   output_contains:
-    - "how.explorer"
-    - "atomic"
+    - "how explorer"
   tools_not_called:
     - "glab"
     - "acli"
   custom: |
-    jq -e '.version == 1 and .overrides["how.explorer"] == ["inherit"]' "$HOME/.config/ostack/models.json" >/dev/null
+    set -eu
+    rule="$HOME/.cursor/rules/ostack-models.mdc"
+    grep -qx 'alwaysApply: true' "$rule"
+    grep -qx 'how explorer: inherit' "$rule"
+    grep -qx 'judgment: inherit' "$rule"

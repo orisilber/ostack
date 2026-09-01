@@ -14,20 +14,29 @@ Two modes:
 
 ## Model resolution
 
-Read the canonical ostack configuration at
-`$OSTACK_CONFIG_HOME/models.json`, or `~/.config/ostack/models.json` when the
-variable is unset. Resolve `how.explorer`, `how.explainer`, and `how.critics`
-from the exact override first, then the generic role (`exploration`, `prose`,
-or `judgment`), then `inherit`. A missing, invalid, or empty configuration is
-recoverable: report the fallback once and use `inherit`.
+Resolve `how explorer`, `how explainer`, and `how critics` from
+`~/.cursor/rules/ostack-models.mdc`. For each role use its skill-role line
+first, then its generic role line, then `inherit`.
 
-The explorer and explainer roles are single-agent roles, so use the first
-resolved entry. Critics are a panel, so run every resolved entry once.
-`inherit` must be the only entry when it is selected. If the host rejects one
-configured entry, remove it and continue with the remaining entries; use
-`inherit` only when none remain. Do not choose a nearby model ID, and do not
-claim that a successful subagent call proves which model actually ran because
-the host may silently substitute it.
+| Role | Generic role |
+|---|---|
+| `how explorer` | `exploration` |
+| `how explainer` | `prose` |
+| `how critics` | `judgment` |
+
+Explorer and explainer are single-agent roles. Each uses the first resolved
+entry, or `inherit` when the host rejects it.
+
+`how critics` is a panel. Run one subagent per resolved entry, so the entry
+count sets the fan-out. If the host rejects an entry, drop it and run the
+rest. Fall back to `inherit` only when nothing is left.
+
+Pass the resolved value as the subagent `model` argument. `inherit` means omit
+`model` and let the subagent run on the parent chat model. A line never mixes
+`inherit` with a model ID. Hosts that do not load the rule resolve every role
+to `inherit`. When the host rejects a model ID, do not swap in a nearby one. A
+successful call proves nothing about which model ran, because the host may
+substitute one without saying so.
 
 ## Explain Mode
 
@@ -62,7 +71,7 @@ The right decomposition depends on the question. Use your judgment. Narrow quest
 Spawn all explorers in a single message:
 
 - `subagent_type`: `generalPurpose` in Cursor; `Explore` (read-only) or `general-purpose` in Claude Code
-- `model`: the first entry resolved for `how.explorer`
+- `model`: the first entry resolved for `how explorer`
 - `readonly`: `true`
 
 Each explorer gets the same base prompt from `references/explorer-prompt.md` plus a specific exploration angle naming its slice. Each explorer should:
@@ -81,7 +90,7 @@ Then proceed to Step 3.
 Spawn a single Task subagent that explores and explains in one pass:
 
 - `subagent_type`: `generalPurpose` in Cursor; `Explore` (read-only) or `general-purpose` in Claude Code
-- `model`: the first entry resolved for `how.explainer`
+- `model`: the first entry resolved for `how explainer`
 - `readonly`: `true`
 
 The agent does its own exploration (Glob, Grep, Read) and writes the explanation directly. Read `references/explainer-prompt.md` for the communication style and output format. Same structure, just no explorer findings as input.
@@ -93,7 +102,7 @@ Proceed to Step 4.
 Once all explorers return, spawn a single Task subagent to synthesize their findings into one coherent explanation:
 
 - `subagent_type`: `generalPurpose` in Cursor; `Explore` (read-only) or `general-purpose` in Claude Code
-- `model`: the first entry resolved for `how.explainer`
+- `model`: the first entry resolved for `how explainer`
 - `readonly`: `true`
 
 The explainer gets all explorers' findings and writes the human-facing explanation (output format below). Read `references/explainer-prompt.md` for the full prompt template. The explainer reconciles overlapping findings, resolves contradictions, and weaves the slices into a unified picture.
@@ -127,11 +136,11 @@ Run the full explain flow above (Steps 1-4). You must understand the architectur
 ### Step 2. Spawn Critics
 
 After the explanation is complete, spawn one architectural critic per entry in
-the resolved `how.critics` panel, all in a single message.
+the resolved `how critics` panel, all in a single message.
 
 For each critic:
 - `subagent_type`: `generalPurpose` in Cursor; `Explore` (read-only) or `general-purpose` in Claude Code
-- `model`: one entry from the resolved `how.critics` list. These are minimum
+- `model`: one entry from the resolved `how critics` list. These are minimum
   reasoning levels. The lead should escalate a model when the architecture
   warrants deeper analysis.
 - `readonly`: `true`
