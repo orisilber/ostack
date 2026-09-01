@@ -60,11 +60,11 @@ Order work as a sequence of small units, each ending in a state you can check, a
 
 **Execution.** In a sweep, migration, or any run of similar edits, verify each change before starting the next. Never batch the edits and verify once at the end. Each unit is a before/after bracket: known-good state, one change, run the check, then proceed. Rebase onto clean trunk first so every check measures against the real baseline. When a lever does the edits, the per-unit check is nearly free; run it anyway.
 
-**Delivery.** Stack commits and PRs in the order that proves the work. The canonical shape is the failing test first, then the fix on top. The first unit shows the bug is real (red), the next shows it resolved (green), so a reviewer sees both the problem and the proof. Other story orders are a subtraction before the reshape, a baseline capture before the treatment, the scaffold before the feature. Each commit lands on its own and the sequence reads as an argument.
+**Delivery.** Stack commits and PRs in the order that proves the work. For a bug fix, the canonical shape is the failing test first, then the fix on top. The first unit shows the bug is real (red), the next shows it resolved (green). For a feature, implement and exercise the accepted behavior first, then add retention tests that preserve the finished contract. Other story orders are a subtraction before the reshape, a baseline capture before the treatment, or a scaffold before the feature. Each commit lands on its own and the sequence reads as an argument.
 
 **Pattern:**
-- Pick the smallest unit that ends in a check: an edit plus its test, or a commit that stands alone.
-- Verify before advancing. Red to green per unit, never deferred to a final batch.
+- Pick the smallest unit that ends in a check: an edit plus an existing or temporary behavior check, or a commit that stands alone.
+- Verify before advancing. Bugs move red to green. Features reach accepted real behavior before permanent retention tests are written.
 - Order the units so the sequence builds confidence on its own, for you while executing and for a reviewer reading the stack.
 
 The sequencing complement to the **prove-it-works** principle skill, which keeps each check real, and the **build-the-lever** principle skill, which makes the per-unit check cheap.
