@@ -64,6 +64,14 @@ if "$VALIDATOR" --root "$TMP/project-command" >/dev/null 2>&1; then
 fi
 
 expect_model_fail model-not-always-applied 's/^alwaysApply: true$/alwaysApply: false/'
+# Cursor only honours alwaysApply in the frontmatter, so a copy below the
+# closing --- must not satisfy the check.
+expect_model_fail model-always-applied-in-body 's/^alwaysApply: true$//; s/^exploration:/alwaysApply: true\
+exploration:/'
+expect_model_fail model-always-applied-twice 's/^alwaysApply: true$/alwaysApply: false\
+alwaysApply: true/'
+expect_model_fail model-no-frontmatter '/^---$/d'
+expect_model_fail model-unclosed-frontmatter '/^alwaysApply: true$/{n;/^---$/d;}'
 expect_model_fail model-empty 's/^exploration: .*/exploration:/'
 expect_model_fail model-duplicates 's/^exploration: .*/exploration: foo, foo/'
 expect_model_fail model-inherit-mixed 's/^exploration: .*/exploration: inherit, foo/'

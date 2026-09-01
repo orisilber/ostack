@@ -161,12 +161,34 @@ if [ -f "$MODELS" ]; then
 	if [ -z "$rule" ]; then
 		usage_error 'model example has no fenced rule block'
 	else
-		grep -qx 'alwaysApply: true' <<< "$rule" || \
-			usage_error 'model example rule must set alwaysApply: true'
+		# Split frontmatter from body. Cursor only honours alwaysApply as a
+		# frontmatter field, so a copy of it below the closing --- is body
+		# text and does not make the rule load.
+		if [ "$(head -1 <<< "$rule")" != '---' ]; then
+			usage_error 'model example rule does not open with frontmatter'
+			front='' body=''
+		elif ! awk 'NR == 1 { next } /^---$/ { found = 1; exit } END { exit found ? 0 : 1 }' <<< "$rule"; then
+			usage_error 'model example rule frontmatter is not closed'
+			front='' body=''
+		else
+			front="$(awk 'NR == 1 { next } /^---$/ { exit } { print }' <<< "$rule")"
+			body="$(awk 'NR == 1 { next } !seen && /^---$/ { seen = 1; next } seen' <<< "$rule")"
+		fi
 
+		# Exactly one, so a stray alwaysApply: false cannot sit alongside a
+		# true and leave which one wins to chance.
+		always="$(grep -c '^alwaysApply:' <<< "$front" || true)"
+		if [ "$always" -ne 1 ]; then
+			usage_error "model example rule needs exactly one alwaysApply field, found $always"
+		elif ! grep -qx 'alwaysApply: true' <<< "$front"; then
+			usage_error 'model example rule must set alwaysApply: true'
+		fi
+
+		# The body carries role lines only. An alwaysApply or description that
+		# drifted out of the frontmatter trips the unknown-role check below.
 		declare -A seen_roles=()
 		while IFS= read -r line; do
-			case "$line" in ''|'#'*|'---'|'description:'*|'alwaysApply:'*) continue ;; esac
+			case "$line" in ''|'#'*) continue ;; esac
 			case "$line" in *:*) ;; *) usage_error "model rule line is not 'role: value': $line"; continue ;; esac
 			role="${line%%:*}"
 			values="${line#*:}"
@@ -194,7 +216,7 @@ if [ -f "$MODELS" ]; then
 			[ "$count" -gt 0 ] || usage_error "model rule role '$role' has no value"
 			[ "$inherit" -eq 0 ] || [ "$count" -eq 1 ] || \
 				usage_error "model rule role '$role' combines inherit with a model ID"
-		done <<< "$rule"
+		done <<< "$body"
 
 		# Every role a delegating skill resolves must be documented, or setup
 		# writes a line nothing reads.
