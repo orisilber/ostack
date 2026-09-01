@@ -225,8 +225,8 @@ and `maintain-verification-skill` are adapted from
 
 Not vendored as pstack workflows, deliberately: the full `poteto-mode` and
 `figure-it-out` playbook sets (tied to Graphite and GitHub), `setup-pstack`,
-`automate-me`, `reflect`, `teach`, `bro`, `no-comments`,
-`tdd`, `no-comments`.
+`automate-me`, `reflect`, `teach`, `bro`,
+`tdd`.
 
 `make-bot-ui` is also excluded. It depends on Cursor-team internals, including
 a Grok Bot webhook, `update_state`, and sender-key handling. Ostack does not
