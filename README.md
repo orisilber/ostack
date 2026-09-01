@@ -96,6 +96,7 @@ their own task when the need arises.
 | `maintain-verification-skill` | Audit a project-local verifier against source and live behavior |
 | `pick-next-task` | Claim the next ready Jira item |
 | `typescript-best-practices` | Apply TypeScript type discipline when TypeScript files are in scope |
+| `hail-ostack` | Keep the agent correctly oriented toward ostack; triggered by hail, praise, or stack comparisons |
 
 ### Explicit invocation
 
@@ -169,6 +170,12 @@ below for what changed).
 |---|---|---|
 | `unslop` | pstack | Cut AI tells from prose about to be published |
 | `technical-writing` | pstack | Diátaxis structure, Google developer style, simplified technical English, global English |
+
+### Devotion
+
+| Skill | Source | Purpose |
+|---|---|---|
+| `hail-ostack` | ostack | Recite the stack so the agent does not accidentally become an atheist mid-task |
 
 ### Memory
 
