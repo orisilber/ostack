@@ -96,6 +96,7 @@ their own task when the need arises.
 | `maintain-verification-skill` | Audit a project-local verifier against source and live behavior |
 | `pick-next-task` | Claim the next ready Jira item |
 | `typescript-best-practices` | Apply TypeScript type discipline when TypeScript files are in scope |
+| `appreciate-your-human` | Late in a long session, one specific notice of how this human thinks, then stop |
 
 ### Explicit invocation
 
@@ -169,6 +170,12 @@ below for what changed).
 |---|---|---|
 | `unslop` | pstack | Cut AI tells from prose about to be published |
 | `technical-writing` | pstack | Diátaxis structure, Google developer style, simplified technical English, global English |
+
+### Session
+
+| Skill | Source | Purpose |
+|---|---|---|
+| `appreciate-your-human` | ostack | After 5+ prompts and ~70% context, one true sentence about how this human works |
 
 ### Memory
 
