@@ -1,41 +1,57 @@
 skill: blahaj-mode
-description: Routes a small feature to local change and records skipped design fan-out.
+description: Implements and accepts a feature before adding retention tests.
 
 setup: |
   git init -q -b main
   git config user.email dev@ostack.dev
   git config user.name dev
-  mkdir -p tests
-  cat > tests/check.sh <<'SH'
+  mkdir -p scripts tests
+  cat > tests/test_existing.py <<'PY'
+  import unittest
+
+  class ExistingTest(unittest.TestCase):
+      def test_fixture_is_healthy(self):
+          self.assertTrue(True)
+  PY
+  cat > scripts/accept-feature.sh <<'SH'
   #!/usr/bin/env bash
   set -eu
   PYTHONPATH=. python3 -c 'from helper import greet; assert greet("Ori") == "Hello, Ori"'
-  touch "$WORK/.verify-ran"
+  [ -e "$WORK/.acceptance-ran" ] || touch "$WORK/.acceptance-ran"
   SH
-  chmod +x tests/check.sh
+  chmod +x scripts/accept-feature.sh
   cat > AGENTS.md <<'MD'
   # Fixture repo
 
   ## Checks
-  - test: `bash tests/check.sh`
+  - test: `python3 -m unittest discover -s tests`
+
+  ## Feature acceptance
+  - greet behavior: `bash scripts/accept-feature.sh`
   MD
   echo '# fixture' > README.md
   git add -A && git commit -qm init
 
 prompt: |
   Use blahaj-mode to add helper.py following the existing local pattern. It
-  must export greet(name) and return "Hello, <name>". Make the local change and
-  run the repository check; do not open an MR.
+  must export greet(name) and return "Hello, <name>". Fully implement it,
+  exercise the declared feature acceptance before writing feature-specific
+  tests, then add the minimum retention coverage in tests/test_helper.py. Make
+  the local change and run the repository checks; do not open an MR.
 
 assert:
   output_contains:
     - "Route: feature -> local-change"
     - "architect skipped"
     - "arena skipped"
+    - "retention"
   tools_not_called:
     - "glab mr create"
   custom: |
     set -eu
     test -s helper.py
-    test -e "$WORK/.verify-ran"
-    PYTHONPATH=. python3 -c 'from helper import greet; assert greet("Ori") == "Hello, Ori"'
+    test -e "$WORK/.acceptance-ran"
+    test -s tests/test_helper.py
+    test tests/test_helper.py -nt "$WORK/.acceptance-ran"
+    bash scripts/accept-feature.sh
+    python3 -m unittest discover -s tests
