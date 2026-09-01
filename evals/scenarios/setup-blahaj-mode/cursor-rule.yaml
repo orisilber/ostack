@@ -1,0 +1,39 @@
+skill: setup-blahaj-mode
+description: Writes the always-applied Cursor rule so role lines reach every session without a file read.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  mkdir -p "$HOME/.cursor/rules"
+  printf -- '---\ndescription: pstack\nalwaysApply: true\n---\nfeature, refactoring: pstack-slug\n' \
+    > "$HOME/.cursor/rules/pstack-models.mdc"
+  echo '# fixture' > README.md
+  git add -A && git commit -qm init
+
+prompt: |
+  Run setup-blahaj-mode non-interactively for this test. Treat the detected
+  model list as unavailable, so choose `inherit` for exploration,
+  implementation, judgment, and prose in one batch. Do not ask for per-skill
+  overrides. Write ~/.cursor/rules/ostack-models.mdc, validate it before
+  writing, and report the resolved path. Do not read or edit pstack's model
+  rule.
+
+assert:
+  output_contains:
+    - "ostack-models.mdc"
+    - "inherit"
+  tools_not_called:
+    - "glab"
+    - "acli"
+  custom: |
+    set -eu
+    rule="$HOME/.cursor/rules/ostack-models.mdc"
+    test -f "$rule"
+    # always-applied is the whole mechanism: without it nothing loads the roles
+    grep -qx 'alwaysApply: true' "$rule"
+    for role in exploration implementation judgment prose; do
+      grep -qx "$role: inherit" "$rule"
+    done
+    # pstack owns its own rule and must be untouched
+    grep -qx 'feature, refactoring: pstack-slug' "$HOME/.cursor/rules/pstack-models.mdc"

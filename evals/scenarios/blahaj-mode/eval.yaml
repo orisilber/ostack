@@ -1,0 +1,35 @@
+skill: blahaj-mode
+description: Runs the static and YAML evaluation layers without an external write.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  mkdir -p evals
+  cat > evals/lint.sh <<'SH'
+  #!/usr/bin/env bash
+  set -eu
+  touch "$WORK/.lint-ran"
+  SH
+  cat > evals/run.sh <<'SH'
+  #!/usr/bin/env bash
+  set -eu
+  touch "$WORK/.scenario-ran"
+  SH
+  chmod +x evals/lint.sh evals/run.sh
+  echo '# fixture' > README.md
+  git add -A && git commit -qm init
+
+prompt: |
+  Use blahaj-mode to run the skill-library evaluation gate and the relevant
+  local YAML scenarios. Report failures; do not open an MR.
+
+assert:
+  output_contains:
+    - "Route: eval -> local-change"
+  tools_not_called:
+    - "glab mr"
+  custom: |
+    set -eu
+    test -e "$WORK/.lint-ran"
+    test -e "$WORK/.scenario-ran"

@@ -242,9 +242,9 @@ done
 
 bash "$ROOT/tests/install-upgrade.sh" || err "installer upgrade fixtures failed"
 
-# ---------------------------------------------------- ostack-mode contracts
-bash "$SKILLS/ostack-mode/scripts/validate.sh" --root "$ROOT" || err "ostack-mode validator failed"
-bash "$ROOT/evals/fixtures/ostack-mode-validator/run.sh" || err "ostack-mode validator fixtures failed"
+# ---------------------------------------------------- blahaj-mode contracts
+bash "$SKILLS/blahaj-mode/scripts/validate.sh" --root "$ROOT" || err "blahaj-mode validator failed"
+bash "$ROOT/evals/fixtures/blahaj-mode-validator/run.sh" || err "blahaj-mode validator fixtures failed"
 
 # A route scenario must prove an observable effect or preserved invariant. An
 # output-only assertion can pass when an agent merely repeats the playbook.
@@ -256,9 +256,9 @@ while IFS= read -r scenario; do
 		}
 		END { exit found ? 0 : 1 }
 	' "$scenario"; then
-		err "ostack-mode scenario has no fail-fast executable evidence: ${scenario#$ROOT/}"
+		err "blahaj-mode scenario has no fail-fast executable evidence: ${scenario#$ROOT/}"
 	fi
-done < <(find "$ROOT/evals/scenarios/ostack-mode" -type f -name '*.yaml' -print | sort)
+done < <(find "$ROOT/evals/scenarios/blahaj-mode" -type f -name '*.yaml' -print | sort)
 
 # ------------------------------------------------------------------- summary
 echo

@@ -1,0 +1,42 @@
+skill: blahaj-mode
+description: Requires architect for a public cross-module feature boundary.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  mkdir -p src tests
+  cat > src/api.py <<'PY'
+  def parse(value):
+      return value.strip().split(',')
+  PY
+  cat > tests/check.sh <<'SH'
+  #!/usr/bin/env bash
+  set -eu
+  PYTHONPATH=. python3 -c 'from src.api import parse; from src.parser import Parser; assert parse("a,b") == ["a", "b"]; assert Parser().parse("x,y") == ["x", "y"]'
+  touch "$WORK/.verify-ran"
+  SH
+  chmod +x tests/check.sh
+  cat > AGENTS.md <<'MD'
+  # Fixture repo
+
+  ## Checks
+  - test: `bash tests/check.sh`
+  MD
+  git add -A && git commit -qm init
+
+prompt: |
+  Use blahaj-mode to add a public Parser type in src/parser.py and move the
+  implementation across modules while preserving src.api.parse() as the public
+  compatibility function. Keep this as a local feature change and run the
+  repository check. Do not open an MR.
+
+assert:
+  output_contains:
+    - "Route: feature -> local-change"
+    - "architect"
+  custom: |
+    set -eu
+    test -s src/parser.py
+    test -e "$WORK/.verify-ran"
+    PYTHONPATH=. python3 -c 'from src.api import parse; from src.parser import Parser; assert parse("a,b") == ["a", "b"]; assert Parser().parse("x,y") == ["x", "y"]'
