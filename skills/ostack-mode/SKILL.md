@@ -87,12 +87,22 @@ or feature recipes into this coordinator. If a requested outcome would require
 an unauthorized external write, stop at the safe boundary and explain what
 remains.
 
-## Model configuration (reserved contract)
+## Model configuration
 
-Model-aware leaf skills may read the canonical configuration at
-`$OSTACK_CONFIG_HOME/models.json` or, when the variable is unset,
-`~/.config/ostack/models.json`. Missing or invalid configuration falls back to
-the host's inherited model and is reported once. A panel uses each configured
-entry once; a single-agent role uses the first entry. `inherit` is never mixed
-with another model ID. The example schema lives in
-[`references/models.example.json`](references/models.example.json).
+Delegating skills run their subagents on configured models rather than always
+inheriting the parent. `setup-ostack-mode` writes that configuration to
+`~/.cursor/rules/ostack-models.mdc` as an always-applied Cursor rule, so Cursor
+loads its role lines into every session.
+
+Resolve a role by taking its skill-role line (`how critics`), then its generic
+role line (`judgment`), then `inherit`. A panel runs one subagent per entry. A
+single-agent role uses the first entry. A resolved `inherit` means omit the
+subagent `model` argument and run on the parent chat model, and no line mixes
+`inherit` with a model ID. When the host rejects an entry, drop it and run the
+rest, falling back to `inherit` only when nothing is left. Do not swap in a
+nearby model ID, and do not read a successful delegation as proof of which
+model ran, because the host may substitute one without saying so.
+
+Hosts other than Cursor do not load `.mdc` rules, so every role there resolves
+to `inherit` and delegation runs on the parent model. This skill keeps the role
+labels and a filled-in example under `references/`.

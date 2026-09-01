@@ -36,10 +36,14 @@ route (`investigation`, `bug-fix`, `large-feature`, `feature`, `refactoring`,
 `Route: <task-kind> -> <outcome>`, and runs the matching playbook. It never
 opens an MR, merges, or releases unless you ask for that outcome.
 
-Configure delegated model roles with `setup-ostack-mode`, which reads
-`~/.config/ostack/models.json` (override with `OSTACK_CONFIG_HOME`). See
-[`skills/ostack-mode/references/models.example.json`](skills/ostack-mode/references/models.example.json)
-for the shape.
+The model-aware skills (`architect`, `arena`, `how`, `interrogate`, `swarm`,
+`why`) run their subagents on configured models. Configure them in Cursor with
+`setup-ostack-mode`, which writes `~/.cursor/rules/ostack-models.mdc` as an
+always-applied rule, so Cursor loads it into new sessions on its own.
+[`skills/ostack-mode/references/models.example.md`](skills/ostack-mode/references/models.example.md)
+has the shape. A role with no line falls back to its generic role line, then to
+`inherit`. Hosts that do not load `.mdc` rules resolve everything to `inherit`
+and delegate on the parent model.
 
 ## How skills participate
 

@@ -23,7 +23,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 ROUTES="${ROUTES:-$ROOT/skills/ostack-mode/references/routes.json}"
-MODELS="${MODELS:-$ROOT/skills/ostack-mode/references/models.example.json}"
+MODELS="${MODELS:-$ROOT/skills/ostack-mode/references/models.example.md}"
 OSTACK_SKILLS="$ROOT/skills/ostack-mode"
 fail=0
 
@@ -47,9 +47,6 @@ require_file "$MODELS" 'model example missing' || true
 
 if [ -f "$ROUTES" ] && ! jq empty "$ROUTES" >/dev/null 2>&1; then
 	usage_error 'route registry is not valid JSON'
-fi
-if [ -f "$MODELS" ] && ! jq empty "$MODELS" >/dev/null 2>&1; then
-	usage_error 'model example is not valid JSON'
 fi
 
 if [ -f "$ROUTES" ] && jq empty "$ROUTES" >/dev/null 2>&1; then
@@ -148,34 +145,77 @@ if [ -f "$ROUTES" ] && jq empty "$ROUTES" >/dev/null 2>&1; then
 	fi
 fi
 
-if [ -f "$MODELS" ] && jq empty "$MODELS" >/dev/null 2>&1; then
-	[ "$(jq -r '.version // empty' "$MODELS")" = 1 ] || usage_error 'model example version must be 1'
-	[ "$(jq -r '.roles | type' "$MODELS")" = object ] || usage_error 'model roles must be an object'
-	for role in exploration implementation judgment prose; do
-		[ "$(jq -r --arg r "$role" '.roles[$r] | type' "$MODELS")" = array ] || usage_error "model roles.$role must be an array"
-	done
-	model_sections=(roles)
-	if jq -e 'has("overrides")' "$MODELS" >/dev/null; then
-		model_sections+=(overrides)
+# The model configuration is an always-applied Cursor rule, not a data file a
+# skill has to go read. Validate the example rule's shape and the role labels
+# the delegating skills resolve against.
+MODEL_ROLES=(
+	"exploration" "implementation" "judgment" "prose"
+	"architect runners" "arena runners" "arena cross-judge"
+	"how explorer" "how explainer" "how critics"
+	"interrogate reviewers" "swarm workers"
+	"why investigators" "why synthesizer"
+)
+
+if [ -f "$MODELS" ]; then
+	rule="$(awk '/^```$/{ inblock = !inblock; next } inblock' "$MODELS")"
+	if [ -z "$rule" ]; then
+		usage_error 'model example has no fenced rule block'
+	else
+		grep -qx 'alwaysApply: true' <<< "$rule" || \
+			usage_error 'model example rule must set alwaysApply: true'
+
+		declare -A seen_roles=()
+		while IFS= read -r line; do
+			case "$line" in ''|'#'*|'---'|'description:'*|'alwaysApply:'*) continue ;; esac
+			case "$line" in *:*) ;; *) usage_error "model rule line is not 'role: value': $line"; continue ;; esac
+			role="${line%%:*}"
+			values="${line#*:}"
+
+			known=0
+			for candidate in "${MODEL_ROLES[@]}"; do
+				[ "$role" = "$candidate" ] && known=1 && break
+			done
+			[ "$known" -eq 1 ] || { usage_error "model rule has an unknown role: $role"; continue; }
+			[ -z "${seen_roles[$role]+x}" ] || usage_error "model rule role is duplicated: $role"
+			seen_roles[$role]=1
+
+			count=0 inherit=0
+			declare -A seen_values=()
+			IFS=',' read -ra entries <<< "$values"
+			for entry in "${entries[@]}"; do
+				entry="$(printf '%s' "$entry" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+				[ -n "$entry" ] || { usage_error "model rule role '$role' has an empty entry"; continue; }
+				[ -z "${seen_values[$entry]+x}" ] || usage_error "model rule role '$role' repeats entry: $entry"
+				seen_values[$entry]=1
+				[ "$entry" = inherit ] && inherit=1
+				count=$((count + 1))
+			done
+			unset seen_values
+			[ "$count" -gt 0 ] || usage_error "model rule role '$role' has no value"
+			[ "$inherit" -eq 0 ] || [ "$count" -eq 1 ] || \
+				usage_error "model rule role '$role' combines inherit with a model ID"
+		done <<< "$rule"
+
+		# Every role a delegating skill resolves must be documented, or setup
+		# writes a line nothing reads.
+		for role in "${MODEL_ROLES[@]}"; do
+			[ -n "${seen_roles[$role]+x}" ] || usage_error "model example omits role: $role"
+		done
 	fi
-	for section in "${model_sections[@]}"; do
-		[ "$(jq -r --arg s "$section" '.[$s] | type' "$MODELS")" = object ] || { usage_error "model '$section' must be an object"; continue; }
-		while IFS= read -r key; do
-			values="$(jq -c --arg s "$section" --arg k "$key" '.[$s][$k]' "$MODELS")"
-			[ "$(jq -r 'type' <<< "$values")" = array ] || { usage_error "model $section.$key must be an array"; continue; }
-			count="$(jq -r 'length' <<< "$values")"
-			[ "$count" -gt 0 ] || usage_error "model $section.$key has an empty array"
-			unique="$(jq -r 'unique | length' <<< "$values")"
-			[ "$count" = "$unique" ] || usage_error "model $section.$key contains duplicate entries"
-			if jq -e 'any(.[]; . == "inherit")' <<< "$values" >/dev/null && [ "$count" -ne 1 ]; then
-				usage_error "model $section.$key combines inherit with another model ID"
-			fi
-			if jq -e 'any(.[]; (type != "string" or length == 0))' <<< "$values" >/dev/null; then
-				usage_error "model $section.$key contains an empty or non-string model ID"
-			fi
-		done < <(jq -r --arg s "$section" '.[$s] | keys[]?' "$MODELS")
-	done
 fi
+
+# Every delegating skill must name the rule and pass a model, or the
+# configuration silently stops reaching subagents (the bug this file guards).
+for caller in architect arena how interrogate swarm why; do
+	caller_file="$ROOT/skills/$caller/SKILL.md"
+	[ -f "$caller_file" ] || continue
+	grep -qF '~/.cursor/rules/ostack-models.mdc' "$caller_file" || \
+		usage_error "$caller does not resolve models from the ostack rule"
+	grep -qF 'then `inherit`' "$caller_file" || \
+		usage_error "$caller does not fall back to inherit"
+	grep -qF 'subagent `model` argument' "$caller_file" || \
+		usage_error "$caller never passes the resolved model to a subagent"
+done
 
 # These are the ostack-managed coordinator and callers that previously
 # consumed pstack's model roster. Keep this check scoped to those paths rather
