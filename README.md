@@ -95,6 +95,7 @@ their own task when the need arises.
 | `create-verification-skill` | Generate a project-local verifier and feature map |
 | `maintain-verification-skill` | Audit a project-local verifier against source and live behavior |
 | `pick-next-task` | Claim the next ready Jira item |
+| `no-comments` | Remove comments that cannot prove a narrow exception and fix the code smells they expose |
 | `typescript-best-practices` | Apply TypeScript type discipline when TypeScript files are in scope |
 
 ### Explicit invocation
@@ -104,7 +105,7 @@ trigger. Invoke them by name or slash command when no active workflow already
 calls for them:
 
 `blahaj-mode`, `setup-blahaj-mode`, `architect`, `arena`, `blast-radius`,
-`create-verification-skill`, `interrogate`, `maintain-verification-skill`,
+`create-verification-skill`, `interrogate`, `maintain-verification-skill`, `no-comments`,
 `recall`, `show-me-your-work`, `swarm`, and `technical-writing`.
 
 For example, `/blahaj-mode Fix the pagination bug` starts the workflow, while
@@ -154,6 +155,7 @@ below for what changed).
 | `arena` | pstack | N parallel candidates at one artifact, judged, then grafted into a single base |
 | `swarm` | pstack | N parallel workers over slices or races, drained into one report |
 | `interrogate` | pstack | Adversarial review panel over a diff, sorted into act-on / consider / noted / dismissed |
+| `no-comments` | pstack | Remove unjustified comments and turn accepted findings into root-cause fixes |
 
 ### Safety & delivery
 
@@ -196,7 +198,7 @@ step if you want the agent doing the mechanics under supervision.
 ## Provenance
 
 `blahaj-mode`, `principles`, `how`, `why`, `blast-radius`, `architect`, `arena`,
-`swarm`, `interrogate`, `recall`, `show-me-your-work`, `unslop`,
+`swarm`, `interrogate`, `no-comments`, `recall`, `show-me-your-work`, `unslop`,
 `technical-writing`, `typescript-best-practices`, `create-verification-skill`,
 and `maintain-verification-skill` are adapted from
 [pstack](https://github.com/poteto/pstack) by Lauren Tan (MIT). See
@@ -224,7 +226,7 @@ and `maintain-verification-skill` are adapted from
 Not vendored as pstack workflows, deliberately: the full `poteto-mode` and
 `figure-it-out` playbook sets (tied to Graphite and GitHub), `setup-pstack`,
 `automate-me`, `reflect`, `teach`, `bro`, `no-comments`,
-`tdd`.
+`tdd`, `no-comments`.
 
 `make-bot-ui` is also excluded. It depends on Cursor-team internals, including
 a Grok Bot webhook, `update_state`, and sender-key handling. Ostack does not
