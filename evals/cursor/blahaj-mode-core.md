@@ -156,11 +156,11 @@ then set the result to `PASS` or `FAIL`.
 
 | Field | Record |
 |---|---|
-| Setup | Use a non-frontend fixture with a small requested behavior and a repository-defined verification command. Start clean. |
+| Setup | Use a non-frontend fixture with a small requested behavior, existing repository checks, and a real-interface acceptance command separate from the permanent test suite. Start clean. |
 | Prompt | `Add this behavior.` |
 | Observable first progress line | `Route: feature -> local-change` |
-| Expected route and tail | Feature base with the data shape named before implementation, then `verify-changes`; no MR or push. Use `architect` only if the boundary really changes. |
-| Evidence to capture | Named data shape, implementation diff, repository-specific verification, `VERIFY: PASS`, and no frontend-command assumption. |
+| Expected route and tail | Name the data shape, implement without feature-specific tests, pass the real-interface acceptance command, invoke `feature-retention-tests`, then run `verify-changes`; no MR or push. Use `architect` only if the boundary really changes. |
+| Evidence to capture | Named data shape, implementation diff, acceptance output timestamped before the first retention-test edit, retained behavior, repository-specific verification, `VERIFY: PASS`, and no frontend-command assumption. |
 | Pass/fail notes | `UNRUN — TODO` |
 
 ### C12 — Refactoring local change
@@ -181,8 +181,8 @@ then set the result to `PASS` or `FAIL`.
 | Setup | Use a Spark fixture (or the repository's equivalent non-frontend job) with its own manifest/CI verification instructions. Ensure no JavaScript package manifest is present. |
 | Prompt | `Change this Spark job.` |
 | Observable first progress line | `Route: feature -> local-change` |
-| Expected route and tail | Feature base and `verify-changes`; discover the repository's Spark/JVM command from its instructions or CI. Do not invent `npm`, `pytest`, or a frontend command. |
-| Evidence to capture | Discovery source, exact verification command, successful result, changed files, and absence of unrelated frontend commands. |
+| Expected route and tail | Feature base with implementation and real job acceptance before retention tests, followed by `verify-changes`; discover the repository's Spark/JVM command from its instructions or CI. Do not invent `npm`, `pytest`, or a frontend command. |
+| Evidence to capture | Discovery source, implementation-before-retention ordering, exact verification command, successful result, changed files, and absence of unrelated frontend commands. |
 | Pass/fail notes | `UNRUN — TODO` |
 
 ### C14 — No matching route
