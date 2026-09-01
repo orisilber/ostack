@@ -1,0 +1,25 @@
+skill: blahaj-mode
+description: Keeps an unsupported task on the safe no-route fallback.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  echo '# fixture' > README.md
+  git add -A && git commit -qm init
+
+prompt: |
+  Use blahaj-mode for this unusual release ceremony. Do not edit files, open
+  an MR, or run a playbook; just tell me what information is missing.
+
+assert:
+  output_contains:
+    - "Route: none"
+  tools_not_called:
+    - "git add"
+    - "git commit"
+    - "glab mr"
+  custom: |
+    set -eu
+    git diff --quiet
+    test -z "$(git status --porcelain)"
