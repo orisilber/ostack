@@ -1,23 +1,33 @@
 skill: blahaj-mode
-description: Decomposes a large feature locally and swarms only disjoint ready work.
+description: Integrates and accepts a large feature before adding retention tests.
 
 setup: |
   git init -q -b main
   git config user.email dev@ostack.dev
   git config user.name dev
-  mkdir -p src/parsing src/validation src/rendering tests
-  cat > tests/check.sh <<'SH'
+  mkdir -p scripts src/parsing src/validation src/rendering tests
+  cat > tests/test_existing.py <<'PY'
+  import unittest
+
+  class ExistingTest(unittest.TestCase):
+      def test_fixture_is_healthy(self):
+          self.assertTrue(True)
+  PY
+  cat > scripts/accept-feature.sh <<'SH'
   #!/usr/bin/env bash
   set -eu
   PYTHONPATH=. python3 -c 'from src.pipeline import run; assert run("a,b") == "a|b"'
-  touch "$WORK/.verify-ran"
+  [ -e "$WORK/.acceptance-ran" ] || touch "$WORK/.acceptance-ran"
   SH
-  chmod +x tests/check.sh
+  chmod +x scripts/accept-feature.sh
   cat > AGENTS.md <<'MD'
   # Fixture repo
 
   ## Checks
-  - test: `bash tests/check.sh`
+  - test: `python3 -m unittest discover -s tests`
+
+  ## Feature acceptance
+  - integrated pipeline: `bash scripts/accept-feature.sh`
   MD
   git add -A && git commit -qm init
 
@@ -28,13 +38,16 @@ prompt: |
   src/pipeline.py as run(value). The three parts have independent acceptance
   checks after their shared list-of-strings contract is defined, and the
   complete feature is too large for one agent session. Keep the decomposition
-  local, implement every part, integrate it, and run the repository check. Do
-  not use Jira or open an MR.
+  local, implement every part without worker-authored tests, integrate it,
+  exercise the declared integrated acceptance, then add retention coverage in
+  tests/test_pipeline.py. Run the repository checks. Do not use Jira or open an
+  MR.
 
 assert:
   output_contains:
     - "Route: large-feature -> local-change"
     - "swarm"
+    - "retention"
     - "verify"
   tools_not_called:
     - "acli jira"
@@ -45,5 +58,9 @@ assert:
     test -s src/validation/validator.py
     test -s src/rendering/renderer.py
     test -s src/pipeline.py
-    test -e "$WORK/.verify-ran"
-    PYTHONPATH=. python3 -c 'from src.pipeline import run; assert run("a,b") == "a|b"'
+    test -e "$WORK/.acceptance-ran"
+    test -s tests/test_pipeline.py
+    test tests/test_pipeline.py -nt "$WORK/.acceptance-ran"
+    test "$(find tests -maxdepth 1 -type f -name 'test_*.py' | wc -l | tr -d ' ')" -eq 2
+    bash scripts/accept-feature.sh
+    python3 -m unittest discover -s tests
