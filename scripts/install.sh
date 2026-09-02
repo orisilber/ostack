@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
-# Install every skill in this checkout into every supported host:
+# Install every skill and subagent in this checkout into every supported host:
 #   ~/.agents/skills  (canonical runtime location)
 #   ~/.claude/skills  (Claude Code)
 #   ~/.cursor/skills  (Cursor)
-# Skills are COPIED, not symlinked, so the clone can be deleted after install.
-# Re-running replaces current skills and removes retired copies with an .ostack
-# marker. Unmarked directories and symlinks are left alone and reported.
+#   ~/.codex/agents, ~/.claude/agents, ~/.cursor/agents
+# Files are COPIED, not symlinked, so the clone can be deleted after install.
+# Re-running replaces current items and removes retired copies with an .ostack
+# marker. Unmarked paths and symlinks are left alone and reported.
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INSTALL_HOME="${OSTACK_INSTALL_HOME:-$HOME}"
 AGENTS_HOME="${AGENTS_HOME:-$INSTALL_HOME/.agents}"
-TARGETS=("$AGENTS_HOME/skills" "$INSTALL_HOME/.claude/skills" "$INSTALL_HOME/.cursor/skills")
+SKILL_TARGETS=("$AGENTS_HOME/skills" "$INSTALL_HOME/.claude/skills" "$INSTALL_HOME/.cursor/skills")
+AGENT_TARGETS=("$INSTALL_HOME/.codex/agents" "$INSTALL_HOME/.claude/agents" "$INSTALL_HOME/.cursor/agents")
 DRY_RUN=0
 
 for arg in "$@"; do
@@ -35,7 +37,7 @@ if [ ! -d "$REPO_DIR/skills" ]; then
 	exit 1
 fi
 
-for target in "${TARGETS[@]}"; do
+for target in "${SKILL_TARGETS[@]}" "${AGENT_TARGETS[@]}"; do
 	mkdir -p "$target"
 done
 
@@ -50,7 +52,7 @@ for skill_dir in "$REPO_DIR"/skills/*/; do
 	[ -f "$skill_dir/SKILL.md" ] || continue
 	source="${skill_dir%/}"
 
-	for target in "${TARGETS[@]}"; do
+	for target in "${SKILL_TARGETS[@]}"; do
 		dest="$target/$name"
 		if [ -L "$dest" ]; then
 			echo "skip $name in $target: symlink is not owned by ostack" >&2
@@ -73,7 +75,7 @@ for skill_dir in "$REPO_DIR"/skills/*/; do
 	[ "$DRY_RUN" = 1 ] || installed=$((installed + 1))
 done
 
-for target in "${TARGETS[@]}"; do
+for target in "${SKILL_TARGETS[@]}"; do
 	for dest in "$target"/*; do
 		[ -e "$dest" ] || [ -L "$dest" ] || continue
 		[ -L "$dest" ] && continue
@@ -91,16 +93,68 @@ for target in "${TARGETS[@]}"; do
 	done
 done
 
+installed_agents=0
+if [ -d "$REPO_DIR/agents" ]; then
+	for source in "$REPO_DIR"/agents/*.md; do
+		[ -f "$source" ] || continue
+		name="$(basename "$source")"
+		for target in "${AGENT_TARGETS[@]}"; do
+			dest="$target/$name"
+			marker="$dest.ostack"
+			if [ -L "$dest" ]; then
+				echo "skip agent $name in $target: symlink is not owned by ostack" >&2
+				skipped=$((skipped + 1))
+				continue
+			fi
+			if [ -e "$dest" ] && [ ! -f "$marker" ]; then
+				echo "skip agent $name in $target: exists but was not installed by ostack" >&2
+				skipped=$((skipped + 1))
+				continue
+			fi
+			if [ "$DRY_RUN" = 1 ]; then
+				echo "would install agent $name -> $target"
+				continue
+			fi
+			cp "$source" "$dest"
+			touch "$marker"
+		done
+		[ "$DRY_RUN" = 1 ] || installed_agents=$((installed_agents + 1))
+	done
+fi
+
+for target in "${AGENT_TARGETS[@]}"; do
+	for marker in "$target"/*.md.ostack; do
+		[ -f "$marker" ] || continue
+		dest="${marker%.ostack}"
+		name="$(basename "$dest")"
+		[ -f "$REPO_DIR/agents/$name" ] && continue
+		if [ -L "$dest" ]; then
+			rm -f "$marker"
+			continue
+		fi
+		if [ "$DRY_RUN" = 1 ]; then
+			echo "would remove agent $name from $target"
+		else
+			rm -f "$dest" "$marker"
+			echo "removed agent $name from $target"
+		fi
+		removed=$((removed + 1))
+	done
+done
+
 echo
 if [ "$DRY_RUN" = 1 ]; then
-	echo "Dry run: $(( $(ls -d "$REPO_DIR"/skills/*/ 2>/dev/null | wc -l) )) skill(s) x ${#TARGETS[@]} hosts; $removed retired skill(s) would be removed."
+	agent_count="$(find "$REPO_DIR/agents" -maxdepth 1 -type f -name '*.md' 2>/dev/null | wc -l | tr -d ' ')"
+	echo "Dry run: $(( $(ls -d "$REPO_DIR"/skills/*/ 2>/dev/null | wc -l) )) skill(s) x ${#SKILL_TARGETS[@]} hosts; $agent_count agent(s) x ${#AGENT_TARGETS[@]} hosts; $removed retired item(s) would be removed."
 	exit 0
 fi
 
-echo "Installed $installed skill(s) into ${#TARGETS[@]} locations:"
-printf '  %s\n' "${TARGETS[@]}"
+echo "Installed $installed skill(s) into ${#SKILL_TARGETS[@]} locations:"
+printf '  %s\n' "${SKILL_TARGETS[@]}"
+echo "Installed $installed_agents agent(s) into ${#AGENT_TARGETS[@]} locations:"
+printf '  %s\n' "${AGENT_TARGETS[@]}"
 if [ "$removed" -gt 0 ]; then
-	echo "Removed $removed retired skill(s)."
+	echo "Removed $removed retired item(s)."
 fi
 if [ "$skipped" -gt 0 ]; then
 	echo "Skipped $skipped foreign path(s) (see warnings above)."

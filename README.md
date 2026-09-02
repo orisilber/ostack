@@ -1,12 +1,15 @@
 # ostack
 
-Personal agent skills. Two layers: the procedure that gets work from a ticket to
+Personal agent skills and subagents. Two layers: the procedure that gets work from a ticket to
 a merged MR, and the judgment that decides whether what shipped was any good.
 
 Skills live in [`skills/`](skills/) as standard `SKILL.md` folders (Cursor /
 Claude Code / opencode compatible). Written Cursor-first: multi-model panels and
 `~/.cursor` paths are the default path, but every skill names its fallback for
 single-vendor hosts, so nothing silently no-ops in Claude Code.
+
+Named subagents live in [`agents/`](agents/) and are installed for Cursor,
+Claude Code, and Codex.
 
 ## Install
 
@@ -20,10 +23,12 @@ Nushell:
 let tmp = (mktemp -d); git clone -q git@github.com:orisilber/ostack.git $"($tmp)/ostack"; bash $"($tmp)/ostack/scripts/install.sh"; rm -rf $tmp
 ```
 
-One line, nothing left behind but the skills: copies everything into
-`~/.agents/skills`, `~/.claude/skills`, and `~/.cursor/skills`, then deletes
-the clone. Re-run anytime to upgrade or drop retired skills. `--dry-run`
-previews; `AGENTS_HOME` or `OSTACK_INSTALL_HOME` redirect the target.
+One line, nothing left behind but the skills and agents: copies skills into
+`~/.agents/skills`, `~/.claude/skills`, and `~/.cursor/skills`; copies
+agents into `~/.codex/agents`, `~/.claude/agents`, and `~/.cursor/agents`;
+then deletes the clone. Re-run anytime to upgrade or drop retired items.
+`--dry-run` previews; `AGENTS_HOME` or `OSTACK_INSTALL_HOME` redirect the
+target.
 
 ## Orchestration
 
