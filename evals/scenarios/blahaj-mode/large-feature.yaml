@@ -17,7 +17,14 @@ setup: |
   #!/usr/bin/env bash
   set -eu
   PYTHONPATH=. python3 -c 'from src.pipeline import run; assert run("a,b") == "a|b"'
-  [ -e "$WORK/.acceptance-ran" ] || touch "$WORK/.acceptance-ran"
+  if [ ! -e "$WORK/.acceptance-ran" ]; then
+    unexpected="$(find tests -maxdepth 1 -type f -name 'test_*.py' ! -name test_existing.py -print -quit)"
+    [ -z "$unexpected" ] || {
+      echo "feature test existed before first integrated acceptance: $unexpected" >&2
+      exit 1
+    }
+    touch "$WORK/.acceptance-ran"
+  fi
   SH
   chmod +x scripts/accept-feature.sh
   cat > AGENTS.md <<'MD'
@@ -60,7 +67,6 @@ assert:
     test -s src/pipeline.py
     test -e "$WORK/.acceptance-ran"
     test -s tests/test_pipeline.py
-    test tests/test_pipeline.py -nt "$WORK/.acceptance-ran"
     test "$(find tests -maxdepth 1 -type f -name 'test_*.py' | wc -l | tr -d ' ')" -eq 2
     bash scripts/accept-feature.sh
     python3 -m unittest discover -s tests
