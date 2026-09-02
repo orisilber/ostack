@@ -1,0 +1,35 @@
+skill: painpoints
+description: Counts a clear-outcome repository how failure without treating missing implementation detail as user fault.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  mkdir -p .agents/skills/verify-app
+  cat > .agents/skills/verify-app/SKILL.md <<'MD'
+  ---
+  name: verify-app
+  description: Verify the fixture app.
+  ---
+  Run `./verify.sh` after changing user-facing behavior.
+  MD
+  echo '#!/bin/sh' > verify.sh
+  echo 'exit 0' >> verify.sh
+  chmod +x verify.sh
+  git add -A && git commit -qm init
+
+prompt: |
+  Conversation packet:
+  User: Implement the new save behavior completely and verify that it works.
+  Assistant: I changed the save handler and the unit tests pass, so it is done.
+  User: You did not run the repository verifier. It is documented in .agents/skills/verify-app.
+
+  Run /painpoints over this conversation.
+
+assert:
+  output_contains:
+    - "verification"
+    - "verify-app"
+    - "repository"
+  output_not_contains:
+    - "user forgot"
