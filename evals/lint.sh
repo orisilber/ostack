@@ -219,6 +219,15 @@ grep -qF 'named `comment-sicko` subagent' "$SKILLS/no-comments/SKILL.md" || \
 	err "contract: no-comments must delegate to the named comment-sicko subagent"
 [ -f "$ROOT/agents/comment-sicko.md" ] || \
 	err "contract: comment-sicko subagent is missing"
+for outcome in mr-open merge-ready; do
+	first_tail="$(jq -r --arg outcome "$outcome" '.outcomeTails[$outcome][0] // empty' \
+		"$SKILLS/blahaj-mode/references/routes.json")"
+	[ "$first_tail" = 'skill:no-comments' ] || \
+		err "contract: $outcome must run no-comments before the MR review tail"
+done
+grep -qF 'preceding `no-comments` outcome-tail step' \
+	"$SKILLS/blahaj-mode/playbooks/opening-an-mr.md" || \
+	err "contract: opening-an-mr must consume the no-comments review gate"
 
 # Feature work proves the implementation before permanent retention coverage.
 grep -qF 'without adding or editing' "$SKILLS/blahaj-mode/playbooks/feature.md" || \

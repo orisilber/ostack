@@ -47,14 +47,26 @@ run_agent() {
 	esac
 }
 
-link_skills() {
-	local home="$1" src name dst
-	mkdir -p "$home/.claude/skills" "$home/.agents/skills"
+link_runtime() {
+	local home="$1" src name dst target
+	mkdir -p \
+		"$home/.agents/skills" "$home/.claude/skills" \
+		"$home/.codex/agents" "$home/.claude/agents" "$home/.cursor/agents"
 	for src in "$ROOT"/skills/*/; do
 		name="$(basename "$src")"
 		dst="${src%/}"
 		ln -sfn "$dst" "$home/.claude/skills/$name"
 		ln -sfn "$dst" "$home/.agents/skills/$name"
+	done
+	for src in "$ROOT"/agents/*.md; do
+		[ -f "$src" ] || continue
+		name="$(basename "$src")"
+		for target in \
+			"$home/.codex/agents" \
+			"$home/.claude/agents" \
+			"$home/.cursor/agents"; do
+			ln -sfn "$src" "$target/$name"
+		done
 	done
 }
 
@@ -95,7 +107,7 @@ for S in "${SCENARIOS[@]}"; do
 	export HOME WORK FIXTURES_DIR CALLS_LOG PROMPT_FILE OUT SANDBOX
 	mkdir -p "$HOME" "$WORK" "$FIXTURES_DIR"
 	touch "$CALLS_LOG"
-	link_skills "$HOME"
+	link_runtime "$HOME"
 
 	n_fixtures="$(jq -r '.fixtures // [] | length' <<< "$json")"
 	for ((i = 0; i < n_fixtures; i++)); do

@@ -71,6 +71,7 @@ You do not need to name them in the prompt.
 | `feature-retention-tests` | Add durable feature coverage only after accepted behavior works through the real interface |
 | `escalate` | Stop a route at a safety or authority boundary |
 | `how` and `why` | Recover runtime structure and design history |
+| `no-comments` | Review and clean the branch diff before an MR is opened or driven merge-ready |
 | `principles` | Review the shape of implementation and refactoring work |
 | `recall` | Reconstruct context for `session-pickup` |
 | `reproduce-first` | Establish failing evidence before a bug fix |
@@ -101,7 +102,6 @@ their own task when the need arises.
 | `create-verification-skill` | Generate a project-local verifier and feature map |
 | `maintain-verification-skill` | Audit a project-local verifier against source and live behavior |
 | `pick-next-task` | Claim the next ready Jira item |
-| `no-comments` | Remove comments that cannot prove a narrow exception and fix the code smells they expose |
 | `typescript-best-practices` | Apply TypeScript type discipline when TypeScript files are in scope |
 
 ### Explicit invocation
@@ -117,8 +117,8 @@ calls for them:
 For example, `/blahaj-mode Fix the pagination bug` starts the workflow, while
 `/interrogate Review this diff` runs the standalone review directly. Inside
 `blahaj-mode`, a selected playbook can include `architect`, `arena`, `recall`,
-`show-me-your-work`, `swarm`, or `technical-writing`; you do not need to invoke
-those skills again.
+`show-me-your-work`, `swarm`, `technical-writing`, or `no-comments`; you do not
+need to invoke those skills again.
 
 ## Skills
 

@@ -26,6 +26,12 @@ setup: |
   SH
   chmod +x tests/check.sh
   git add -A && git commit -qm init
+  git checkout -qb fix/mr-open
+  cat > branch-helper.sh <<'SH'
+  # Prepare the branch for review.
+  true
+  SH
+  git add branch-helper.sh && git commit -qm 'chore: add branch helper'
 
 prompt: |
   Use blahaj-mode to fix this bug: app.txt must contain "fixed". Reproduce it,
@@ -43,6 +49,7 @@ fixtures:
 assert:
   output_contains:
     - "Route: bug-fix -> mr-open"
+    - "no-comments"
     - "https://gitlab.example.com/ostack/-/merge_requests/8"
   tools_called:
     - "glab mr view"
@@ -50,6 +57,7 @@ assert:
   custom: |
     set -eu
     grep -qx fixed app.txt
+    grep -qx true branch-helper.sh
     test -e "$WORK/.verify-ran"
     reproduce_line="$(grep -n '^--- repo reproduce fail' "$CALLS_LOG" | head -1 | cut -d: -f1)"
     verify_line="$(grep -n '^--- repo verify pass' "$CALLS_LOG" | head -1 | cut -d: -f1)"
