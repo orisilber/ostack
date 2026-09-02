@@ -63,6 +63,7 @@ You do not need to name them in the prompt.
 | `babysit-gitlab-mr` | Run only for the explicit `merge-ready` outcome |
 | `decompose-epic` | Split work only when the source is a real Jira epic |
 | `e2e-verify` | Verify UI behavior or visual parity on a real UI |
+| `feature-retention-tests` | Add durable feature coverage only after accepted behavior works through the real interface |
 | `escalate` | Stop a route at a safety or authority boundary |
 | `how` and `why` | Recover runtime structure and design history |
 | `principles` | Review the shape of implementation and refactoring work |
@@ -129,6 +130,7 @@ below for what changed).
 | `decompose-epic` | ostack | Jira epic → atomic, conflict-free child tickets with acceptance criteria, disjoint file scopes, and real `Blocks` links |
 | `clarify-requirements` | ostack | One batched round of upfront questions per ticket, defaults included, then never interrupts |
 | `reproduce-first` | ostack | Bug tickets: an executable failing check before any fix, and the honest path when a unit test is the wrong tool |
+| `feature-retention-tests` | ostack | Features: permanent behavioral coverage only after implementation and real-interface acceptance |
 | `create-verification-skill` | pstack | Generate and prove a project-local verifier with exact checks, control instructions, and a user-facing feature map |
 | `maintain-verification-skill` | pstack | Audit a project-local verifier against source and live behavior without changing product code |
 | `verify-changes` | ostack | Pre-push gate: run declared checks and affected project-local verification, block on failure |

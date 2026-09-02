@@ -207,6 +207,16 @@ grep -q 'last_seen_note' "$SKILLS/babysit-gitlab-mr/SKILL.md" || \
 grep -qE 'declared budget|budget.*declared' "$SKILLS/escalate/SKILL.md" || \
 	err "contract: escalate must allow calling skills to declare their own budget"
 
+# Feature work proves the implementation before permanent retention coverage.
+grep -qF 'without adding or editing' "$SKILLS/blahaj-mode/playbooks/feature.md" || \
+	err "contract: feature playbook must defer feature-specific tests"
+grep -qF 'feature-retention-tests' "$SKILLS/blahaj-mode/playbooks/feature.md" || \
+	err "contract: feature playbook must invoke retention coverage after acceptance"
+grep -qF 'Workers must not add or edit' "$SKILLS/blahaj-mode/playbooks/large-feature.md" || \
+	err "contract: large-feature workers must not author feature tests"
+grep -qF 'Start only after the caller provides' "$SKILLS/feature-retention-tests/SKILL.md" || \
+	err "contract: retention tests require completed, accepted behavior"
+
 # verify-changes' retry loop must match escalate's soft-stop default, numerically
 escalate_n="$(grep -oE 'default N=[0-9]+' "$SKILLS/escalate/SKILL.md" | grep -oE '[0-9]+' | head -1)"
 verify_n="$(grep -oE 'Loop max [0-9]+ attempts' "$SKILLS/verify-changes/SKILL.md" | grep -oE '[0-9]+' | head -1)"
