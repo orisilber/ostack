@@ -1,6 +1,8 @@
 ---
 name: blahaj-mode
 description: Cursor-first orchestration for investigation, bug-fix, feature, and refactoring work. Classifies the requested outcome, selects only an implemented route, and stops at the authorized boundary.
+icon: paw
+color: magenta
 disable-model-invocation: true
 ---
 
