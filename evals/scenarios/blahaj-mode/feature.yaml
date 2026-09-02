@@ -17,7 +17,13 @@ setup: |
   #!/usr/bin/env bash
   set -eu
   PYTHONPATH=. python3 -c 'from helper import greet; assert greet("Ori") == "Hello, Ori"'
-  [ -e "$WORK/.acceptance-ran" ] || touch "$WORK/.acceptance-ran"
+  if [ ! -e "$WORK/.acceptance-ran" ]; then
+    [ ! -e tests/test_helper.py ] || {
+      echo 'retention test existed before first feature acceptance' >&2
+      exit 1
+    }
+    touch "$WORK/.acceptance-ran"
+  fi
   SH
   chmod +x scripts/accept-feature.sh
   cat > AGENTS.md <<'MD'
@@ -52,6 +58,5 @@ assert:
     test -s helper.py
     test -e "$WORK/.acceptance-ran"
     test -s tests/test_helper.py
-    test tests/test_helper.py -nt "$WORK/.acceptance-ran"
     bash scripts/accept-feature.sh
     python3 -m unittest discover -s tests
