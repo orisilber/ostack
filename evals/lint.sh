@@ -48,6 +48,15 @@ for dir in "$SKILLS"/*/; do
 	done < <(grep -oE '(references/[A-Za-z0-9._/-]+\.(md|tsv|json|yaml|yml))' "$f" | sort -u)
 done
 
+# -------------------------------------------------------------------- agents
+for f in "$ROOT"/agents/*.md; do
+	[ -f "$f" ] || continue
+	name="$(basename "$f" .md)"
+	grep -q "^name: $name$" "$f" || err "agent: frontmatter name must match $name"
+	grep -q '^description:' "$f" || err "agent: $name has no description"
+	grep -q '^readonly: true$' "$f" || err "agent: $name must remain read-only"
+done
+
 # ------------------------------------------------- cross-skill references valid
 all_names="$(ls "$SKILLS")"
 for dir in "$SKILLS"/*/; do
@@ -206,6 +215,10 @@ grep -q 'last_seen_note' "$SKILLS/babysit-gitlab-mr/SKILL.md" || \
 	err "contract: babysit cursor field renamed but doc still says otherwise"
 grep -qE 'declared budget|budget.*declared' "$SKILLS/escalate/SKILL.md" || \
 	err "contract: escalate must allow calling skills to declare their own budget"
+grep -qF 'named `comment-sicko` subagent' "$SKILLS/no-comments/SKILL.md" || \
+	err "contract: no-comments must delegate to the named comment-sicko subagent"
+[ -f "$ROOT/agents/comment-sicko.md" ] || \
+	err "contract: comment-sicko subagent is missing"
 
 # Feature work proves the implementation before permanent retention coverage.
 grep -qF 'without adding or editing' "$SKILLS/blahaj-mode/playbooks/feature.md" || \

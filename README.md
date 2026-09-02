@@ -1,12 +1,15 @@
 # ostack
 
-Personal agent skills. Two layers: the procedure that gets work from a ticket to
+Personal agent skills and subagents. Two layers: the procedure that gets work from a ticket to
 a merged MR, and the judgment that decides whether what shipped was any good.
 
 Skills live in [`skills/`](skills/) as standard `SKILL.md` folders (Cursor /
 Claude Code / opencode compatible). Written Cursor-first: multi-model panels and
 `~/.cursor` paths are the default path, but every skill names its fallback for
 single-vendor hosts, so nothing silently no-ops in Claude Code.
+
+Named subagents live in [`agents/`](agents/) and are installed for Cursor,
+Claude Code, and Codex.
 
 ## Install
 
@@ -20,10 +23,12 @@ Nushell:
 let tmp = (mktemp -d); git clone -q git@github.com:orisilber/ostack.git $"($tmp)/ostack"; bash $"($tmp)/ostack/scripts/install.sh"; rm -rf $tmp
 ```
 
-One line, nothing left behind but the skills: copies everything into
-`~/.agents/skills`, `~/.claude/skills`, and `~/.cursor/skills`, then deletes
-the clone. Re-run anytime to upgrade or drop retired skills. `--dry-run`
-previews; `AGENTS_HOME` or `OSTACK_INSTALL_HOME` redirect the target.
+One line, nothing left behind but the skills and agents: copies skills into
+`~/.agents/skills`, `~/.claude/skills`, and `~/.cursor/skills`; copies
+agents into `~/.codex/agents`, `~/.claude/agents`, and `~/.cursor/agents`;
+then deletes the clone. Re-run anytime to upgrade or drop retired items.
+`--dry-run` previews; `AGENTS_HOME` or `OSTACK_INSTALL_HOME` redirect the
+target.
 
 ## Orchestration
 
@@ -96,6 +101,7 @@ their own task when the need arises.
 | `create-verification-skill` | Generate a project-local verifier and feature map |
 | `maintain-verification-skill` | Audit a project-local verifier against source and live behavior |
 | `pick-next-task` | Claim the next ready Jira item |
+| `no-comments` | Remove comments that cannot prove a narrow exception and fix the code smells they expose |
 | `typescript-best-practices` | Apply TypeScript type discipline when TypeScript files are in scope |
 
 ### Explicit invocation
@@ -105,7 +111,7 @@ trigger. Invoke them by name or slash command when no active workflow already
 calls for them:
 
 `blahaj-mode`, `setup-blahaj-mode`, `architect`, `arena`, `blast-radius`,
-`create-verification-skill`, `interrogate`, `maintain-verification-skill`,
+`create-verification-skill`, `interrogate`, `maintain-verification-skill`, `no-comments`,
 `recall`, `show-me-your-work`, `swarm`, and `technical-writing`.
 
 For example, `/blahaj-mode Fix the pagination bug` starts the workflow, while
@@ -156,6 +162,7 @@ below for what changed).
 | `arena` | pstack | N parallel candidates at one artifact, judged, then grafted into a single base |
 | `swarm` | pstack | N parallel workers over slices or races, drained into one report |
 | `interrogate` | pstack | Adversarial review panel over a diff, sorted into act-on / consider / noted / dismissed |
+| `no-comments` | pstack | Remove unjustified comments and turn accepted findings into root-cause fixes |
 
 ### Safety & delivery
 
@@ -198,7 +205,7 @@ step if you want the agent doing the mechanics under supervision.
 ## Provenance
 
 `blahaj-mode`, `principles`, `how`, `why`, `blast-radius`, `architect`, `arena`,
-`swarm`, `interrogate`, `recall`, `show-me-your-work`, `unslop`,
+`swarm`, `interrogate`, `no-comments`, `recall`, `show-me-your-work`, `unslop`,
 `technical-writing`, `typescript-best-practices`, `create-verification-skill`,
 and `maintain-verification-skill` are adapted from
 [pstack](https://github.com/poteto/pstack) by Lauren Tan (MIT). See
@@ -225,7 +232,7 @@ and `maintain-verification-skill` are adapted from
 
 Not vendored as pstack workflows, deliberately: the full `poteto-mode` and
 `figure-it-out` playbook sets (tied to Graphite and GitHub), `setup-pstack`,
-`automate-me`, `reflect`, `teach`, `bro`, `no-comments`,
+`automate-me`, `reflect`, `teach`, `bro`,
 `tdd`.
 
 `make-bot-ui` is also excluded. It depends on Cursor-team internals, including
