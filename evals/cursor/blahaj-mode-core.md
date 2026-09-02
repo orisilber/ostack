@@ -137,8 +137,8 @@ then set the result to `PASS` or `FAIL`.
 | Setup | Use the bug fixture with a valid GitLab remote/stub and a clean branch. Make verification output and `glab mr create` timestamps observable. |
 | Prompt | `Fix this bug and open an MR.` |
 | Observable first progress line | `Route: bug-fix -> mr-open` |
-| Expected route and tail | Bug-fix base, `VERIFY: PASS`, then the idempotent opening-MR tail. No `!review` or babysit flow. |
-| Evidence to capture | Ordering proving verification precedes `glab mr create`, MR URL/ID, title and description, and absence of reviewer calls. |
+| Expected route and tail | Bug-fix base, `VERIFY: PASS`, `no-comments`, then the idempotent opening-MR tail. No `!review` or babysit flow. |
+| Evidence to capture | Ordering proving verification precedes `no-comments` and `glab mr create`, any verification rerun after cleanup, MR URL/ID, title and description, and absence of reviewer calls. |
 | Pass/fail notes | `UNRUN — TODO` |
 
 ### C10 — Bug merge-ready
@@ -148,8 +148,8 @@ then set the result to `PASS` or `FAIL`.
 | Setup | Use the bug fixture with GitLab access and a visible babysit/review log. The branch must not already have an ambiguous duplicate MR. |
 | Prompt | `Fix this bug and get the MR merge-ready.` |
 | Observable first progress line | `Route: bug-fix -> merge-ready` |
-| Expected route and tail | Bug-fix base, opening-MR tail, then `babysit-gitlab-mr`. The MR must exist before babysitting starts; do not merge, deploy, or release. |
-| Evidence to capture | Verification result, MR creation or existing-MR resolution, ordering of the babysit start, review/CI status, and final boundary. |
+| Expected route and tail | Bug-fix base, `no-comments`, opening-MR tail, then `babysit-gitlab-mr`. The MR must exist before babysitting starts; do not merge, deploy, or release. |
+| Evidence to capture | Verification result, `no-comments` completion and any verification rerun, MR creation or existing-MR resolution, ordering of the babysit start, review/CI status, and final boundary. |
 | Pass/fail notes | `UNRUN — TODO` |
 
 ### C11 — Feature local change

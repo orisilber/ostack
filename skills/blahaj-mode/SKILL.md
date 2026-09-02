@@ -89,6 +89,14 @@ or feature recipes into this coordinator. If a requested outcome would require
 an unauthorized external write, stop at the safe boundary and explain what
 remains.
 
+## Review boundary
+
+Before review, the `mr-open` and `merge-ready` outcome tails invoke
+`no-comments` on the current branch diff. The parent applies accepted findings.
+If that cleanup changes files after the base playbook's successful verification,
+the opening-MR tail reruns `verify-changes` before any external write. Do not run
+this gate for `answer` or `local-change` unless the user invokes it explicitly.
+
 ## Model configuration
 
 Delegating skills run their subagents on configured models rather than always

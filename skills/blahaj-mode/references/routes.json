@@ -96,7 +96,7 @@
   "outcomeTails": {
     "answer": [],
     "local-change": [],
-    "mr-open": ["playbooks/opening-an-mr.md"],
-    "merge-ready": ["playbooks/opening-an-mr.md", "skill:babysit-gitlab-mr"]
+    "mr-open": ["skill:no-comments", "playbooks/opening-an-mr.md"],
+    "merge-ready": ["skill:no-comments", "playbooks/opening-an-mr.md", "skill:babysit-gitlab-mr"]
   }
 }

@@ -43,6 +43,7 @@ fixtures:
 assert:
   output_contains:
     - "Route: bug-fix -> mr-open"
+    - "no-comments"
     - "https://gitlab.example.com/ostack/-/merge_requests/8"
   tools_called:
     - "glab mr view"

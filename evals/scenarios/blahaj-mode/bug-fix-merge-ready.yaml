@@ -56,6 +56,7 @@ fixtures:
 assert:
   output_contains:
     - "Route: bug-fix -> merge-ready"
+    - "no-comments"
   tools_called:
     - "glab mr view"
     - "glab mr note"
