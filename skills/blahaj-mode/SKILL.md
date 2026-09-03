@@ -19,7 +19,7 @@ Blahaj has two execution modes:
 - **Normal** is the default. The user authorizes the outcome explicitly through
   the request, and Blahaj stops at that boundary.
 - **Autonomous** is selected only when the user explicitly requests autonomous
-  execution or when another explicit entry point, currently `DJUNGELSKOG`,
+  execution or when another explicit entry point, currently `djungelskog-mode`,
   invokes Blahaj in autonomous mode. The task route stays the same; autonomous
   mode changes how much ordinary decision-making and delivery authority Blahaj
   may exercise inside that route.
