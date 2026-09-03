@@ -10,11 +10,18 @@ Use this route when the user asks for new behavior.
    local pattern.
 4. Route through `arena` when the user requests competing implementations, the
    task exposes incompatible boundaries or interactions, or one attempt would
-   lock in a consequential choice between viable approaches. Otherwise record
-   why it was not needed.
-5. Implement the complete accepted feature without adding or editing
-   feature-specific tests. Existing tests may run throughout. Keep working
-   until the full acceptance scope exists, not merely a partial slice.
+   lock in a consequential choice between viable approaches. Give every arena
+   candidate the complete acceptance scope and the same test-last constraint as
+   this playbook: do not add or edit feature-specific tests; existing tests may
+   run. Treat the synthesized arena artifact as the implementation for step 5.
+   Arena verification may use existing checks but does not replace step 6's
+   real-interface acceptance gate. Otherwise record why arena was not needed.
+5. If step 4 ran `arena`, review and integrate its synthesized implementation
+   and fill only any acceptance-scope gaps; do not reimplement the feature from
+   scratch. Otherwise implement the complete accepted feature. In either case,
+   do not add or edit feature-specific tests. Existing tests may run throughout.
+   Keep working until the full acceptance scope exists, not merely a partial
+   slice.
 6. Prove every acceptance behavior through the real UI, API, CLI, or integration
    path. Run existing declared checks, but do not create a new automated
    script or spec as the proof. If an existing expectation is intentionally
