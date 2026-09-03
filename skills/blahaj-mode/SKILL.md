@@ -64,6 +64,13 @@ such as `how`, `why`, `architect`, `arena`, `interrogate`, and `swarm`, plus any
 future skill whose contract explicitly owns delegated execution. Respect those
 choices instead of substituting coordinator defaults.
 
+A routed workflow may expose supported inputs that intentionally alter one of
+its defaults for a nested call. A caller may pass only an override declared by
+the callee's contract; the callee still owns resolution and execution. For
+example, Arena may accept a runner-role override while retaining ownership of
+candidate spawning, cross-judging, grafting, verification, and fallback
+handling. Do not inject undeclared model, fan-out, or subagent overrides.
+
 A playbook may explicitly scope a named skill to one mode or phase. In that
 case, follow only that scoped portion and do not silently enter later phases of
 the skill. Procedural leaf skills that do not own delegation are governed by
