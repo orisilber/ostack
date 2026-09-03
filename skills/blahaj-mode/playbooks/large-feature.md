@@ -9,8 +9,12 @@ implementation scopes or cannot reasonably finish in one agent session.
    route through `architect` in `design-only` mode. Its design comparison
    satisfies `arena` for that decision. Otherwise, route through `arena` when at
    least two viable approaches exist and choosing the wrong one would cause
-   substantial rework. Record why an arena was not needed when the target
-   follows an established pattern.
+   substantial rework. For this pre-decomposition arena, the candidate artifact
+   is the implementation design only: pass the complete done predicate, require
+   structurally distinct approaches, and forbid production-code changes or
+   feature implementation. Arena returns the synthesized design decision that
+   step 3 decomposes. Record why an arena was not needed when the target follows
+   an established pattern.
 3. Decompose the work into atomic tasks with acceptance checks, explicit file
    ownership, and a dependency DAG. Put shared foundations first. Acceptance
    checks use existing repository checks or temporary commands against real
