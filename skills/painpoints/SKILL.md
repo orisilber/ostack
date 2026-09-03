@@ -58,6 +58,22 @@ Do not count:
 When a later user correction mixes both kinds, split it. Count only the part
 that the assistant should already have known or discovered.
 
+## Model resolution
+
+Maldy is a judgment role. Resolve `judgment` from
+`~/.cursor/rules/ostack-models.mdc` and use its first entry. If the rule or role
+is unavailable, resolve to `inherit`.
+
+Pass the resolved value as the subagent `model` argument. `inherit` means omit
+the `model` argument and let Maldy run on the parent chat model. The agent file
+itself uses `model: inherit` so the installed definition remains valid on Codex,
+Claude Code, and Cursor; Cursor-specific model selection happens at spawn time.
+
+Only Cursor loads the `.mdc` rule automatically. Other hosts therefore run
+Maldy with `inherit`. If Cursor rejects the configured model ID, do not invent a
+nearby replacement; retry once with `inherit`. A successful spawn does not prove
+which model ran because the host may substitute one without reporting it.
+
 ## 1. Build the conversation packet
 
 Maldy does not inherit the parent conversation. Give it the evidence it needs.
@@ -81,7 +97,7 @@ of inventing the missing turns.
 
 Spawn the named `maldy` subagent and pass the conversation packet. Do not
 restate Maldy's full rubric or replace it with a general-purpose reviewer. The
-agent's independent prompt and model choice are part of this skill's contract.
+agent's independent prompt and resolved model are part of this skill's contract.
 
 If the host cannot resolve `maldy`, fail and report that the ostack agents were
 not installed. Do not perform the retrospective with the authoring agent as a
