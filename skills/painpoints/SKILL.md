@@ -88,10 +88,30 @@ the audit through the `/painpoints` invocation. Preserve turn order and include:
 - available skill, tool, permission, and environment facts that matter to a
   suspected failure.
 
+Treat every user correction, repeated request, complaint, or "you already had
+that" message as an evidence anchor. For each anchor, include the complete local
+sequence needed to judge it rather than a summary:
+
+1. the user turn that established the original request, constraint, permission,
+   or expected outcome;
+2. every assistant response and tool call/result from that point through the
+   turn that triggered the correction or complaint; and
+3. the correction, repetition, or complaint itself, plus the immediately
+   following assistant turn when it clarifies what actually failed.
+
+Do not omit intermediate tool failures, partial successes, confirmations,
+questions, or handoffs just because a later summary appears to capture them.
+Those details often distinguish an assistant-caused miss from genuinely missing
+user context. When several anchors overlap, merge the ranges without dropping
+turns.
+
 Do not include hidden system prompts, private reasoning, or secrets. Do not
-summarize away a turn that establishes intent, authority, or a later complaint.
-If the host truncates old conversation, state that coverage is partial instead
-of inventing the missing turns.
+summarize away a turn that establishes intent, authority, tool availability, or
+what the assistant actually attempted. If the host exposes only a summarized or
+truncated version of a required turn, include that representation verbatim and
+mark coverage partial for that evidence range. If older conversation is no
+longer available at all, state that coverage is partial instead of inventing the
+missing turns.
 
 ## 2. Spawn Maldy
 
