@@ -4,9 +4,10 @@ Use this route when the user asks for new behavior.
 
 1. Name the data shape, boundary, and acceptance behavior before editing.
 2. Route through `how` over the affected subsystem.
-3. Route through `architect` when a public function, class, type, or ownership
-   boundary crosses modules. Record `architect skipped: <reason>` for a small
-   change that follows an existing local pattern.
+3. When a public function, class, type, or ownership boundary crosses modules,
+   route through `architect` only through Phase C (Ground, Sketch, Agree), then
+   stop before Phase D implementation. Record `architect skipped: <reason>` for
+   a small change that follows an existing local pattern.
 4. Route through `arena` when the user requests competing implementations, the
    task exposes incompatible boundaries or interactions, or one attempt would
    lock in a consequential choice between viable approaches. Otherwise record
