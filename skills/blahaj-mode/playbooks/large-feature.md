@@ -6,12 +6,11 @@ implementation scopes or cannot reasonably finish in one agent session.
 1. State the complete done predicate and route through `how` over every affected
    subsystem.
 2. When a public type, function, class, or ownership boundary crosses modules,
-   route through `architect` only through Phase C (Ground, Sketch, Agree), then
-   stop before Phase D implementation. Its design comparison satisfies `arena`
-   for that decision. Otherwise, route through `arena` when at least two viable
-   approaches exist and choosing the wrong one would cause substantial rework.
-   Record why an arena was not needed when the target follows an established
-   pattern.
+   route through `architect` in `design-only` mode. Its design comparison
+   satisfies `arena` for that decision. Otherwise, route through `arena` when at
+   least two viable approaches exist and choosing the wrong one would cause
+   substantial rework. Record why an arena was not needed when the target
+   follows an established pattern.
 3. Decompose the work into atomic tasks with acceptance checks, explicit file
    ownership, and a dependency DAG. Put shared foundations first. Acceptance
    checks use existing repository checks or temporary commands against real
