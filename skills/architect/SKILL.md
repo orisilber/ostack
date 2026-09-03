@@ -1,39 +1,67 @@
 ---
 name: architect
-description: Settle types, signatures, and module boundaries before writing code, then implement against that sketch and scrap it when implementation proves it wrong. Triggers "architect this", "design this first", or non-trivial work where jumping to code would lock in the wrong shape. Use only when real code follows; a plan nobody implements is not this skill.
+description: Settle types, signatures, and module boundaries before writing code, optionally returning the design to a caller or implementing against it. Triggers "architect this", "design this first", or non-trivial work where jumping to code would lock in the wrong shape. Use only when real code follows; a plan nobody implements is not this skill.
 disable-model-invocation: true
 ---
 
 # Architect
 
-Design before implementing. Sketch types, function signatures, class shapes, and module boundaries with `not implemented` bodies and pseudocode. Synthesize across multiple model perspectives, then fill in code against the chosen sketch. If implementation proves the sketch wrong, throw it out and redesign.
+Design before implementing. Sketch types, function signatures, class shapes, and module boundaries with `not implemented` bodies and pseudocode. Synthesize across multiple model perspectives. In full mode, fill in code against the chosen sketch and scrap it when implementation proves it wrong. In design-only mode, return the synthesized design to the caller that owns implementation.
+
+## Modes
+
+Architect has two modes:
+
+- **Full** is the default for direct `/architect` usage. Run Ground, Sketch,
+  Agree, Implement, and Scrap when implementation invalidates the design.
+- **Design-only** is for a caller that owns implementation. Run Ground, Sketch,
+  and Agree, return the synthesized design package, and stop. Do not enter
+  Implement or Scrap and do not modify production implementation code.
+
+A caller selects design-only explicitly, for example `architect design-only` or
+"route through `architect` in design-only mode." If no mode is supplied, use
+full mode.
+
+A checkpoint is separate from mode. `full with checkpoint` pauses after Agree
+for user approval and then continues implementation after approval. Design-only
+always returns after Agree because implementation belongs to the caller.
 
 ## Model resolution
 
-Resolve `architect runners`, generic role `judgment`, from
-`~/.cursor/rules/ostack-models.mdc`. Use the skill-role line first, then the
-generic role line, then `inherit`.
+Architect's design-candidate role is `architect runners`, generic role
+`judgment`, from `~/.cursor/rules/ostack-models.mdc`. Architect does not spawn
+those candidates directly. In Phase B it routes through Arena and passes
+`architect runners` as Arena's supported runner-role override. Arena then owns
+resolution, host-rejection handling, candidate spawning, and fallback semantics
+for that panel. Arena continues to resolve its cross-judge from
+`arena cross-judge`.
 
-This is a panel. Run one subagent per resolved entry, so the entry count sets
-the fan-out. If the host rejects an entry, drop it and run the rest. Fall back
-to `inherit` only when nothing is left.
+For this nested call, Arena resolves `architect runners` from the skill-role
+line, then generic `judgment`, then `inherit`, and passes each resolved candidate
+value as the subagent `model` argument.
 
-Pass the resolved value as the subagent `model` argument. `inherit` means omit
-`model` and let the subagent run on the parent chat model. A line never mixes
-`inherit` with a model ID. Hosts that do not load the rule resolve every role
-to `inherit`. When the host rejects a model ID, do not swap in a nearby one. A
-successful call proves nothing about which model ran, because the host may
-substitute one without saying so.
+Hosts that do not load the Cursor rule therefore resolve both roles to
+`inherit`. Do not replace a rejected model with a nearby ID, and do not treat a
+successful delegation as proof of which model actually ran because the host may
+substitute one silently.
 
 ## Start
 
-Open a todolist with one entry per phase before starting. Autonomous mode without checkpoints needs the list to show phase position and keep phases from silently disappearing.
+Open a todolist with one entry per active phase before starting. Autonomous mode without checkpoints needs the list to show phase position and keep phases from silently disappearing.
+
+Full mode:
 
 1. Ground
 2. Sketch
 3. Agree
 4. Implement
 5. Scrap
+
+Design-only mode:
+
+1. Ground
+2. Sketch
+3. Agree
 
 ## Phase A: Ground the problem
 
@@ -47,7 +75,10 @@ Skip Phase A only when the work is genuinely greenfield with no surrounding syst
 
 Run the **arena** skill with the design-sketch task and the Phase A grounding artifacts. Pass `references/runner-prompt.md` as each runner's prompt. Each candidate produces a design package shaped per `references/rationale-template.md`: the caller's usage written first, then the type sketch, function signatures, module map, and prose rationale derived from it.
 
-Use the resolved `architect runners` panel for the design candidates.
+Set Arena's runner-role override to `architect runners`. Do not also use
+`arena runners` for the design candidates. Arena still owns its
+`arena cross-judge` role and the rest of its comparison, grafting, and
+verification workflow.
 
 Design it twice. Require at least two structurally distinct candidates before synthesis, even when the first looks sufficient. This is the **exhaust-the-design-space** principle made concrete. Whole-shape alternatives, not point fixes inside one shape.
 
@@ -57,23 +88,29 @@ Compare viable candidates on interface depth. Prefer the design that hides more 
 
 Arena returns one synthesized design package. The synthesis decision populates the rationale's "Synthesis decision" section.
 
-## Phase C: Agree (opt-in)
+## Phase C: Agree
 
-Default: proceed directly to implementation with the synthesized design. No human checkpoint.
+In design-only mode, return the synthesized design package to the caller and stop. Do not enter Phase D or modify production implementation code.
 
-Opt in to a checkpoint when the invoker explicitly asks: "/architect with checkpoint," "stop and show me before implementing," or similar. Then surface the synthesized design and pause for sign-off.
+In full mode, proceed directly to implementation with the synthesized design unless the invoker explicitly requested a checkpoint.
 
-The synthesis can ship as its own commit either way. That's the "scaffold first" mode of the **foundational-thinking** principle; subsequent commits read as filling in bodies against a stable contract. Planned and scoped breakage during fill-in is fine, per the **outcome-oriented-execution** principle. For adversarial pressure on the design before implementing, run the **interrogate** skill on the synthesized sketch.
+For `full with checkpoint`, surface the synthesized design and pause for sign-off. After approval, continue to Phase D. Examples include `/architect with checkpoint`, "stop and show me before implementing", or similar.
 
-If the human pushes back on the shape (in a checkpoint or after the fact), treat that as Phase A evidence. Re-ground and re-run Phase B before writing more code.
+The synthesis can ship as its own commit in full mode. That's the "scaffold first" mode of the **foundational-thinking** principle; subsequent commits read as filling in bodies against a stable contract. Planned and scoped breakage during fill-in is fine, per the **outcome-oriented-execution** principle. For adversarial pressure on the design before implementing, run the **interrogate** skill on the synthesized sketch.
+
+If the human or calling workflow pushes back on the shape, treat that as Phase A evidence. Re-ground and re-run Phase B before writing more code.
 
 ## Phase D: Implement against the sketch
+
+Full mode only.
 
 Replace `not implemented` bodies with code, pseudocode with logic. The synthesized sketch is the contract.
 
 Deviations from the sketch are signal worth surfacing, not friction to absorb silently. If a function needs a parameter the sketch didn't anticipate, ask whether the sketch was wrong, the requirement was missed, or the implementation is overreaching. Surface it; don't bolt it on.
 
 ## Phase E: Scrap when the architecture is wrong
+
+Full mode only.
 
 If implementation keeps producing friction the sketch can't absorb, throw the sketch out. Don't bolt fixes onto a wrong design, per the **redesign-from-first-principles** and **fix-root-causes** principles.
 
@@ -98,3 +135,5 @@ When you scrap:
 ## Outputs
 
 The caller's usage is written first and the type sketch derived from it. One file with new types and signatures for small changes; module map plus type definitions for larger work. The rationale ships alongside, shaped per `references/rationale-template.md`, including the usage sketch and the synthesis decision.
+
+Design-only returns that design package to the caller as its final artifact. Full mode continues through implementation and returns the implemented result plus the design rationale.

@@ -52,6 +52,36 @@ outcome tail into the task list. Keep skipped steps visible with the reason.
 Complete the base work before an outcome tail. An MR or reviewer interaction is
 never implicit.
 
+## Routed workflow skills
+
+When a playbook routes through a workflow skill that owns delegation, invoke
+that installed skill and follow the routed mode or phase completely. Do not
+inline, imitate, or replace its procedure in the coordinator.
+
+Routed workflow skills own their own subagent type, model selection, fan-out,
+readonly behavior, and fallback semantics. In ostack this applies to skills
+such as `how`, `why`, `architect`, `arena`, `interrogate`, and `swarm`, plus any
+future skill whose contract explicitly owns delegated execution. Respect those
+choices instead of substituting coordinator defaults.
+
+A routed workflow may expose supported inputs that intentionally alter one of
+its defaults for a nested call. A caller may pass only an override declared by
+the callee's contract; the callee still owns resolution and execution. For
+example, Arena may accept a runner-role override while retaining ownership of
+candidate spawning, cross-judging, grafting, verification, and fallback
+handling. Do not inject undeclared model, fan-out, or subagent overrides.
+
+A playbook may explicitly scope a named skill to one mode or phase. In that
+case, follow only that scoped portion and do not silently enter later phases of
+the skill. Procedural leaf skills that do not own delegation are governed by
+the exact playbook step that calls them; naming one does not automatically turn
+its entire standalone workflow into the route.
+
+If a required routed workflow skill cannot be resolved, report that failure
+rather than silently doing the work in the parent agent. Optional conditional
+steps may be skipped only when their playbook condition is false, with the skip
+reason kept visible in the task list.
+
 ## Resolve feature size before route selection
 
 Select `large-feature` instead of `feature` when the user asks to implement new

@@ -6,7 +6,8 @@ throwaway artifacts.
 1. State the concrete decision the prototype must answer. If there is no
    decision, route to `feature` instead.
 2. Build each candidate in an isolated scratch directory outside production
-   source. Use `arena` only when competing artifacts will inform the decision.
+   source. Route through `arena` only when competing artifacts will inform the
+   decision.
 3. Label every candidate and keep a single switcher when the alternatives share
    a surface.
 4. Drive the matching surface and record screenshots, output, or timing as

@@ -10,12 +10,18 @@ Fan out N parallel attempts at the same task. Read every candidate end to end. P
 
 ## Model resolution
 
-Resolve `arena runners` and `arena cross-judge`, both generic role `judgment`,
-from `~/.cursor/rules/ostack-models.mdc`. For each role use its skill-role
-line first, then its generic role line, then `inherit`.
+Arena owns model resolution for its subagents. The runner role defaults to
+`arena runners`. A nested caller may explicitly pass a **runner-role override**
+when this contract says that override is supported by the caller's workflow.
+When present, resolve that role instead of `arena runners`; do not merge both
+panels. `arena cross-judge` is not changed by a runner-role override.
 
-`arena runners` is a panel. Run one subagent per resolved entry, so the entry
-count sets the fan-out. If the host rejects an entry, drop it and run the
+Resolve the selected runner role and `arena cross-judge`, both generic role
+`judgment`, from `~/.cursor/rules/ostack-models.mdc`. For each role use its
+skill-role line first, then its generic role line, then `inherit`.
+
+The selected runner role is a panel. Run one subagent per resolved entry, so the
+entry count sets the fan-out. If the host rejects an entry, drop it and run the
 rest. Fall back to `inherit` only when nothing is left.
 
 `arena cross-judge` is a pool rather than a panel. Pick one entry from it, and
@@ -45,7 +51,7 @@ The N candidates will receive the same prompt, so the prompt is the contract. Ge
 
 1. State the artifact each candidate is producing.
 2. Derive the rubric. State what success looks like for *this* task, then turn it into 3-6 concrete gradeable criteria. Concrete: `Adds a --dry-run flag that skips writes`. Vague: `code is correct`. The rubric is the picker's tool in Phase D; candidates only see the task.
-3. Pick the runners from the resolved `arena runners` panel. Spawn more when the arena covers multiple design directions. Same model N times when the work is generation-bound rather than judgment-sensitive.
+3. Pick the runners from the resolved runner-role panel. Spawn more when the arena covers multiple design directions. Same model N times when the work is generation-bound rather than judgment-sensitive.
 4. Assign output paths. Each candidate writes to its own location (a git worktree where possible, otherwise `/tmp/arena-<slug>/candidate-<n>/`). N candidates writing to the same path is shared mutable state and fails the the **separate-before-serializing-shared-state** principle test.
 
 ## Phase B: Fan out
