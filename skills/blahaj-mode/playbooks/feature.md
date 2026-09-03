@@ -24,9 +24,9 @@ Use this route when the user asks for new behavior.
 5. If step 4 ran `arena`, review and integrate its synthesized implementation
    and fill only any acceptance-scope gaps; do not reimplement the feature from
    scratch. Otherwise implement the complete accepted feature. In either case,
-   do not add or edit feature-specific tests. Existing tests may run throughout.
-   Keep working until the full acceptance scope exists, not merely a partial
-   slice.
+   complete the accepted implementation without adding or editing
+   feature-specific tests. Existing tests may run throughout. Keep working until
+   the full acceptance scope exists, not merely a partial slice.
 6. Prove every acceptance behavior through the real UI, API, CLI, or integration
    path. Run existing declared checks, but do not create a new automated
    script or spec as the proof. If an existing expectation is intentionally
