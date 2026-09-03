@@ -11,8 +11,9 @@ The first progress update must identify the selected outcome.
 3. Route through `how` for the affected runtime flow and through `why` when
    regression history or an existing design decision could constrain the fix.
 4. Form competing hypotheses and collect evidence that rules them in or out.
-5. Route through `architect` only when the fix crosses a function, module, or
-   ownership boundary. Otherwise keep the change local.
+5. When the fix crosses a function, module, or ownership boundary, route through
+   `architect` only through Phase C (Ground, Sketch, Agree), then stop before
+   Phase D implementation. Otherwise keep the change local.
 6. Implement the smallest fix justified by the surviving evidence.
 7. Route through `verify-changes`, then report the failing-before and
    passing-after repro evidence.
