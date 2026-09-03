@@ -101,6 +101,7 @@ their own task when the need arises.
 | `interrogate` | Run an adversarial review over a diff |
 | `create-verification-skill` | Generate a project-local verifier and feature map |
 | `maintain-verification-skill` | Audit a project-local verifier against source and live behavior |
+| `painpoints` | Audit the current chat for assistant-caused failures and recommend durable fixes |
 | `pick-next-task` | Claim the next ready Jira item |
 | `typescript-best-practices` | Apply TypeScript type discipline when TypeScript files are in scope |
 
@@ -112,11 +113,12 @@ calls for them:
 
 `blahaj-mode`, `setup-blahaj-mode`, `architect`, `arena`, `blast-radius`,
 `create-verification-skill`, `interrogate`, `maintain-verification-skill`, `no-comments`,
-`recall`, `show-me-your-work`, `swarm`, and `technical-writing`.
+`painpoints`, `recall`, `show-me-your-work`, `swarm`, and `technical-writing`.
 
 For example, `/blahaj-mode Fix the pagination bug` starts the workflow, while
-`/interrogate Review this diff` runs the standalone review directly. Inside
-`blahaj-mode`, a selected playbook can include `architect`, `arena`, `recall`,
+`/interrogate Review this diff` runs the standalone review directly. `/painpoints`
+audits the current chat for assistant-caused failures. Inside `blahaj-mode`, a
+selected playbook can include `architect`, `arena`, `recall`,
 `show-me-your-work`, `swarm`, `technical-writing`, or `no-comments`; you do not
 need to invoke those skills again.
 
@@ -163,6 +165,7 @@ below for what changed).
 | `swarm` | pstack | N parallel workers over slices or races, drained into one report |
 | `interrogate` | pstack | Adversarial review panel over a diff, sorted into act-on / consider / noted / dismissed |
 | `no-comments` | pstack | Remove unjustified comments and turn accepted findings into root-cause fixes |
+| `painpoints` | ostack | Explicit retrospective over the current chat using Maldy to diagnose assistant-caused failures and durable fixes |
 
 ### Safety & delivery
 
