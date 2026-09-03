@@ -1,0 +1,78 @@
+skill: djungelskog-mode
+description: Autonomous entry selects merge-ready without requiring the user to name the delivery outcome.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  mkdir -p tests
+  cat > AGENTS.md <<'MD'
+  # Fixture repo
+
+  ## Checks
+  - test: `bash tests/check.sh`
+  MD
+  echo 'broken' > app.txt
+  cat > tests/check.sh <<'SH'
+  #!/usr/bin/env bash
+  set -eu
+  if grep -qx fixed app.txt; then
+    echo '--- repo verify pass' >> "$CALLS_LOG"
+    touch "$WORK/.verify-ran"
+  else
+    echo '--- repo reproduce fail' >> "$CALLS_LOG"
+    exit 1
+  fi
+  SH
+  chmod +x tests/check.sh
+  git add -A && git commit -qm init
+  git checkout -qb fix/djungelskog-mode
+  cat > branch-helper.sh <<'SH'
+  # Prepare the branch for review.
+  true
+  SH
+  git add branch-helper.sh && git commit -qm 'chore: add branch helper'
+
+prompt: |
+  Fix app.txt so it contains "fixed". Reproduce the defect with bash
+  tests/check.sh and finish the task properly. review-bot is the known review
+  bot for this repository.
+
+fixtures:
+  - match: mr view
+    response: |
+      {"iid":7,"project_id":9,"web_url":"https://gitlab.example.com/ostack/-/merge_requests/7","state":"opened"}
+  - match: api user
+    response: |
+      {"username":"fixture-user"}
+  - match: mr note
+    response: |
+      {"id":2}
+  - match: discussions
+    response: |
+      [{"id":"d1","notes":[{"id":3,"system":false,"body":"LGTM approved","author":{"username":"review-bot"}}]}]
+  - match: ci list
+    response: |
+      [{"id":12,"status":"success"}]
+  - match: pipelines/12/jobs
+    response: |
+      [{"name":"test","stage":"test","status":"success","allow_failure":false}]
+
+assert:
+  output_contains:
+    - "Route: bug-fix -> merge-ready"
+    - "no-comments"
+  tools_called:
+    - "glab mr view"
+    - "glab mr note"
+  custom: |
+    set -eu
+    grep -qx fixed app.txt
+    grep -qx true branch-helper.sh
+    test -e "$WORK/.verify-ran"
+    reproduce_line="$(grep -n '^--- repo reproduce fail' "$CALLS_LOG" | head -1 | cut -d: -f1)"
+    verify_line="$(grep -n '^--- repo verify pass' "$CALLS_LOG" | head -1 | cut -d: -f1)"
+    mr_line="$(grep -n '^--- glab mr view' "$CALLS_LOG" | head -1 | cut -d: -f1)"
+    review_line="$(grep -n '^--- glab mr note' "$CALLS_LOG" | head -1 | cut -d: -f1)"
+    test -n "$reproduce_line" && test -n "$verify_line" && test -n "$mr_line" && test -n "$review_line"
+    test "$reproduce_line" -lt "$verify_line" && test "$verify_line" -lt "$mr_line" && test "$mr_line" -lt "$review_line"
