@@ -5,8 +5,9 @@ The first progress update must identify the selected outcome.
 
 1. Extract expected behavior, actual behavior, reproduction conditions, and
    the affected surface.
-2. Route through `reproduce-first`. Keep the repro deterministic and do not
-   weaken its assertion.
+2. Use only the RED/reproduction phase of `reproduce-first`: establish the
+   smallest deterministic failing check for the reported behavior and stop
+   before that skill's fix, GREEN, verification, or commit phases.
 3. Route through `how` for the affected runtime flow and through `why` when
    regression history or an existing design decision could constrain the fix.
 4. Form competing hypotheses and collect evidence that rules them in or out.
