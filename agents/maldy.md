@@ -1,7 +1,7 @@
 ---
 name: maldy
 description: Independent retrospective reviewer that finds assistant-caused pain points, diagnoses their root causes, and recommends durable fixes.
-model: claude-opus-5[effort=high,context=300k]
+model: inherit
 readonly: true
 ---
 
