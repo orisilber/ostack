@@ -13,8 +13,13 @@ Use this route when the user asks for new behavior.
    lock in a consequential choice between viable approaches. Give every arena
    candidate the complete acceptance scope and the same test-last constraint as
    this playbook: do not add or edit feature-specific tests; existing tests may
-   run. Treat the synthesized arena artifact as the implementation for step 5.
-   Arena verification may use existing checks but does not replace step 6's
+   run. If step 3 produced an Architect design package, pass it to every arena
+   candidate as a hard constraint. Candidates may vary implementation details
+   inside that design, but may not silently replace its public boundaries,
+   ownership, or type shape. If implementation evidence shows that design must
+   change, return to `architect` in `design-only` mode before continuing Arena.
+   Treat the synthesized arena artifact as the implementation for step 5. Arena
+   verification may use existing checks but does not replace step 6's
    real-interface acceptance gate. Otherwise record why arena was not needed.
 5. If step 4 ran `arena`, review and integrate its synthesized implementation
    and fill only any acceptance-scope gaps; do not reimplement the feature from
