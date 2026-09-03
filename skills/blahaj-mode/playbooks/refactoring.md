@@ -7,8 +7,7 @@ extract, inline, move, or deduplication.
    with a characterization test, snapshot, or equivalence harness.
 2. Name the missing structure and the target shape before moving code.
 3. When the target crosses a function or module boundary, route through
-   `architect` only through Phase C (Ground, Sketch, Agree), then stop before
-   Phase D implementation.
+   `architect` in `design-only` mode.
 4. Apply Subtract Before You Add: remove dead weight and redundant wrappers
    before introducing a new layer. Keep `principles` and its Laziness Protocol
    as the review lens.
