@@ -36,6 +36,10 @@ resolution, host-rejection handling, candidate spawning, and fallback semantics
 for that panel. Arena continues to resolve its cross-judge from
 `arena cross-judge`.
 
+For this nested call, Arena resolves `architect runners` from the skill-role
+line, then generic `judgment`, then `inherit`, and passes each resolved candidate
+value as the subagent `model` argument.
+
 Hosts that do not load the Cursor rule therefore resolve both roles to
 `inherit`. Do not replace a rejected model with a nearby ID, and do not treat a
 successful delegation as proof of which model actually ran because the host may
