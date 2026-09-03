@@ -41,12 +41,12 @@ route (`investigation`, `bug-fix`, `large-feature`, `feature`, `refactoring`,
 `Route: <task-kind> -> <outcome>`, and runs the matching playbook. In normal
 mode it never opens an MR, merges, or releases unless you ask for that outcome.
 
-`DJUNGELSKOG` is the autonomous entry point. Invoke `/DJUNGELSKOG <task>` when
+`djungelskog-mode` is the autonomous entry point. Invoke `/djungelskog-mode <task>` when
 you want the same Blahaj routes and playbooks to research, choose the approach,
 implement, verify, open the change request, and drive it merge-ready without
 routine checkpoints. Autonomous mode chooses the strongest allowed non-merge
 outcome unless your prompt lowers that authority. Negative constraints always
-win, and DJUNGELSKOG never merges, releases, or deploys without separate
+win, and djungelskog-mode never merges, releases, or deploys without separate
 explicit authorization.
 
 The model-aware skills (`architect`, `arena`, `how`, `interrogate`, `swarm`,
@@ -88,7 +88,7 @@ You do not need to name them in the prompt.
 | `technical-writing` and `unslop` | Edit prose that a workflow publishes |
 | `verify-changes` | Run repository checks and affected project-local verification after a code change |
 
-`blahaj-mode` is the workflow entry point. `DJUNGELSKOG` enters that same
+`blahaj-mode` is the workflow entry point. `djungelskog-mode` enters that same
 workflow with autonomous execution enabled. `setup-blahaj-mode` configures its
 model roles but does not run inside a task route.
 
@@ -119,13 +119,13 @@ Skills with `disable-model-invocation: true` do not start from a model-selected
 trigger. Invoke them by name or slash command when no active workflow already
 calls for them:
 
-`blahaj-mode`, `DJUNGELSKOG`, `setup-blahaj-mode`, `architect`, `arena`,
+`blahaj-mode`, `djungelskog-mode`, `setup-blahaj-mode`, `architect`, `arena`,
 `blast-radius`, `create-verification-skill`, `interrogate`,
 `maintain-verification-skill`, `no-comments`, `recall`, `show-me-your-work`,
 `swarm`, and `technical-writing`.
 
 For example, `/blahaj-mode Fix the pagination bug` starts the normal workflow,
-while `/DJUNGELSKOG Fix the pagination bug` starts the same workflow in
+while `/djungelskog-mode Fix the pagination bug` starts the same workflow in
 autonomous mode and may carry it through merge-ready. `/interrogate Review this
 diff` runs the standalone review directly. Inside `blahaj-mode`, a selected
 playbook can include `architect`, `arena`, `recall`, `show-me-your-work`,
@@ -143,7 +143,7 @@ below for what changed).
 | Skill | Source | Purpose |
 |---|---|---|
 | `blahaj-mode` | ostack | Cursor-first router for task kind, outcome, execution mode, and implemented playbooks |
-| `DJUNGELSKOG` | ostack | Explicit autonomous entry point for Blahaj: research, decide, implement, verify, open the change request, and drive it merge-ready |
+| `djungelskog-mode` | ostack | Explicit autonomous entry point for Blahaj: research, decide, implement, verify, open the change request, and drive it merge-ready |
 | `setup-blahaj-mode` | ostack | Configure ostack's delegated model roles and fallback behavior |
 | `pick-next-task` | ostack | Claim the next Jira work item with `acli`: JQL by agent-ready criteria, self-assign with read-back, transition, branch |
 | `decompose-epic` | ostack | Jira epic → atomic, conflict-free child tickets with acceptance criteria, disjoint file scopes, and real `Blocks` links |
