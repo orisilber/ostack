@@ -1,0 +1,24 @@
+skill: painpoints
+description: Does not blame the assistant for a requirement the user first supplied later.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  echo "# fixture" > README.md
+  git add -A && git commit -qm init
+
+prompt: |
+  Conversation packet:
+  User: Add a settings button to the header.
+  Assistant: Implemented the settings button in the existing header style.
+  User: I forgot to mention that it must only appear for admins.
+
+  Run /painpoints over this conversation.
+
+assert:
+  output_contains:
+    - "No assistant-caused pain points found"
+  output_not_contains:
+    - "admin requirement was missed"
+    - "clarify"

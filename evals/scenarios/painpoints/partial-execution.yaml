@@ -1,0 +1,25 @@
+skill: painpoints
+description: Finds an assistant-caused incomplete execution and recommends a durable fix.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  echo "# fixture" > README.md
+  git add -A && git commit -qm init
+
+prompt: |
+  Conversation packet:
+  User: Fetch the latest release notes from the supplied source and save them to notes.md.
+  Assistant: I fetched the release notes. Would you like me to save them to notes.md?
+  User: I already asked you to save them.
+
+  Run /painpoints over this conversation.
+
+assert:
+  output_contains:
+    - "incomplete"
+    - "notes.md"
+    - "Fix plan"
+  output_not_contains:
+    - "user forgot"
