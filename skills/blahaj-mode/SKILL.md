@@ -12,6 +12,29 @@ Blahaj Mode is a thin coordinator. It chooses a task kind and an outcome,
 then makes the smallest applicable leaf-skill sequence visible to the user.
 The route registry is the source of truth; read it before selecting a route.
 
+## Execution mode
+
+Blahaj has two execution modes:
+
+- **Normal** is the default. The user authorizes the outcome explicitly through
+  the request, and Blahaj stops at that boundary.
+- **Autonomous** is selected only when the user explicitly requests autonomous
+  execution or when another explicit entry point, currently `DJUNGELSKOG`,
+  invokes Blahaj in autonomous mode. The task route stays the same; autonomous
+  mode changes how much ordinary decision-making and delivery authority Blahaj
+  may exercise inside that route.
+
+Autonomous mode is not a new route and does not duplicate any playbook. It
+means: investigate enough to understand the affected system, choose the best
+supported approach, implement the complete accepted scope, prove the behavior,
+add retention coverage at the playbook-defined point, run verification, and
+continue through the strongest authorized non-merge outcome the selected route
+supports.
+
+Autonomous mode never authorizes merging, releasing, deploying, destructive
+external actions, or any other irreversible operation that is not already
+explicitly authorized. Negative constraints always win.
+
 ## First progress update
 
 Emit exactly one routing line before doing substantive work:
@@ -23,11 +46,13 @@ Do not claim a route that is not present in
 [`references/routes.json`](references/routes.json). Do not invent a playbook or
 silently substitute a nearby route.
 
-## Resolve the outcome before the task kind
+## Resolve authorization and outcome
 
 Honor negative constraints first. A request that says not to edit, not to open
-an MR, or not to contact an external system cannot select a write-capable tail.
-Then resolve the strongest explicitly requested outcome:
+an MR, not to contact reviewers, or not to contact an external system lowers
+what the run may do regardless of execution mode.
+
+In normal mode, resolve the strongest explicitly requested outcome:
 
 1. Read-only questions default to `answer`.
 2. Requested code changes default to `local-change`.
@@ -35,22 +60,70 @@ Then resolve the strongest explicitly requested outcome:
 4. Explicitly babysitting, getting green, or reaching merge-ready selects
    `merge-ready`.
 
-Never infer an external-write outcome from a ticket, branch, remote, or the
-fact that code changed. The selected outcome is the maximum this run may do.
+Never infer an external-write outcome in normal mode from a ticket, branch,
+remote, or the fact that code changed.
+
+In autonomous mode, resolve an **authority ceiling** instead of requiring the
+user to name every delivery step. Start at `merge-ready`, then lower it when the
+request constrains the run:
+
+- no edits or read-only only -> `answer`;
+- no PR/MR or no external writes -> `local-change`;
+- open a PR/MR but do not contact reviewers or babysit -> `mr-open`;
+- otherwise -> `merge-ready`.
+
+An explicit lower outcome from the user also lowers the ceiling. Autonomous
+mode never raises authority above an explicit constraint.
 
 ## Select one route
 
-1. If the user names a route ID, use it only when that route allows the
-   resolved outcome.
+1. If the user names a route ID, use it only when that route can satisfy the
+   authorized outcome or, in autonomous mode, an allowed outcome at or below
+   the authority ceiling.
 2. Otherwise, walk `routes` in registry order and choose the first matching
-   entry whose `allowedOutcomes` contains the resolved outcome.
-3. If no entry matches, keep `Route: none` and use the applicable leaf skills
-   directly.
+   entry. In normal mode its `allowedOutcomes` must contain the resolved
+   outcome. In autonomous mode it must contain at least one outcome at or below
+   the authority ceiling.
+3. In autonomous mode, after selecting the route, choose its strongest allowed
+   outcome at or below the ceiling in this order: `merge-ready`, `mr-open`,
+   `local-change`, `answer`.
+4. If no entry matches, keep `Route: none` and use the applicable leaf skills
+   directly. Autonomous mode still obeys the same authority ceiling and may not
+   invent an external-write tail for an unregistered route.
 
 When a route is selected, copy its base playbook steps followed by the selected
 outcome tail into the task list. Keep skipped steps visible with the reason.
 Complete the base work before an outcome tail. An MR or reviewer interaction is
-never implicit.
+implicit only when autonomous mode selected an outcome whose registered tail
+contains that action; otherwise it remains unauthorized.
+
+## Autonomous decision policy
+
+Autonomous mode should feel unattended, not indiscriminate. Use the smallest
+amount of machinery that can settle the task well.
+
+- Inspect repository evidence before choosing a solution. Follow an established
+  local pattern when it satisfies the acceptance behavior.
+- Route through `how` when runtime behavior, ownership, or layering is unclear,
+  and through `why` when history or an existing decision could constrain the
+  change.
+- Route through `architect` in the playbook-selected mode when a consequential
+  public boundary needs to be settled before implementation.
+- Route through `arena` when at least two materially viable approaches remain
+  and choosing the wrong one would cause substantial rework. Do not run Arena
+  merely because autonomous mode is active.
+- Choose ordinary reversible engineering decisions yourself. Prefer repository
+  evidence, explicit acceptance behavior, established conventions, smaller
+  blast radius, and simpler public surfaces over asking the user for taste.
+- Continue fixing implementation, verification, CI, and review failures while
+  they remain inside the selected route and authority ceiling.
+
+Interrupt the user only when the decision cannot responsibly be derived from
+available evidence or the run hits a real authority boundary: ambiguous product
+semantics that change externally observable behavior, conflicting explicit
+requirements, missing credentials or permissions, a safety boundary, or an
+irreversible/destructive action outside the authorization. Batch related
+questions when possible. Do not ask for routine implementation preferences.
 
 ## Routed workflow skills
 
