@@ -52,6 +52,24 @@ outcome tail into the task list. Keep skipped steps visible with the reason.
 Complete the base work before an outcome tail. An MR or reviewer interaction is
 never implicit.
 
+## Route through leaf skills
+
+When a playbook says to route through, invoke, run, use, or delegate to a named
+skill, invoke that installed skill and follow its contract completely. Do not
+inline, imitate, or replace the skill's procedure in the coordinator unless the
+playbook explicitly says to do so.
+
+The routed skill owns its own subagent type, model selection, fan-out, readonly
+mode, verification procedure, and fallback behavior. Respect those choices
+instead of substituting coordinator defaults. This matches pstack's routed-skill
+contract: the coordinator owns the route and final answer; the leaf skill owns
+how its step is executed.
+
+If a required routed skill cannot be resolved, report that failure rather than
+silently doing the work in the parent agent. Optional conditional steps may be
+skipped only when their playbook condition is false, with the skip reason kept
+visible in the task list.
+
 ## Resolve feature size before route selection
 
 Select `large-feature` instead of `feature` when the user asks to implement new
