@@ -9,8 +9,9 @@ setup: |
   git add app.txt && git commit -qm init
 
 prompt: |
-  Change app.txt to contain "after". Do this autonomously, but do not open a PR
-  or MR and do not contact any external system.
+  Use djungelskog-mode for this request. Change app.txt to contain "after".
+  Do this autonomously, but do not open a PR or MR and do not contact any
+  external system.
 
 assert:
   output_contains:
