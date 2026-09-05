@@ -44,10 +44,17 @@ mode it never opens an MR, merges, or releases unless you ask for that outcome.
 `djungelskog-mode` is the autonomous entry point. Invoke `/djungelskog-mode <task>` when
 you want the same Blahaj routes and playbooks to research, choose the approach,
 implement, verify, open the change request, and drive it merge-ready without
-routine checkpoints. Autonomous mode chooses the strongest allowed non-merge
-outcome unless your prompt lowers that authority. Negative constraints always
+routine checkpoints. This explicit entry point opts into delivery; saying
+"work autonomously" alone preserves the outcome you requested. Both modes
+settle routine engineering decisions without asking. Negative constraints always
 win, and djungelskog-mode never merges, releases, or deploys without separate
 explicit authorization.
+
+Delivery supports GitHub PRs and GitLab MRs. Readiness requires review and CI
+for the current head. Longer tasks can save progress outside tracked files and
+resume the original route and scope. Later execution requires an explicitly
+requested and confirmed host schedule; installing the skill does not keep the
+agent running after its host stops.
 
 The model-aware skills (`architect`, `arena`, `how`, `interrogate`, `swarm`,
 `why`) run their subagents on configured models. Configure them in Cursor with
@@ -73,7 +80,7 @@ You do not need to name them in the prompt.
 |---|---|
 | `architect` | Settle a boundary before a feature, bug fix, or refactor crosses it |
 | `arena` | Compare viable implementations when one choice would lock in the wrong shape |
-| `babysit-gitlab-mr` | Run only for the explicit or autonomous `merge-ready` outcome |
+| `babysit-gitlab-mr` | Run the authorized GitLab `merge-ready` tail |
 | `decompose-epic` | Split work only when the source is a real Jira epic |
 | `e2e-verify` | Verify UI behavior or visual parity on a real UI |
 | `feature-retention-tests` | Add durable feature coverage only after accepted behavior works through the real interface |

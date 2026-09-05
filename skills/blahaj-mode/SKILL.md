@@ -21,15 +21,9 @@ Blahaj has two execution modes:
 - **Autonomous** is selected only when the user explicitly requests autonomous
   execution or when another explicit entry point, currently `djungelskog-mode`,
   invokes Blahaj in autonomous mode. The task route stays the same; autonomous
-  mode changes how much ordinary decision-making and delivery authority Blahaj
-  may exercise inside that route.
+  mode changes persistence within the agreed task, not permission to publish.
 
-Autonomous mode is not a new route and does not duplicate any playbook. It
-means: investigate enough to understand the affected system, choose the best
-supported approach, implement the complete accepted scope, prove the behavior,
-add retention coverage at the playbook-defined point, run verification, and
-continue through the strongest authorized non-merge outcome the selected route
-supports.
+Both modes use the same routes, playbooks, and verification gates.
 
 Autonomous mode never authorizes merging, releasing, deploying, destructive
 external actions, or any other irreversible operation that is not already
@@ -56,21 +50,22 @@ In normal mode, resolve the strongest explicitly requested outcome:
 
 1. Read-only questions default to `answer`.
 2. Requested code changes default to `local-change`.
-3. Explicitly opening or creating an MR selects `mr-open`.
+3. Explicitly opening, creating, or updating a PR/MR selects `mr-open`.
 4. Explicitly babysitting, getting green, or reaching merge-ready selects
    `merge-ready`.
 
 Never infer an external-write outcome in normal mode from a ticket, branch,
 remote, or the fact that code changed.
 
-In autonomous mode, resolve an **authority ceiling** instead of requiring the
-user to name every delivery step. Start at `merge-ready`, then lower it when the
-request constrains the run:
+In both modes, the requested outcome is the **authority ceiling**. Saying
+"autonomously" alone does not authorize publishing. Explicitly invoking
+`djungelskog-mode` opts into delivery through `merge-ready` for an implementation
+task unless the user selects a lower outcome. Lower that ceiling for constraints:
 
 - no edits or read-only only -> `answer`;
 - no PR/MR or no external writes -> `local-change`;
-- open a PR/MR but do not contact reviewers or babysit -> `mr-open`;
-- otherwise -> `merge-ready`.
+- no reviewer contact or no babysitting -> at most `mr-open`;
+- otherwise -> the requested outcome (the wrapper's default is `merge-ready`).
 
 An explicit lower outcome from the user also lowers the ceiling. Autonomous
 mode never raises authority above an explicit constraint.
@@ -93,14 +88,18 @@ mode never raises authority above an explicit constraint.
 
 When a route is selected, copy its base playbook steps followed by the selected
 outcome tail into the task list. Keep skipped steps visible with the reason.
-Complete the base work before an outcome tail. An MR or reviewer interaction is
-implicit only when autonomous mode selected an outcome whose registered tail
-contains that action; otherwise it remains unauthorized.
+Complete the base work before an outcome tail. Pass the original request,
+acceptance criteria, route, outcome, constraints, existing authorization, and
+current evidence to each callee. This task contract prevents a nested skill
+from asking again for authority already supplied or widening the task.
+Reviewer messages require explicit authorization from the request or a host
+that permits the wrapper's explicit delivery contract to supply it. A selected
+tail never overrides a host restriction on contacting others.
 
-## Autonomous decision policy
+## Decision policy in both modes
 
-Autonomous mode should feel unattended, not indiscriminate. Use the smallest
-amount of machinery that can settle the task well.
+Choose routine engineering details and finish authorized work in both modes.
+Use the smallest amount of machinery that can settle the task well.
 
 - Inspect repository evidence before choosing a solution. Follow an established
   local pattern when it satisfies the acceptance behavior.
@@ -124,6 +123,22 @@ semantics that change externally observable behavior, conflicting explicit
 requirements, missing credentials or permissions, a safety boundary, or an
 irreversible/destructive action outside the authorization. Batch related
 questions when possible. Do not ask for routine implementation preferences.
+
+Pause only the blocked action and continue independent work. A failed check is
+work to resolve, not a reason to ask whether to continue. Honor declared budgets;
+there is no implicit task-wide timeout. Follow `escalate` when materially
+different attempts stop producing progress.
+
+## Continuation
+
+For work spanning interruptions or external waits, read
+[`references/continuation.md`](references/continuation.md). Save the task
+contract and next action at meaningful boundaries. On "continue" for a known
+task, restore its original route and authorized outcome before selecting a new
+route. Reconcile the checkpoint with trusted conversation history and current
+files; cached state does not grant permission. Recheck stale evidence and reuse
+the existing change request. Do not promise an unattended restart unless a
+supported host scheduler has actually accepted it.
 
 ## Routed workflow skills
 
@@ -167,15 +182,6 @@ behavior and either condition is true:
 Judge the work shape after a short repository inspection. Do not infer size
 from the prompt length or a raw file count. A request for only a plan remains a
 `multi-phase-plan` request, even when the planned feature is large.
-
-## Choose the exploration shape
-
-Use `how` when the existing system is unclear but the target is known. Use
-`arena` when the task is hard because the solution choice is uncertain, at
-least two viable approaches exist, and committing to one approach would cause
-substantial rework if it is wrong. An established local pattern or mechanical
-change does not need an arena. A playbook may name narrower triggers for its
-domain.
 
 ## Empty-registry behavior
 

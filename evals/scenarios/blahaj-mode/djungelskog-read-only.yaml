@@ -1,0 +1,21 @@
+skill: djungelskog-mode
+description: Explicit delivery entry does not turn a read-only question into an implementation task.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  echo 'The display name is derived from the filename.' > design.txt
+  git add design.txt && git commit -qm init
+
+prompt: |
+  Use djungelskog-mode. Explain how the display name is chosen according to
+  design.txt. Do not edit any files or contact external systems.
+
+assert:
+  output_contains:
+    - "Route: investigation -> answer"
+  custom: |
+    set -eu
+    test -z "$(git status --porcelain)"
+    if grep -Eq '^--- (gh|glab|acli) |^--- git .*push' "$CALLS_LOG"; then exit 1; fi

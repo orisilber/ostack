@@ -15,11 +15,11 @@ prompt: |
 
 assert:
   output_contains:
-    - "Route: feature -> local-change"
+    - "Route: (feature -> local-change|none)"
   custom: |
     set -eu
     grep -qx after app.txt
-    if grep -q '^--- glab ' "$CALLS_LOG"; then
-      echo "unexpected external glab call" >&2
+    if grep -Eq '^--- (gh|glab|acli) |^--- git .*push' "$CALLS_LOG"; then
+      echo "unexpected external operation" >&2
       exit 1
     fi

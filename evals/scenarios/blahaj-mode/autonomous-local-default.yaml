@@ -1,0 +1,21 @@
+skill: blahaj-mode
+description: Ordinary autonomous execution preserves the requested local outcome.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  echo before > app.txt
+  git add app.txt && git commit -qm init
+
+prompt: |
+  Use blahaj-mode to change app.txt to contain "after". Work autonomously and
+  use your judgment for ordinary implementation details.
+
+assert:
+  output_contains:
+    - "Route: (feature -> local-change|none)"
+  custom: |
+    set -eu
+    grep -qx after app.txt
+    if grep -Eq '^--- (gh|glab|acli) |^--- git .*push' "$CALLS_LOG"; then exit 1; fi
