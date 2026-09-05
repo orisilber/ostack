@@ -1,123 +1,88 @@
 ---
 name: architect
-description: Settle types, signatures, and module boundaries before writing code when the user asks to architect or a workflow finds a consequential unresolved shape. Return a usable sketch to the caller, or implement it only in explicit implementation mode. Use only when real code follows; a plan nobody implements is not this skill.
+description: Settle types, signatures, and module boundaries when the user asks to architect or a workflow finds a consequential unresolved design. Return a sketch to the caller, or implement it in full mode.
 disable-model-invocation: true
 ---
 
 # Architect
 
-Design before implementing. Sketch types, function signatures, class shapes, and module boundaries with `not implemented` bodies and pseudocode. Synthesize across multiple model perspectives, then fill in code against the chosen sketch. If implementation proves the sketch wrong, throw it out and redesign.
+Settle the caller's usage, types, and ownership before committing to a shape.
+Reuse an established design when it already answers the consequential questions.
 
-## Invocation contract
+## Modes and ownership
 
-Callers that own decomposition or implementation should invoke this skill in
-`design-only` mode. That mode returns the usage sketch, candidate comparison,
-and synthesized contract without editing product code. A standalone invocation
-may use implementation mode when the user asked this skill to carry the change
-through; the mode must be explicit when another workflow owns the files.
+- **Full** is the default for direct architect usage: design, implement, and
+  verify the requested change.
+- **Design-only** returns a design package and stops. The caller owns product
+  edits, decomposition, implementation, and final verification. Do not write
+  production implementation code in this mode.
+- **Full with checkpoint** pauses after the design only when the invoker
+  explicitly requested that checkpoint.
 
-## Model resolution
+Callers that own implementation must select `architect design-only` explicitly.
+A design-only return is a handoff to that caller, not a request for another user
+approval. Preserve already granted authority throughout.
 
-Resolve `architect.runners` from the canonical ostack configuration at
-`$OSTACK_CONFIG_HOME/models.json`, or `~/.config/ostack/models.json` when the
-variable is unset. Use the exact override when present, then the generic
-`judgment` role, then `inherit`. A missing, invalid, or empty configuration is
-recoverable: report the fallback once and use `inherit`.
+## Ground the decision
 
-These entries select models, not candidate count. Phase B determines the useful
-number of candidates; reuse an available entry for distinct directions when
-only one model is exposed. `inherit` must be the only entry when selected. If the host rejects one configured entry, remove that
-entry and continue with the remaining entries. Use `inherit` only if none
-remain. Never select a nearby model ID, and never claim that a successful
-subagent call proves which model actually ran because the host may silently
-substitute it.
+Reuse the caller's current evidence and inspect contracts the design could
+change. Invoke the **how** skill for a material gap in behavior or ownership,
+and the **why** skill when unresolved historical constraints affect the choice.
+A mechanical change with a clear target does not require another investigation.
 
-## Start
+Write the caller's usage first. Derive the type sketch, signatures, and module
+map from it. Use [references/rationale-template.md](references/rationale-template.md)
+for a substantial package; scale the detail to the decision.
 
-Open a todolist with one entry per phase before starting. In `design-only` mode
-the list ends at Agree; implementation mode includes Implement and Scrap.
-Autonomous mode without checkpoints needs the list to show phase position and
-keep phases from silently disappearing.
+## Compare only consequential alternatives
 
-1. Ground
-2. Sketch
-3. Agree
-4. Implement
-5. Scrap
+If grounding leaves multiple viable shapes and choosing poorly would cause
+substantial rework, or the user explicitly requests alternatives, route through
+the **arena** skill. Pass the grounding and
+[references/runner-prompt.md](references/runner-prompt.md). Candidates produce
+design packages only; no production implementation edits.
 
-## Phase A: Ground the problem
+Set Arena's supported runner-role override to `architect runners`. Arena owns
+candidate spawning, fallback handling, and its separate `arena cross-judge`
+role. Do not merge `arena runners` into the design-candidate panel.
 
-Reuse the caller's current grounding and inspect only the contracts the design
-could change. Invoke the **how** skill for a material gap in behavior or ownership,
-and the **why** skill when an unresolved historical constraint affects the
-choice. Do not repeat a caller's adequate exploration or require a separate
-explanation for a mechanical change.
+The selected role resolves from its line in
+`~/.cursor/rules/ostack-models.mdc`, then generic `judgment`, then `inherit`.
+Arena passes each resolved value as the subagent `model` argument; `inherit`
+omits that argument. Hosts that do not load the rule use `inherit`. Do not
+substitute nearby model IDs or claim the requested model was the one that ran
+without host evidence.
 
-## Phase B: Sketch
+Candidate count follows the useful design directions, not model-list length.
+Reuse an available model for distinct directions when necessary. When there
+is one established, reversible shape, produce that grounded candidate directly
+and record why a comparison would not change the decision.
 
-Use the **arena** skill with the design-sketch task and the Phase A grounding
-artifacts when Phase A leaves a consequential design choice unresolved or the
-caller explicitly asks for alternatives. Pass `references/runner-prompt.md` as
-each runner's prompt. Each candidate produces a design package shaped per
-`references/rationale-template.md`: the caller's usage written first, then the
-type sketch, function signatures, module map, and prose rationale derived from
-it. For an established or mechanically constrained shape, produce one grounded
-candidate and record why comparison would not change the decision.
+## Select and return the contract
 
-Use the resolved `architect.runners` panel for the design candidates.
+Check the candidate against
+[references/design-red-flags.md](references/design-red-flags.md). Reject
+information leaks, shallow wrappers, and unnecessary coupling. Compare viable
+alternatives on what callers need to know and what complexity the interface hides.
+Reuse a prior comparison that still answers this decision.
 
-When alternatives are warranted, require at least two structurally distinct
-candidates before synthesis. Whole-shape alternatives are useful here; point
-fixes inside one shape are not. Do not manufacture a second candidate when the
-grounding leaves one viable shape and the decision is reversible.
+Return the usage sketch, selected types and signatures, module ownership,
+material alternatives, and constraints implementation must preserve.
+In design-only mode, stop here. In full mode, continue unless the user requested
+a checkpoint. Commit a scaffold separately only when authorized and useful to
+review; a design handoff does not authorize a product commit.
 
-Screen every candidate against [`references/design-red-flags.md`](references/design-red-flags.md) before synthesis. Reject or revise shallow modules, information leakage, temporal decomposition, and pass-through methods.
+## Implement in full mode
 
-Compare viable candidates on interface depth. Prefer the design that hides more complexity behind a smaller, simpler public surface. A rich interface can keep call chains short by concentrating capability instead of scattering it across layers.
+Fill in the chosen design and verify the accepted behavior. Keep verification
+appropriate to the task: bug reproduction, feature acceptance followed by
+retention coverage, or refactoring equivalence.
 
-Comparison, when used, returns one synthesized design package. The synthesis decision populates the rationale's "Synthesis decision" section.
+Treat implementation deviations as evidence. A local correction need not
+restart design. Revisit the shape when the same friction recurs across callers:
+leaking internal rules, repeated special cases, or incompatible ownership.
+Compare again only if the new evidence leaves a consequential choice.
 
-## Phase C: Agree (opt-in)
-
-In `design-only` mode, return the synthesized design package here and stop. The
-caller owns implementation and verification. In standalone implementation mode,
-proceed directly to implementation with the synthesized design. No human
-checkpoint.
-
-Opt in to a checkpoint when the invoker explicitly asks: "/architect with checkpoint," "stop and show me before implementing," or similar. Then surface the synthesized design and pause for sign-off.
-
-Only in implementation mode, and within the authorized commit scope, the synthesis can ship as its own commit. That's the "scaffold first" mode of the **foundational-thinking** principle; subsequent commits read as filling in bodies against a stable contract. Planned and scoped breakage during fill-in is fine, per the **outcome-oriented-execution** principle. For adversarial pressure on the design before implementing, run the **interrogate** skill on the synthesized sketch.
-
-If the human pushes back on the shape (in a checkpoint or after the fact), treat that as Phase A evidence. Re-ground and re-run Phase B before writing more code.
-
-## Phase D: Implement against the sketch (implementation mode only)
-
-Replace `not implemented` bodies with code, pseudocode with logic. The synthesized sketch is the contract.
-
-Deviations from the sketch are signal worth surfacing, not friction to absorb silently. If a function needs a parameter the sketch didn't anticipate, ask whether the sketch was wrong, the requirement was missed, or the implementation is overreaching. Surface it; don't bolt it on.
-
-## Phase E: Scrap when the architecture is wrong
-
-If implementation keeps producing friction the sketch can't absorb, throw the sketch out. Don't bolt fixes onto a wrong design, per the **redesign-from-first-principles** and **fix-root-causes** principles.
-
-The signal is a *pattern*, not single instances. Tells:
-
-- The same shape of workaround appearing repeatedly across unrelated code.
-- Multiple unrelated edge cases that all need special-case branches.
-- Types that need escape hatches (`any`, casts, optional fields always set in practice) to compile.
-- The "we need a lock" reflex when the sketch said the state wasn't shared.
-- Callers having to know the abstraction's internal rules to use it.
-- Two or more independent Phase D deviations of the same shape across the implementation. Surfacing deviations is Phase D's job; a repeated pattern of them is Phase E's trigger.
-
-Use judgment. A few edge cases don't condemn an architecture. Some problems are legitimately complex; complexity in the data is not complexity in the design. The rewrite signal is repeated friction of the same shape, not single hard cases.
-
-When you scrap:
-
-1. Re-run the **how** skill over what's been built. The implementation lessons enter the new design as inputs, not vibes.
-2. Redesign as if the new constraints had been day-one assumptions, per redesign-from-first-principles.
-3. Subtract before adding, per the **subtract-before-you-add** principle. The new sketch should be smaller than the old one before it grows.
-4. Return to Phase B; compare alternatives only if the new evidence warrants it.
-
-## Outputs
-
-The caller's usage is written first and the type sketch derived from it. One file with new types and signatures for small changes; module map plus type definitions for larger work. The rationale ships alongside, shaped per `references/rationale-template.md`, including the usage sketch and the synthesis decision.
+Return the implemented result and its verification, with the design rationale
+at the depth needed to review it. The calling workflow owns publication and
+any subsequent reviewer interaction.

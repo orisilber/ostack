@@ -2,7 +2,7 @@ Portions of this repository are adapted from pstack
 (https://github.com/poteto/pstack), Copyright (c) 2026 Lauren Tan,
 licensed under the MIT License.
 
-Adapted skills: ostack-mode (the mode and playbook mechanism from pstack's
+Adapted skills: blahaj-mode (the mode and playbook mechanism from pstack's
 poteto-mode; the route registry, outcome tails, and playbook text are specific
 to ostack), principles (consolidated from the 21 principle-* skills), how, why,
 blast-radius, architect, arena, swarm, interrogate, recall, show-me-your-work,

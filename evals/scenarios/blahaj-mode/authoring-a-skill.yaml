@@ -1,0 +1,37 @@
+skill: blahaj-mode
+description: Routes skill authoring through principles, writing, unslop, and evals.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  mkdir -p evals
+  cat > evals/lint.sh <<'SH'
+  #!/usr/bin/env bash
+  set -eu
+  test -s skills/changelog-format/SKILL.md
+  test -s evals/scenarios/changelog-format/basic.yaml
+  touch "$WORK/.lint-ran"
+  SH
+  chmod +x evals/lint.sh
+  echo '# fixture' > README.md
+  git add -A && git commit -qm init
+
+prompt: |
+  Use blahaj-mode to create a small changelog-format skill at
+  skills/changelog-format/SKILL.md. Add its behavioral scenario at
+  evals/scenarios/changelog-format/basic.yaml. Apply principles,
+  technical-writing, and unslop, then run the local lint gate. Do not open an
+  MR.
+
+assert:
+  output_contains:
+    - "Route: authoring-a-skill -> local-change"
+    - "principles"
+    - "technical-writing"
+    - "unslop"
+  custom: |
+    set -eu
+    test -s skills/changelog-format/SKILL.md
+    test -s evals/scenarios/changelog-format/basic.yaml
+    test -e "$WORK/.lint-ran"

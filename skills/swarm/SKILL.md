@@ -10,16 +10,20 @@ Fan out N parallel workers, cloud where the host has them, local otherwise. They
 
 ## Model resolution
 
-Resolve `swarm.workers` from the canonical ostack configuration at
-`$OSTACK_CONFIG_HOME/models.json`, or `~/.config/ostack/models.json` when the
-variable is unset. Use the exact override first, then the generic
-`implementation` role, then `inherit`. A missing, invalid, or empty
-configuration is recoverable: report the fallback once and use `inherit`.
+Resolve `swarm workers`, generic role `implementation`, from
+`~/.cursor/rules/ostack-models.mdc`. Use the skill-role line first, then the
+generic role line, then `inherit`.
 
-Workers use the first resolved entry unless a race or comparison explicitly
-assigns another configured entry. If the host rejects an entry, use `inherit`
-for that worker; never pick a nearby model ID. Do not claim that a successful
-worker call proves which model ran because the host may silently substitute it.
+Every worker uses the first resolved entry, unless a race or comparison
+assigns a different entry per arm. A worker whose entry the host rejects runs
+on `inherit`.
+
+Pass the resolved value as the subagent `model` argument. `inherit` means omit
+`model` and let the subagent run on the parent chat model. A line never mixes
+`inherit` with a model ID. Hosts that do not load the rule resolve every role
+to `inherit`. When the host rejects a model ID, do not swap in a nearby one. A
+successful call proves nothing about which model ran, because the host may
+substitute one without saying so.
 
 ## Start
 
@@ -35,7 +39,7 @@ Open a todolist with one entry per phase before launching anything.
 1. State the done predicate and the artifact or report the swarm must return.
 2. Choose the shape. Partition into slices, race N workers on identical briefs, or mix both. For a race or mixed shape, declare `first pass`, `rank all`, or `best-of` before spawning.
 3. Set N from the user or derive it from the shape. N is total workers, not the cloud concurrency limit.
-4. Pick the worker model from the resolved `swarm.workers` role; workers are
+4. Pick the worker model from the resolved `swarm workers` role; workers are
    bulk labor, so use the first configured entry. For a model race, name each
    arm's model up front and use only configured entries.
 5. Give each worker its own writable output when it writes. Use a distinct

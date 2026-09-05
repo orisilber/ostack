@@ -1,2 +1,4 @@
 evals/.venv/
 evals/results.jsonl
+__pycache__/
+*.pyc

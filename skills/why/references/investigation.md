@@ -5,19 +5,25 @@ requests broad coverage. Reuse the code anchor and findings already collected.
 
 ## Model resolution
 
-Resolve `why.investigators` and `why.synthesizer` from the canonical ostack
-configuration at `$OSTACK_CONFIG_HOME/models.json`, or
-`~/.config/ostack/models.json` when the variable is unset. Use the exact
-override first, then the generic role (`exploration` or `prose`), then
-`inherit`. A missing, invalid, or empty configuration is recoverable: report
-the fallback once and use `inherit`.
+Resolve `why investigators` and `why synthesizer` from
+`~/.cursor/rules/ostack-models.mdc`. For each role use its skill-role line
+first, then its generic role line, then `inherit`.
 
-Each investigator uses the first resolved entry, and the synthesizer is a
-single-agent role that also uses its first entry. If a configured entry is
-rejected, use `inherit` for that subagent; never select a nearby model ID. A
-successful subagent call does not prove which model ran because the host may
-silently substitute it.
+| Role | Generic role |
+|---|---|
+| `why investigators` | `exploration` |
+| `why synthesizer` | `prose` |
 
+Every investigator uses the first entry resolved for `why investigators`. The
+synthesizer is a single-agent role and uses its own first entry. A subagent
+whose entry the host rejects runs on `inherit`.
+
+Pass the resolved value as the subagent `model` argument. `inherit` means omit
+`model` and let the subagent run on the parent chat model. A line never mixes
+`inherit` with a model ID. Hosts that do not load the rule resolve every role
+to `inherit`. When the host rejects a model ID, do not swap in a nearby one. A
+successful call proves nothing about which model ran, because the host may
+substitute one without saying so.
 
 ## Choose and assign sources
 

@@ -258,6 +258,7 @@ class SkillContracts(Sandbox):
         (references / "guide.md").write_text("Use **first-missing** skill and `second-missing` skill.\n")
         errors = self.module.check(self.root)
         self.assertEqual(len(errors), 2, errors)
+
         self.assertTrue(any("first-missing" in e for e in errors))
         self.assertTrue(any("second-missing" in e for e in errors))
         (self.root / "evals").mkdir()
@@ -270,6 +271,23 @@ class SkillContracts(Sandbox):
         with (self.skill / "SKILL.md").open("a") as stream:
             stream.write("Run [helper](scripts/missing.py).\n")
         self.assertTrue(any("missing.py" in e for e in self.module.check(self.root)))
+
+    def test_plural_dependency_list(self):
+        with (self.skill / "SKILL.md").open("a") as stream:
+            stream.write("Use **first-missing** and `second-missing` skills.\n")
+        errors = self.module.check(self.root)
+        self.assertEqual(len(errors), 2, errors)
+
+
+class CliExamples(unittest.TestCase):
+    def test_pipeline_flags_are_not_cli_flags(self):
+        spec = importlib.util.spec_from_file_location("cli_command", ROOT / "evals/lib/cli-command.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.assertEqual(module.arguments('acli jira workitem view PROJ-1 --json | jq --arg id 1'),
+                         ['acli', 'jira', 'workitem', 'view', 'PROJ-1', '--json'])
+        self.assertEqual(module.arguments('glab api "projects/a|b" --method GET > result.json'),
+                         ['glab', 'api', 'projects/a|b', '--method', 'GET'])
 
 
 if __name__ == "__main__":

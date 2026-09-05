@@ -6,23 +6,28 @@ disable-model-invocation: true
 
 # Interrogate
 
-Spawn one reviewer per configured model to adversarially review code changes. Each model gets the same prompt and rubric. The adversarial signal comes from model diversity, not assigned personas. Models differ in blind spots, priors, and reasoning patterns. Agreement across models is high-confidence signal; lone-model findings are worth reading but lower confidence.
+Spawn the configured reviewers with the same intent and rubric. Judge their
+findings by demonstrated impact and source evidence. Independent agreement can
+direct attention, but one concrete counterexample can outweigh consensus.
 
 The deliverable is a synthesized verdict. Do not auto-apply changes.
 
 ## Model resolution
 
-Resolve `interrogate.reviewers` from the canonical ostack configuration at
-`$OSTACK_CONFIG_HOME/models.json`, or `~/.config/ostack/models.json` when the
-variable is unset. Use the exact override first, then the generic `judgment`
-role, then `inherit`. A missing, invalid, or empty configuration is
-recoverable: report the fallback once and use `inherit`.
+Resolve `interrogate reviewers`, generic role `judgment`, from
+`~/.cursor/rules/ostack-models.mdc`. Use the skill-role line first, then the
+generic role line, then `inherit`.
 
-This is a panel. Run each resolved entry once. `inherit` must be the only entry
-when selected. If the host rejects one configured entry, remove it and
-continue with the remaining entries; use `inherit` only when none remain. Do
-not select a nearby model ID. A successful subagent call does not prove which
-model ran because the host may silently substitute it.
+This is a panel. Run one subagent per resolved entry, so the entry count sets
+the fan-out. If the host rejects an entry, drop it and run the rest. Fall back
+to `inherit` only when nothing is left.
+
+Pass the resolved value as the subagent `model` argument. `inherit` means omit
+`model` and let the subagent run on the parent chat model. A line never mixes
+`inherit` with a model ID. Hosts that do not load the rule resolve every role
+to `inherit`. When the host rejects a model ID, do not swap in a nearby one. A
+successful call proves nothing about which model ran, because the host may
+substitute one without saying so.
 
 ## Step 1, Determine Scope
 
@@ -48,13 +53,13 @@ Write one clear paragraph. Reviewers challenge whether the work achieves the int
 ## Step 3, Spawn Reviewers
 
 Launch all reviewers in a single message. Create one reviewer per entry in the
-resolved `interrogate.reviewers` panel and label them in spawn order (Reviewer
-A, Reviewer B, and so on). The resolved entries, not an inline default table,
-define the panel's size and requested models.
+resolved `interrogate reviewers` panel and label them in spawn order (Reviewer
+A, Reviewer B, and so on). The resolved entries define the panel's size and
+requested models.
 
 For each reviewer:
 - `subagent_type`: `generalPurpose` in Cursor; `Explore` (read-only) or `general-purpose` in Claude Code
-- `model`: one entry from the resolved `interrogate.reviewers` panel
+- `model`: one entry from the resolved `interrogate reviewers` panel
 - `readonly`: `true`
 
 If a configured model entry is rejected, remove that entry from this panel and
@@ -77,8 +82,8 @@ Each reviewer produces structured findings as described in the prompt template.
 As results come back, build a unified picture:
 
 1. **Parse all findings** from the reviewers
-2. **Identify consensus**. Findings raised by 2+ models independently are highest signal.
-3. **Identify lone-model findings**. Still worth reading, but weight accordingly.
+2. **Check evidence**. Trace the claimed failure and its actual impact.
+3. **Identify agreement and lone findings** without using vote count as severity.
 4. **Deduplicate**. Different models may describe the same issue differently. Merge these and note which models raised it.
 5. **Note disagreements**. If one model flags something and another explicitly says the opposite, that's useful context for the verdict.
 
@@ -108,7 +113,7 @@ Present the verdict in this structure:
 > [The stated intent paragraph from Step 2]
 
 ### Reviewers
-- Reviewer [label]: [model name], [N findings] (one bullet per reviewer)
+- Reviewer [label]: requested model, confirmed actual model if available, and findings
 
 ### Act On
 [Findings that should be addressed. For each: description, which models raised it, why it matters.]

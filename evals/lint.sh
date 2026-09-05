@@ -22,6 +22,20 @@ source "$ROOT/evals/lib/py_with_yaml.sh"
 PYTHON="$(resolve_python)"
 "$PYTHON" "$ROOT/evals/lib/check-skill-contracts.py" "$ROOT" || err "skill contract validation failed"
 "$PYTHON" "$ROOT/tests/audit-regressions.py" || err "audit regression tests failed"
+if node -e 'require(process.env.TYPESCRIPT_PATH || "typescript")' >/dev/null 2>&1; then
+	node "$ROOT/tests/typescript-examples.cjs" || err "TypeScript example regression tests failed"
+else
+	wrn "TypeScript compiler unavailable; set TYPESCRIPT_PATH to run the example checks"
+fi
+
+# -------------------------------------------------------------------- agents
+for f in "$ROOT"/agents/*.md; do
+	[ -f "$f" ] || continue
+	name="$(basename "$f" .md)"
+	grep -q "^name: $name$" "$f" || err "agent: frontmatter name must match $name"
+	grep -q '^description:' "$f" || err "agent: $name has no description"
+	grep -q '^readonly: true$' "$f" || err "agent: $name must remain read-only"
+done
 
 # ----------------------------------------------------- CLI flag accuracy check
 # Extract glab/gh/acli invocations from fenced bash blocks; join continuation
@@ -116,12 +130,16 @@ check_cli() {
 
 	while IFS= read -r line; do
 		case "$line" in *lint-ignore*) continue ;; esac
+		line="$(printf '%s' "$line" | "$PYTHON" "$ROOT/evals/lib/cli-command.py")" || {
+			err "cli: cannot parse documented command"
+			continue
+		}
 		# subcommand path: leading non-flag words after the cli token
 		local rest subcmd=""
 		rest="${line#$cli }"
 		for word in $rest; do
 			case "$word" in
-				-*|\"*|\`*|\$*|\#*|\<*|[A-Z_]+=*|*[/?]*) break ;;
+				-*|\"*|\'*|\`*|\$*|\#*|\<*|[A-Z_]+=*|*[/?]*) break ;;
 				*) subcmd="$subcmd $word" ;;
 			esac
 		done
@@ -132,9 +150,14 @@ check_cli() {
 		# exits on first match and SIGPIPEs the producer, which pipefail
 		# then reports as a pipeline failure regardless of grep's verdict.
 		# stop after "api": it takes a raw REST endpoint/path, not a subcommand.
-		local level="" bad_word="" ok=1 avail
+		local level="" bad_word="" ok=1 avail level_help
 		for word in $subcmd; do
-			avail="$(commands_in_help "$(help_at "$cli" "$level")")"
+			level_help="$(help_at "$cli" "$level")"
+			if [[ "$level_help" = *OSTACK_HELP_UNAVAILABLE* ]]; then
+				ok=0; bad_word="$word (help unavailable)"; break
+			fi
+			avail="$(commands_in_help "$level_help")"
+			[ -n "$avail" ] || break   # the remaining words are positional arguments
 			if ! grep -qxF "$word" <<< "$avail"; then
 				ok=0; bad_word="$word"; break
 			fi
@@ -148,7 +171,11 @@ check_cli() {
 
 		# every long flag must appear in the leaf level's help text
 		local help_cache
-		help_cache="$(help_at "$cli" "$subcmd")"
+		help_cache="$(help_at "$cli" "$level")"
+		if [[ "$help_cache" = *OSTACK_HELP_UNAVAILABLE* ]]; then
+			err "cli: '$cli $level --help' unavailable"
+			continue
+		fi
 		for word in $rest; do
 			case "$word" in
 				--[a-zA-Z][a-zA-Z-]*)
@@ -173,7 +200,7 @@ while IFS= read -r -d '' f; do
 	LC_ALL=C grep -q "$EMDASH" "$f" && err "style: em dash in $rel"
 	grep -nE "[[:blank:]]+$" "$f" >/dev/null && err "style: trailing whitespace in $rel"
 	[ -n "$(tail -c 1 "$f")" ] && err "style: no trailing newline in $rel"
-done < <(find "$SKILLS" "$ROOT/README.md" -name "*.md" -print0 2>/dev/null)
+done < <(find "$SKILLS" "$ROOT/agents" "$ROOT/README.md" -name "*.md" -print0 2>/dev/null)
 
 # ---------------------------------------------------- hand-written contracts
 # Add project-specific invariants here as skills evolve.
@@ -181,6 +208,30 @@ grep -q 'last_seen_note' "$SKILLS/babysit-gitlab-mr/SKILL.md" || \
 	err "contract: babysit cursor field renamed but doc still says otherwise"
 grep -qE 'declared budget|budget.*declared' "$SKILLS/escalate/SKILL.md" || \
 	err "contract: escalate must allow calling skills to declare their own budget"
+
+grep -qF 'named `comment-sicko` subagent' "$SKILLS/no-comments/SKILL.md" || \
+	err "contract: no-comments must delegate to the named comment-sicko subagent"
+[ -f "$ROOT/agents/comment-sicko.md" ] || \
+	err "contract: comment-sicko subagent is missing"
+for outcome in mr-open merge-ready; do
+	first_tail="$(jq -r --arg outcome "$outcome" '.outcomeTails[$outcome][0] // empty' \
+		"$SKILLS/blahaj-mode/references/routes.json")"
+	[ "$first_tail" = 'skill:no-comments' ] || \
+		err "contract: $outcome must run no-comments before the MR review tail"
+done
+grep -qF 'preceding `no-comments` outcome-tail step' \
+	"$SKILLS/blahaj-mode/playbooks/opening-an-mr.md" || \
+	err "contract: opening-an-mr must consume the no-comments review gate"
+
+# Feature work proves the implementation before permanent retention coverage.
+grep -qF 'without adding or editing' "$SKILLS/blahaj-mode/playbooks/feature.md" || \
+	err "contract: feature playbook must defer feature-specific tests"
+grep -qF 'feature-retention-tests' "$SKILLS/blahaj-mode/playbooks/feature.md" || \
+	err "contract: feature playbook must invoke retention coverage after acceptance"
+grep -qF 'Workers must not add or edit' "$SKILLS/blahaj-mode/playbooks/large-feature.md" || \
+	err "contract: large-feature workers must not author feature tests"
+grep -qF 'Start only after the caller provides' "$SKILLS/feature-retention-tests/SKILL.md" || \
+	err "contract: retention tests require completed, accepted behavior"
 
 # verify-changes' retry loop must match escalate's soft-stop default, numerically
 escalate_n="$(grep -oE 'default N=[0-9]+' "$SKILLS/escalate/SKILL.md" | grep -oE '[0-9]+' | head -1)"
@@ -212,9 +263,9 @@ grep -qF 'disable-model-invocation: true' "$SKILLS/maintain-verification-skill/S
 	err "contract: maintain-verification-skill must remain explicitly invoked"
 bash "$ROOT/tests/install-upgrade.sh" || err "installer upgrade fixtures failed"
 
-# ---------------------------------------------------- ostack-mode contracts
-bash "$SKILLS/ostack-mode/scripts/validate.sh" --root "$ROOT" || err "ostack-mode validator failed"
-bash "$ROOT/evals/fixtures/ostack-mode-validator/run.sh" || err "ostack-mode validator fixtures failed"
+# ---------------------------------------------------- blahaj-mode contracts
+bash "$SKILLS/blahaj-mode/scripts/validate.sh" --root "$ROOT" || err "blahaj-mode validator failed"
+bash "$ROOT/evals/fixtures/blahaj-mode-validator/run.sh" || err "blahaj-mode validator fixtures failed"
 
 # A route scenario must prove an observable effect or preserved invariant. An
 # output-only assertion can pass when an agent merely repeats the playbook.
@@ -226,9 +277,9 @@ while IFS= read -r scenario; do
 		}
 		END { exit found ? 0 : 1 }
 	' "$scenario"; then
-		err "ostack-mode scenario has no fail-fast executable evidence: ${scenario#$ROOT/}"
+		err "blahaj-mode scenario has no fail-fast executable evidence: ${scenario#$ROOT/}"
 	fi
-done < <(find "$ROOT/evals/scenarios/ostack-mode" -type f -name '*.yaml' -print | sort)
+done < <(find "$ROOT/evals/scenarios/blahaj-mode" -type f -name '*.yaml' -print | sort)
 
 # ------------------------------------------------------------------- summary
 echo

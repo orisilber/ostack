@@ -8,7 +8,11 @@ import sys
 import yaml
 
 
-DEPENDENCY = re.compile(r"(?:\*\*([a-z][a-z0-9-]*)\*\*|`([a-z][a-z0-9-]*)`)\s+skill\b")
+NAME = r"[a-z][a-z0-9-]*"
+FORMATTED_NAME = rf"(?:\*\*{NAME}\*\*|`{NAME}`)"
+DEPENDENCY = re.compile(
+    rf"(?:\*\*({NAME})\*\*|`({NAME})`)(?=(?:\s*(?:,|and|or)\s*{FORMATTED_NAME})*\s+skills?\b)"
+)
 LOCAL_REFERENCE = re.compile(r"(?<![\w/-])(references/[A-Za-z0-9._/-]+\.(?:md|tsv|json|ya?ml))\b")
 SCRIPT_REFERENCE = re.compile(r"(?:\]\(|<[^>\n]+>/)(scripts/[A-Za-z0-9._/-]+\.(?:sh|py|jq))\b")
 

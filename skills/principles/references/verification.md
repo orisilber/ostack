@@ -67,10 +67,11 @@ batch the change and run one focused check at the end. Each unit should have a
 known-good baseline and a check appropriate to its risk; rebasing onto trunk is
 useful when the baseline matters, but is not a prerequisite for local work.
 
-**Delivery.** Stack commits and PRs in the order that proves the work. The canonical shape is the failing test first, then the fix on top. The first unit shows the bug is real (red), the next shows it resolved (green), so a reviewer sees both the problem and the proof. Other story orders are a subtraction before the reshape, a baseline capture before the treatment, the scaffold before the feature. Each commit lands on its own and the sequence reads as an argument.
+**Delivery.** Stack commits and PRs in the order that proves the work. For a bug fix, the canonical shape is the failing test first, then the fix on top. The first unit shows the bug is real (red), the next shows it resolved (green). For a feature, implement and exercise the accepted behavior first, then add retention tests that preserve the finished contract. Other story orders are a subtraction before the reshape, a baseline capture before the treatment, or a scaffold before the feature. Each commit lands on its own and the sequence reads as an argument.
 
 **Pattern:**
-- Pick the smallest unit that ends in a check: an edit plus its test, or a commit that stands alone.
+- Pick a unit with an existing or temporary behavior check. Bugs move red to
+  green; features reach accepted real behavior before permanent retention tests.
 - Verify at boundaries that make failures easy to localize; batch cohesive edits
   when one focused check covers the unit.
 - Order the units so the sequence builds confidence on its own, for you while executing and for a reviewer reading the stack.
