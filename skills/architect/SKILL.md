@@ -24,8 +24,9 @@ variable is unset. Use the exact override when present, then the generic
 `judgment` role, then `inherit`. A missing, invalid, or empty configuration is
 recoverable: report the fallback once and use `inherit`.
 
-This is a panel. Run each resolved entry once; `inherit` must be the only entry
-when it is selected. If the host rejects one configured entry, remove that
+These entries select models, not candidate count. Phase B determines the useful
+number of candidates; reuse an available entry for distinct directions when
+only one model is exposed. `inherit` must be the only entry when selected. If the host rejects one configured entry, remove that
 entry and continue with the remaining entries. Use `inherit` only if none
 remain. Never select a nearby model ID, and never claim that a successful
 subagent call proves which model actually ran because the host may silently
@@ -46,11 +47,11 @@ keep phases from silently disappearing.
 
 ## Phase A: Ground the problem
 
-Build a real mental model of every system the new code touches. Run the **how** skill over the relevant subsystems. Critique mode if existing structure is the constraint or the design must push back on it.
-
-Naming a file isn't grounding. Produce the traced model `how` prescribes. If the design redefines ownership or layering, also run the **why** skill on the existing shape so the rationale becomes a constraint, not a guess.
-
-Skip Phase A only when the work is genuinely greenfield with no surrounding system to integrate.
+Reuse the caller's current grounding and inspect only the contracts the design
+could change. Invoke the **how** skill for a material gap in behavior or ownership,
+and the **why** skill when an unresolved historical constraint affects the
+choice. Do not repeat a caller's adequate exploration or require a separate
+explanation for a mechanical change.
 
 ## Phase B: Sketch
 
@@ -74,7 +75,7 @@ Screen every candidate against [`references/design-red-flags.md`](references/des
 
 Compare viable candidates on interface depth. Prefer the design that hides more complexity behind a smaller, simpler public surface. A rich interface can keep call chains short by concentrating capability instead of scattering it across layers.
 
-Arena returns one synthesized design package. The synthesis decision populates the rationale's "Synthesis decision" section.
+Comparison, when used, returns one synthesized design package. The synthesis decision populates the rationale's "Synthesis decision" section.
 
 ## Phase C: Agree (opt-in)
 
@@ -85,7 +86,7 @@ checkpoint.
 
 Opt in to a checkpoint when the invoker explicitly asks: "/architect with checkpoint," "stop and show me before implementing," or similar. Then surface the synthesized design and pause for sign-off.
 
-The synthesis can ship as its own commit either way. That's the "scaffold first" mode of the **foundational-thinking** principle; subsequent commits read as filling in bodies against a stable contract. Planned and scoped breakage during fill-in is fine, per the **outcome-oriented-execution** principle. For adversarial pressure on the design before implementing, run the **interrogate** skill on the synthesized sketch.
+Only in implementation mode, and within the authorized commit scope, the synthesis can ship as its own commit. That's the "scaffold first" mode of the **foundational-thinking** principle; subsequent commits read as filling in bodies against a stable contract. Planned and scoped breakage during fill-in is fine, per the **outcome-oriented-execution** principle. For adversarial pressure on the design before implementing, run the **interrogate** skill on the synthesized sketch.
 
 If the human pushes back on the shape (in a checkpoint or after the fact), treat that as Phase A evidence. Re-ground and re-run Phase B before writing more code.
 
@@ -115,7 +116,7 @@ When you scrap:
 1. Re-run the **how** skill over what's been built. The implementation lessons enter the new design as inputs, not vibes.
 2. Redesign as if the new constraints had been day-one assumptions, per redesign-from-first-principles.
 3. Subtract before adding, per the **subtract-before-you-add** principle. The new sketch should be smaller than the old one before it grows.
-4. Return to Phase B and re-run arena.
+4. Return to Phase B; compare alternatives only if the new evidence warrants it.
 
 ## Outputs
 

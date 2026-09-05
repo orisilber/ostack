@@ -16,7 +16,8 @@ extract, inline, move, or deduplication.
    as the review lens.
 5. Move callers with the API, delete the legacy shape in the same wave, and
    preserve the pinned behavior.
-6. Run the pin, neighboring checks, and `verify-changes`; report the
+6. Pass completed pin and neighboring-check evidence to `verify-changes`.
+   Run missing or invalidated checks at the required scope and report the
    equivalence evidence.
 
 The route must not smuggle in new behavior. Split a discovered feature or bug

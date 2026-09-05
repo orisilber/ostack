@@ -60,7 +60,8 @@ only (`agent-transcripts/` under the Cursor project dir, `~/.claude/projects/<sl
 - Every row maps to a real action. Append a correction for invented or aspirational entries; do not rewrite an immutable committed trail.
 - Each row's evidence resolves and shows what the row claims.
 - A fork, pivot, or abandoned approach that shaped the work but isn't logged is a gap. Append it.
-- Drop padding from a draft log. In a committed log, append a superseding note rather than deleting history.
+- Omit padding before recording a row. Once recorded, append a superseding
+  correction rather than deleting history, whether or not the log is committed.
 
 Fix the log, not the story. If the work diverged from what a row claims, the row is wrong.
 

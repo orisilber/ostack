@@ -1,6 +1,6 @@
 ---
 name: recall
-description: Rebuild your working context on a topic from your own transcripts plus the shared record (MRs, tickets, incidents, errors) and hand back a tight current-state brief. Triggers "catch me up", "what was I working on", "where did I leave off", before resuming work. Use only to reconstruct context; durable preferences and facts are memory-recall (agent-memory).
+description: Rebuild your working context on a topic from your own transcripts plus the shared record (MRs, tickets, incidents, errors) and hand back a tight current-state brief. Triggers "catch me up", "what was I working on", "where did I leave off". Use only to reconstruct context; durable preferences and facts are memory-recall (agent-memory).
 disable-model-invocation: true
 ---
 
@@ -26,14 +26,14 @@ Transcripts are per-workspace JSONL, one chat message per line. Where they live 
   for the active workspace first. If it exposes no history, continue with live
   state and say so; do not pretend the Cursor or Claude paths apply.
 
-Neither directory exists → say so and work from live state alone. Don't invent a history.
+If neither native task history nor a host transcript store is available, say so
+and work from live state alone. Do not invent a history.
 
 1. Classify, then route. Resuming one specific prior chat is a session pickup, not this: open that transcript and continue from it. A durable preference or procedure is `memory-capture` (from agent-memory, not this repo). A human-readable summary of your work is a different task. Recall loads working context across recent chats before you act. If the user already gave you a full state capsule (paths, branch, the change), use it and skip the mining.
 2. Lock the scope before searching. Pin the window ("recent" is a real range, default the last 7 days), the topic if named, and the workspace (default the active one; never read another project's transcripts without being asked). State the scope back. Never quietly turn "all" into "recent N".
 3. Search your chat history. For a large corpus, spawn bounded parallel
    workers on a fast model, each taking a slice. For one or two chats, search
-   directly. In either case, order candidates by real modification time (`ls
-   -t`) rather than UUID name, search the topic before reading a matching chat,
+   directly. In either case, order candidates by real modification time (`ls -t`) rather than UUID name, search the topic before reading a matching chat,
    read only relevant regions, and skip the current chat plus obvious noise
    (subagent, eval, and test chats). Return the same schema, one block per chat:
    topic, the user's goal, decisions, open threads, struggles and corrections,

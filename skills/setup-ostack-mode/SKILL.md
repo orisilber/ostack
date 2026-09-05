@@ -47,7 +47,8 @@ when no valid value exists) and ask for all four generic roles together:
 - `prose`: explainers and synthesis writers
 
 Each role is an array with at least one entry. A single-agent role uses its
-first entry. A panel role uses every entry once. Keep `inherit` as the only
+first entry. Review panels use every entry once; architect and arena choose
+candidate count from distinct design directions and reuse model entries when needed. Keep `inherit` as the only
 entry in its array; it must not be mixed with model IDs. An explicit rejection
 of one model entry removes that entry from a panel. Continue with the
 remaining entries, and use `inherit` only when no entries remain. Never claim

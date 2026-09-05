@@ -6,7 +6,9 @@ description: Split a Jira epic into atomic, conflict-free tickets with acceptanc
 # Decompose Epic
 
 One epic in, N ready-to-claim tickets out. Quality bar: each ticket must be
-completable in ONE agent session and parallel-safe.
+independently verifiable, with explicit ownership and dependencies. Prefer work
+that fits one session, without splitting a cohesive acceptance unit just to
+meet a file-count or time heuristic.
 
 Spec still in Confluence, not Jira? That's `spec-to-backlog` (Atlassian plugin),
 then come back here to make its output agent-shaped.
@@ -17,7 +19,7 @@ then come back here to make its output agent-shaped.
 PROJECT_KEY="${PROJECT_KEY:-${EPIC%%-*}}"
 acli jira workitem view "$EPIC" --fields "summary,description,labels,status,priority"
 acli jira workitem search --jql "parent = $EPIC" \
-  --fields "key,issuetype,status,assignee,summary" --limit 50 --paginate --csv
+  --fields "key,issuetype,status,assignee,summary" --paginate --csv
 acli jira workitem comment list --key "$EPIC"
 ```
 
@@ -31,8 +33,8 @@ Drain every page before drafting. If the provider cannot prove that the listing
 is complete, report the inventory as incomplete and do not create tickets yet;
 never rely on the first page to avoid duplicate scope.
 
-If discussion is long, summarize it now and work from the summary. Never
-re-read it later. Then explore the codebase enough to name real files and
+If discussion is long, summarize it with source pointers. Revisit the original
+only when new evidence or ambiguity makes the summary insufficient. Then explore the codebase enough to name real files and
 modules per ticket. Guessing scopes from titles is how parallel agents collide.
 
 ## 2. Draft tickets (in memory, no API calls yet)
@@ -43,30 +45,32 @@ Each ticket needs:
   implementable without reading the epic.
 - **Description**: goal in 2–3 sentences, acceptance criteria as a CHECKLIST
   (each item objectively checkable), explicit out-of-scope line.
-- **Scope**: the files and modules it touches, and must be disjoint across tickets.
+- **Scope**: concrete files/modules and ownership. Concurrent tickets must have
+  disjoint writes; overlapping work can be ordered by dependencies.
   Shared foundations (types, API client, feature flag, util) become their own
   first ticket that the others depend on.
 - **Dependencies**: which tickets must merge first. A DAG, kept shallow.
 - **Type**: `Story` for behavior, `Production Bug` only for a real reported
   defect, `Sub-task` when the parent is a Story rather than an Epic. Match the
   types the project actually has; `acli jira project view` if unsure.
-- **Size**: if you can't state the touched files, it's too big. Split.
+- **Size**: identify source entry points and the acceptance unit. Investigate
+  an unknown scope before splitting it into speculative file-sized tickets.
 
 ## 3. Self-check before creating
 
 Run this matrix against the draft:
 
-1. Any two tickets touching the same file? → merge them, or extract a shared
-   foundation ticket both depend on.
+1. Any two concurrent tickets touching the same file? Merge them, extract a
+   shared foundation, or serialize them through a dependency.
 2. Can each be verified independently? If two only make sense together, they are
    one ticket.
 3. Does any acceptance criterion need human judgment ("looks good", "feels
    fast")? Rewrite it into something checkable, or drop it.
 4. Is there a final integration ticket (wiring + `e2e-verify`) if the pieces
    interact at runtime?
-5. Does any ticket land in an `escalate` forbidden zone (auth, payments,
-   migrations, infra)? Keep it in the plan, but mark it human-only so no agent
-   claims it.
+5. Does a ticket require an operation outside current authority or access?
+   Record that dependency and required approval. Authorized source edits in
+   auth, billing, migration, or infrastructure code are not human-only by topic.
 
 ## 4. Show ONE approval table, then create
 

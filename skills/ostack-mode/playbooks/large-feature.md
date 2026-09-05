@@ -3,11 +3,11 @@
 Use this route when new behavior spans multiple independently verifiable
 implementation scopes or cannot reasonably finish in one agent session.
 
-1. State the complete done predicate and run `how` over every affected
-   subsystem.
-2. Run `architect` in `design-only` mode when a public type, function, class, or
-   ownership boundary crosses modules. Its design comparison satisfies `arena`
-   for that decision and returns control before implementation ownership is
+1. State the complete done predicate and reuse current grounding. Run `how`
+   for material gaps in affected behavior or ownership.
+2. Run `architect` in `design-only` mode when a public boundary introduces a
+   consequential unresolved shape. Its comparison, when warranted, satisfies `arena`
+   for that same decision and returns control before implementation ownership is
    assigned.
    Otherwise, run `arena` when at least two viable approaches exist and choosing
    the wrong one would cause substantial rework. Record why an arena was not

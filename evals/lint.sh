@@ -17,50 +17,11 @@ declare -a FAILURES=()
 err() { fail=$((fail + 1)); FAILURES+=("FAIL $1"); }
 wrn() { warn=$((warn + 1)); echo "WARN $1" >&2; }
 
-# ---------------------------------------------------------------- frontmatter
-for dir in "$SKILLS"/*/; do
-	name="$(basename "$dir")"
-	f="$dir/SKILL.md"
-	[ -f "$f" ] || { err "$name: SKILL.md missing"; continue; }
-
-	grep -q '^name:' "$f" || err "$name: no name in frontmatter"
-	fm_name="$(sed -n 's/^name:[[:space:]]*//p' "$f" | head -1 | tr -d '[:space:]')"
-	[ "$fm_name" = "$name" ] || err "$name: frontmatter name '$fm_name' != folder"
-
-	# description length measured ONLY within the frontmatter block
-	desc_len="$(awk 'NR==1{next} /^---[[:space:]]*$/{exit} /^[a-z-]+:/ && !/^description:/ && seen{exit} /^description:/{seen=1} seen{print}' "$f" | wc -c | tr -d ' ')"
-	grep -q '^description:' "$f" || err "$name: no description in frontmatter"
-	if [ "${desc_len:-0}" -gt 600 ]; then
-		err "$name: description ${desc_len}b > 600b (index bloat)"
-	fi
-
-	# whole-file token budget: SKILL.md is loaded in full whenever the skill
-	# fires, unlike references/ (loaded selectively). Cap well above today's
-	# largest (why, ~23KB) so it only trips on a real bloat regression.
-	body_bytes="$(wc -c < "$f" | tr -d ' ')"
-	if [ "$body_bytes" -gt 32000 ]; then
-		err "$name: SKILL.md ${body_bytes}b > 32000b token budget"
-	fi
-
-	# local file references must exist
-	while IFS= read -r ref; do
-		[ -e "$dir$ref" ] || err "$name: references missing file $ref"
-	done < <(grep -oE '(references/[A-Za-z0-9._/-]+\.(md|tsv|json|yaml|yml))' "$f" | sort -u)
-done
-
-# ------------------------------------------------- cross-skill references valid
-# Check the forms used in prose (`how` skill and **how** skill). The old loop
-# iterated only over directories that already existed, so it could never report
-# a missing dependency.
-for dir in "$SKILLS"/*/; do
-	name="$(basename "$dir")"
-	while IFS= read -r other; do
-		[ -n "$other" ] || continue
-		[ -d "$SKILLS/$other" ] || err "$name: mentions skill '$other' which does not exist"
-	done < <(
-		sed -nE 's/.*\*\*([a-z][a-z0-9-]*)\*\*[[:space:]]+skill.*/\1/p; s/.*`([a-z][a-z0-9-]*)`[[:space:]]+skill.*/\1/p' "$dir/SKILL.md" | sort -u
-	)
-done
+# ------------------------------------------------ skill metadata and references
+source "$ROOT/evals/lib/py_with_yaml.sh"
+PYTHON="$(resolve_python)"
+"$PYTHON" "$ROOT/evals/lib/check-skill-contracts.py" "$ROOT" || err "skill contract validation failed"
+"$PYTHON" "$ROOT/tests/audit-regressions.py" || err "audit regression tests failed"
 
 # ----------------------------------------------------- CLI flag accuracy check
 # Extract glab/gh/acli invocations from fenced bash blocks; join continuation
@@ -111,8 +72,15 @@ help_at() {
 	[ -z "$level" ] && key="${cli}_ROOT"
 	local cache="$TMP/help_${key}.cache"
 	if [ ! -f "$cache" ]; then
-		# shellcheck disable=SC2086
-		"$cli" $level --help > "$cache" 2>&1 || true
+		# Bound help probes: some CLIs try network access even for --help.
+		"$PYTHON" - "$cli" "$level" > "$cache" 2>&1 <<'PY' || printf '\nOSTACK_HELP_UNAVAILABLE\n' >> "$cache"
+import subprocess
+import sys
+result = subprocess.run([sys.argv[1], *sys.argv[2].split(), "--help"],
+                        capture_output=True, text=True, timeout=10)
+print(result.stdout + result.stderr)
+sys.exit(result.returncode)
+PY
 	fi
 	cat "$cache"
 }
@@ -123,15 +91,20 @@ check_cli() {
 		wrn "lint: $cli not installed; flag checks skipped"
 		return 0
 	}
+	if [[ "$(help_at "$cli" '')" = *OSTACK_HELP_UNAVAILABLE* ]]; then
+		wrn "lint: $cli --help unavailable; flag checks skipped"
+		return 0
+	fi
 
 	# collect fenced bash content across all skills, plus inline `glab ...` code
 	local joined
 	joined="$(mktemp "$TMP/cli.XXXX")"
-	for f in "$SKILLS"/*/"SKILL.md"; do
+	while IFS= read -r f; do
 		sed -n '/^```bash/,/^```/p' "$f" \
+			| awk '{ while (sub(/\\$/, "")) { next_line=""; if (getline next_line <= 0) break; $0=$0 next_line }; print }' \
 			| grep "^$cli " >> "$joined" 2>/dev/null || true
 		grep -oE "\`$cli [^\`]+\`" "$f" | sed 's/^`//; s/`$//' >> "$joined" 2>/dev/null || true
-	done
+	done < <(find "$SKILLS" -type f -name "*.md" -print)
 	# join continuation lines, then split compound lines at every cli invocation
 	awk '{ while (sub(/\\$/,"")) { buf=buf $0; getline; buf=buf $0 }; if (buf!="") { print buf; buf="" } else print }' \
 		"$joined" > "$joined.j" || cp "$joined" "$joined.j"
@@ -237,14 +210,6 @@ grep -qF 'disable-model-invocation: true' "$SKILLS/create-verification-skill/SKI
 	err "contract: create-verification-skill must remain explicitly invoked"
 grep -qF 'disable-model-invocation: true' "$SKILLS/maintain-verification-skill/SKILL.md" || \
 	err "contract: maintain-verification-skill must remain explicitly invoked"
-for f in "$SKILLS"/*/SKILL.md; do
-	grep -qF 'disable-model-invocation: true' "$f" || continue
-	skill="$(basename "$(dirname "$f")")"
-	policy="$SKILLS/$skill/agents/openai.yaml"
-	[ -f "$policy" ] && grep -qF 'allow_implicit_invocation: false' "$policy" || \
-		err "contract: $skill must remain explicitly invoked in Codex"
-done
-
 bash "$ROOT/tests/install-upgrade.sh" || err "installer upgrade fixtures failed"
 
 # ---------------------------------------------------- ostack-mode contracts

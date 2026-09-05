@@ -135,7 +135,7 @@ When a novel interaction or architectural decision has no established precedent,
 
 ## Build the Lever
 
-When the work isn't trivial, build the tool that does it instead of doing it by hand.
+When repetition or proof warrants a tool, build the tool that does it instead of doing it by hand.
 
 **Why:** Two payoffs. Throughput: a codemod, generator, or script does the work the same way every time and reruns for free. Confidence: the tool is one artifact a reviewer can read and rerun to check the work. Hand-done changes can only be re-verified by redoing them. A deterministic script turns "trust me" into "run this".
 
@@ -152,6 +152,6 @@ confidence.
   reviewable, record why a new script would not reduce effort or risk.
 - Commit the lever when the work outlives the session, so the next run reruns it instead of redoing it.
 
-**Balance:** The bar is triviality, not repetition. A one-off still earns a lever when the lever is what makes the work checkable. Per the [Laziness Protocol](core.md), build the smallest script that does or proves the job, never a framework.
+**Balance:** The bar is useful repetition or stronger proof. A one-off still earns a lever when the lever is what makes the work checkable. Per the [Laziness Protocol](core.md), build the smallest script that does or proves the job, never a framework.
 
 Distinct from [Encode Lessons in Structure](delegation.md), which makes a recurring instruction a durable guardrail. This is throughput and reviewability on the work in front of you. For scripting the verification itself, see [Prove It Works](verification.md).

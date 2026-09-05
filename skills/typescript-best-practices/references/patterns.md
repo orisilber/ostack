@@ -53,18 +53,32 @@ function pickWinner(entries: string[]): string {
   return entries[Math.floor(Math.random() * entries.length)];
 }
 
-// Do: an empty value of the type can't exist
+// Do: reject an empty tuple and prohibit mutation through this reference
 function pickWinner(entries: NonEmpty<string>): string {
   const index = Math.floor(Math.random() * entries.length);
   return entries[index] ?? entries[0];
 }
 ```
 
-Where a plain `T[]` arrives, narrow once with a guard. The fact then travels in the type:
+Where a plain `T[]` arrives, a guard narrows the current value:
 
 ```ts
 const isNonEmpty = <T>(arr: readonly T[]): arr is NonEmpty<T> => arr.length > 0;
 ```
+
+Readonly is a compile-time view, not ownership or runtime freezing. Another
+mutable alias can still empty the original array. When the invariant must
+survive other callers or an async boundary, validate a copy and freeze it:
+
+```ts
+function nonEmptySnapshot<T>(input: readonly T[]): NonEmpty<T> {
+  const copy = [...input];
+  if (!isNonEmpty(copy)) throw new Error("no entries");
+  return Object.freeze(copy);
+}
+```
+
+This freezes array membership, not the objects stored in the array.
 
 Even length, as pairs. TypeScript has no refinement types (no `arr.length % 2 === 0` at the type level); you don't need one:
 
@@ -79,19 +93,22 @@ A time range, as start plus duration:
 type TimeRange = { start: Date; end: Date }; // start <= end
 
 // Do: validate the duration at the boundary; derive end when needed
-type NonNegativeDurationMs = { readonly milliseconds: number };
+type NonNegativeDurationMs = number & { readonly __brand: "NonNegativeDurationMs" };
 type TimeRange = { start: Date; duration: NonNegativeDurationMs };
 
 function nonNegativeDurationMs(value: number): NonNegativeDurationMs {
   if (!Number.isFinite(value) || value < 0) {
     throw new Error("duration must be a finite non-negative number");
   }
-  return { milliseconds: value };
+  return value as NonNegativeDurationMs;
 }
 ```
 
-The object wrapper makes construction go through the boundary check, so a
-`TimeRange` cannot contain a negative duration unless code bypasses the factory.
+The brand rejects plain numbers and structural object literals at typed call
+sites. The factory validates finite, non-negative values before the single
+boundary cast. Assertions and untyped inputs can bypass TypeScript, so keep
+validation at those boundaries. Dates have their own validity and overflow
+constraints; this example establishes only the duration invariant.
 A `Pairs<T>` is an even-length list under the interpretation you give it. Pick
 the representation that makes the bad state unconstructable, then expose the
 reading you need on top (`pairs.flat()`, a `rangeEnd()` helper).

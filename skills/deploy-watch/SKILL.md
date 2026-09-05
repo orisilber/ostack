@@ -1,218 +1,58 @@
 ---
 name: deploy-watch
-description: "Watch a deployment's health after release: compare error/latency/uptime against baseline, roll back or alert per pre-authorized policy. Triggers \"watch the deploy\", \"post-deploy check\", \"monitor rollout\", \"set up deploy watch\". Not for triggering deploys, that's CI's job."
+description: Watch deployment health against an agreed baseline and trigger policy. Set up a missing contract when requested, alert on meaningful changes, and roll back only with explicit authority.
 ---
 
-# Deploy Watch
+# Deploy watch
 
-The last mile of autonomy: notice breakage before users do, act within
-pre-granted limits.
+Use the requested environment, duration, and existing trigger policy. Check
+relevant repository/service instructions or `deploy-watch.json` for a contract.
+Reuse supplied values and previous authorization. A watch request alone does
+not authorize rollback, issue creation, or messages to third parties.
 
-## 0. Load the watch contract (required before watching anything)
+For first-time setup or missing consequential values, read
+[references/setup.md](references/setup.md). Discover sources and prepare the
+contract before asking only for what is missing. An explicit setup-and-watch
+request continues into the watch as soon as the contract is complete.
 
-Per-project config in `AGENTS.md`, or a `deploy-watch.json` adjacent to
-`.gitlab-ci.yml`, or (in a monorepo) adjacent to the specific service's own
-`AGENTS.md`. Check all three locations relevant to the thing being watched
-before concluding no contract exists. The contract defines the trigger
-policy, not the tooling; tooling is discovered fresh every run (step 1),
-because two projects on this same skill can watch completely different
-stacks:
+## Discover and validate the sources
 
-```json
-{
-  "env": "production",
-  "baseline_minutes": 30,
-  "watch_minutes": 60,
-  "poll_seconds": 120,
-  "rollback": { "authorized": true, "command": "<exact rollback cmd>" },
-  "triggers": [
-    { "metric": "error_rate", "condition": ">2x baseline", "severity": "auto_rollback" },
-    { "metric": "p95_latency", "condition": ">2x baseline", "severity": "alert" },
-    { "metric": "uptime", "condition": "<99%", "severity": "auto_rollback" }
-  ]
-}
-```
+Resolve tools from the contract and current host. Check named sources first,
+then relevant repository/CI declarations and available connectors for gaps.
+Do not search every integration on the host. For each metric, confirm the exact
+query, environment, units, and deployment SHA; a tool name alone is insufficient.
 
-No contract found → prepare the smallest reviewable setup request. If the user
-explicitly asked for first-time setup and watching, continue through §0a after
-one batched question set. Otherwise pause before writing a contract. The
-contract encodes a trust boundary (auto-rollback authorization) that only a
-human can grant. Never invent a threshold, metric, or rollback permission.
+Use the existing CLI/API for shell-callable sources. For MCP-only sources, use
+host tools and its scheduler or interruptible waits. A model-callable MCP is not
+a command a shell loop can execute. If a required source cannot be read, report
+that gap rather than declaring the deployment healthy.
 
-## 0a. First-time setup (no contract exists)
+## Establish baseline and watch
 
-Run when setup is requested. Explore the repo first (CI config, existing
-monitoring code, README/AGENTS.md) to pre-fill source details, then ask only for
-missing consequential choices. Show discovered values and let the human correct
-them. Never guess rollback permission or a threshold and silently write it.
+Read the agreed baseline window before the deployment, then evaluate the
+declared metrics during the agreed watch window. Use bounded polls or the
+host's scheduler, respecting user interrupts and the original duration.
+Missing data is not a healthy sample.
 
-Ask once, batched, free text (this is intentionally open-ended, not
-multiple-choice: "I don't know" is a valid answer for 1-4, and just leaves
-that category to fresh discovery per run instead of a fixed source):
+Stay quiet while the state is unchanged and non-actionable. Report a trigger,
+an important source failure, a required decision, or completion. Two consecutive
+unreadable samples require an alert to the user, not an assumed healthy value.
 
-```
-Setting up deploy-watch for this project, five questions, answer what you can:
+## Act within the contract
 
-1. Deploy: which environment should I watch (e.g. production, staging)? How
-   does a change reach that environment, and how would I check whether a
-   given commit/SHA is currently live there? (CI system name, a CLI, a
-   dashboard URL, an MCP tool, whatever you actually use)
-2. Rollback: is there a command I'm authorized to run automatically if a
-   trigger fires? Give the exact command, or say "no"; if no, I will always
-   alert/escalate instead of auto-rolling-back.
-3. Metrics: where do I check error rate, latency, and uptime? Name the tool
-   (Datadog, Grafana, Prometheus, CloudWatch, an internal CLI, an HTTP
-   endpoint, an MCP server) and the exact query/command/URL if you know it.
-4. Logs: where should I pull evidence from when something looks wrong?
-   Same detail level as above.
-5. Defaults, say "defaults" to accept all, or override any:
-   - thresholds: error_rate >2x baseline -> auto_rollback (if authorized)
-     else alert; p95_latency >2x baseline -> alert; uptime <99% ->
-     auto_rollback (if authorized) else alert
-   - timing: baseline_minutes=30, watch_minutes=60, poll_seconds=120
-```
+- If a rollback trigger fires and that exact rollback operation is authorized,
+  run the recorded command and verify the rollback deployment. Do not improvise
+  a different rollback method.
+- If rollback is not authorized, present evidence and the missing decision.
+  Continue independent observation while awaiting it.
+- For an alert, capture a concise log/screenshot and notify the user. Create an
+  issue or send a third-party message only when that channel is authorized.
 
-Write the answers to `deploy-watch.json` at the repo root (or beside the
-relevant service's own `AGENTS.md` in a monorepo with more than one watched
-service, ask which if that's ambiguous), extending the step 0 schema with a
-`sources` block. `env` is always the literal environment named in the
-answer to question 1, never assumed: a setup run for staging must record
-`"env": "staging"`, not default to production because that's the usual
-target.
+## Stop and report
 
-```json
-{
-  "env": "<the environment named in question 1, e.g. production>",
-  "baseline_minutes": 30,
-  "watch_minutes": 60,
-  "poll_seconds": 120,
-  "rollback": { "authorized": true, "command": "<exact rollback cmd>" },
-  "triggers": [
-    { "metric": "error_rate", "condition": ">2x baseline", "severity": "auto_rollback" },
-    { "metric": "p95_latency", "condition": ">2x baseline", "severity": "alert" },
-    { "metric": "uptime", "condition": "<99%", "severity": "auto_rollback" }
-  ],
-  "sources": {
-    "deploy_status": { "type": "cli", "detail": "<verbatim answer: command, URL, or MCP tool name>" },
-    "metrics":       { "type": "mcp", "detail": "<...>" },
-    "logs":          { "type": "http", "detail": "<...>" },
-    "uptime":        { "type": "other", "detail": "<...>" }
-  }
-}
-```
+Stop when the requested window ends, the user stops it, or a contractual end
+condition is met. An extension or a new rollback watch needs an already agreed
+policy or a new duration decision; do not silently double the time.
 
-`type` is whichever of `cli` / `http` / `mcp` / `other` matches the answer.
-A category the human answered "I don't know" to is simply omitted from
-`sources`, step 1 falls back to live discovery for that category only, same
-as a contract with no `sources` block at all.
-
-Keep it untracked without touching the project's own `.gitignore` (that file
-is shared and committed; this contract is a local, possibly credential-
-adjacent artifact). Resolve the exclude file with `git rev-parse`, never a
-literal `.git/info/exclude` path: in a linked worktree `.git` is a file, not
-a directory, so that literal path fails with "Not a directory", and running
-from a subdirectory of the repo (e.g. a service folder in a monorepo)
-means a relative `.git/...` path from cwd is wrong too. Compute the entry
-relative to the repo root regardless of where `deploy-watch.json` landed or
-where this command runs from:
-
-```bash
-repo_root="$(git rev-parse --show-toplevel)"
-contract_path="${CONTRACT_PATH:-$repo_root/deploy-watch.json}"
-exclude="$(git rev-parse --git-path info/exclude)"
-case "$contract_path" in
-  "$repo_root"/*) entry="${contract_path#"$repo_root/"}" ;;
-  *) echo "contract must be inside the repository" >&2; exit 1 ;;
-esac
-grep -qxF "$entry" "$exclude" 2>/dev/null || printf '%s\n' "$entry" >> "$exclude"
-git -C "$repo_root" check-ignore -q --no-index "$entry"
-```
-
-Only report the contract as untracked after this command exits 0. If it
-fails, say so explicitly instead of claiming success; a written contract
-that `git add -A` can still pick up is worse than one you flagged as still
-tracked.
-
-Close with one line: `Wrote deploy-watch.json (untracked via .git/info/exclude).`
-If watching was part of the original request and the contract is complete, start
-the watch; otherwise stop with the contract ready for review.
-
-## 1. Discover the sources (fresh every run, never hardcoded)
-
-Same discovery method as `why`'s Discovery step: list what this host can
-actually reach. In Cursor, use the available-tools map when present,
-otherwise the `mcps/` directory it exposes. In Claude Code, the tool list
-(including deferred tools findable via ToolSearch) plus the repo's
-`.mcp.json`.
-
-Map what you find to the category each trigger's metric actually needs, not
-to a fixed vendor list:
-
-- **Metrics** (`error_rate`, `p95_latency`, custom counters): a
-  metrics/observability MCP.
-- **Logs** (evidence for an `alert`, or a metric with no dashboard):
-  a log-search MCP.
-- **Deploy/build status** (has the rollout finished, which SHA is live):
-  a CI MCP, or `glab ci` / `gh run` when no MCP covers it.
-- **Uptime/synthetic checks**: whatever the project already uses; check
-  `AGENTS.md` and `.gitlab-ci.yml` for a named tool before assuming one.
-
-Classify an MCP by its name, server instructions, and tool names, the same
-way `why` classifies an ambiguous MCP: by primary evidence, not by guessing
-from a familiar-sounding name. Don't assume any specific vendor is present or
-absent; check.
-
-If the contract has a `sources` entry for a category, check that first:
-verify it's still reachable with one lightweight call before trusting it for
-the run. Only fall back to fresh discovery below for a category the contract
-doesn't name, or whose named source no longer resolves.
-
-No MCP covers a category a trigger needs → fall back to the CLI the
-project's own CI or scripts already call (grep for it before inventing a
-command). Still nothing → `escalate`: a trigger you can't read is the same
-failure as a trigger that doesn't exist.
-
-State the mapping once, before polling starts, one line:
-`Sources: metrics=<mcp/cli>, logs=<mcp/cli>, deploy=<mcp/cli>`.
-
-## 2. Establish baseline before judging
-
-Read each mapped source for the `baseline_minutes` window prior to deploy.
-One line: `Baseline: err 0.4% · p95 210ms · uptime 100%`.
-
-## 3. Watch: blocking poll, never busy-loop
-
-For CLI or HTTP sources, use one bounded polling call per window (loop + sleep
-inside, like babysit-gitlab-mr), projecting each metric to a single number via
-the mapped source's CLI/API with `--jq` or equivalent. For MCP-only sources,
-poll through the host's MCP or scheduling interface instead of pretending a
-model-callable tool is a shell command. Wake only on trigger match or window
-end.
-
-Each wake emits exactly one line:
-`t+12m: OK (err 0.5% · p95 220ms · up 100%)` or
-`t+14m: TRIGGER error_rate 1.1% > 2x baseline 0.4%`.
-
-## 4. Action on trigger
-
-- `auto_rollback` AND contract says `authorized: true` → run the exact
-  configured command, then keep watching the ROLLBACK deploy to completion.
-  Announce: `Rolled back <sha>: <trigger>`. Never improvise a different
-  rollback path.
-- `auto_rollback` but not authorized → `escalate` immediately with metric
-  evidence; recommend rollback explicitly.
-- `alert` → collect evidence (one screenshot/log tail), file an issue
-  (`glab issue create`) tagged `deploy-alert`, continue watching.
-
-## 5. End states
-
-- Window elapsed clean → final line `Deploy healthy: <sha> after Nm`, stop.
-- Rollback completed stable → summary + auto-created issue linking timeline, stop.
-- Deteriorating-but-under-threshold at window end → extend once by
-  `watch_minutes`, then report either way.
-
-## Hard rules
-
-Never touch infra beyond the authorized rollback command. Never silence
-alerts. Two consecutive polls where a source is unreadable = treat as
-`alert`, not as healthy.
+Report the deployment SHA, observed window, relevant evidence, actions taken,
+and unresolved gaps. A setup-only task ends with its prepared contract.

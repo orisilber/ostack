@@ -1,0 +1,4 @@
+{
+  "memory-recall": "agent-memory plugin (optional durable-memory workflow)",
+  "spec-to-backlog": "Atlassian plugin (optional spec-to-ticket workflow)"
+}

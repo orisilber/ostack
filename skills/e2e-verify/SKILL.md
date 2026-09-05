@@ -22,10 +22,10 @@ cleanup. This skill owns browser assertions, console-error capture, traces,
 and the flake protocol. Do not install or create a second browser tool when the
 local verifier provides one.
 
-If a local instruction disagrees with current source or fails before reaching
-the changed behavior, report the drift and point to
-`maintain-verification-skill`. Do not hide stale instructions with an unrelated
-fallback.
+If a local instruction drifts, report it and use a current repository command
+or observed path that exercises the same affected behavior. Point to
+`maintain-verification-skill`; fail only when the behavior fails or remains
+unverified. An unrelated passing flow does not substitute for that evidence.
 
 ## 1. Choose browser control
 
@@ -101,7 +101,8 @@ If neither exists, `escalate` rather than inventing a test user.
 
 ## 5. Run the pass
 
-Script the ticket's acceptance criteria as one user journey:
+Exercise the ticket's acceptance criteria as one user journey, using a script
+when durable coverage is warranted and direct browser control otherwise:
 
 1. **Arrange**: navigate, authenticate via `storageState`, seed state.
 2. **Act**: perform the changed flow the way a user would.
@@ -136,7 +137,7 @@ map audit to `maintain-verification-skill`.
 E2E: PASS|FAIL
 Verifier: <project-local path | fallback>
 Flows: <what was driven>
-Script: <path, re-runnable command>
+Script or steps: <path and command | exact interactive path>
 Screenshots: <paths>
 Console errors: <none | list>
 Suppressed: <none | the pre-existing noise you filtered>
@@ -145,7 +146,8 @@ Suppressed: <none | the pre-existing noise you filtered>
 On FAIL: the failing assertion, the last screenshot path, and the trace
 (`npx playwright show-trace <path>`). Fix product code, adjust selectors freely
 when the UI intentionally changed, and rerun the affected check. After three
-failed fix-and-rerun cycles, or two unchanged transient failures, `escalate`.
+failed fix-and-rerun cycles, `escalate`. Two unchanged transient failures require
+diagnosis before any further retry.
 
 ## 7. Flake protocol
 

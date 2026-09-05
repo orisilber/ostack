@@ -28,7 +28,10 @@ When verifying delegated work, inspect the actual output artifact (git diff, fil
 
 ### Script the check when you can
 
-The strongest proof is a deterministic script that re-runs the same comparison, not a one-time eyeball. Write the script, run it, and keep its output as an artifact a reviewer can re-run instead of trusting your word. A script comparing the old and new compiled output catches what a glance misses.
+A deterministic script is useful when the comparison needs repetition or would
+be hard to check by hand. Reuse an existing check when it proves the same fact;
+create a helper when its value justifies maintaining it. A direct manual check
+can be sufficient for a small, reversible change. Record what was observed.
 
 Keep the artifact visible for the human. Commit it only for large or complex work where the trail has to be auditable later, like a big port or migration (the **show-me-your-work** skill). Most work just needs it visible, not committed.
 
@@ -68,7 +71,8 @@ useful when the baseline matters, but is not a prerequisite for local work.
 
 **Pattern:**
 - Pick the smallest unit that ends in a check: an edit plus its test, or a commit that stands alone.
-- Verify before advancing. Red to green per unit, never deferred to a final batch.
+- Verify at boundaries that make failures easy to localize; batch cohesive edits
+  when one focused check covers the unit.
 - Order the units so the sequence builds confidence on its own, for you while executing and for a reviewer reading the stack.
 
 The sequencing complement to the **prove-it-works** principle skill, which keeps each check real, and the **build-the-lever** principle skill, which makes the per-unit check cheap.

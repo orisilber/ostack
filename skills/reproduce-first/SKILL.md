@@ -5,8 +5,8 @@ description: For bug tickets. Write a failing test that reproduces the reported 
 
 # Reproduce First
 
-A bug you can't reproduce, you can't fix, and a fix without a failing test
-first is a guess that might regress later.
+Establish the reported failure before changing product code. Prefer a focused
+test; use the executable or manual fallback below when a new test is impractical.
 
 ## Default order
 
@@ -21,8 +21,8 @@ first is a guess that might regress later.
 ## 1. Extract repro conditions from the report
 
 From the ticket: expected vs actual, exact input, environment, steps. Anything
-missing → that's what clarify-requirements should have covered; if still
-missing, attempt with the most literal reading of the report.
+missing: inspect the linked evidence first, then ask only for a material fact
+that cannot be recovered. New evidence can justify a later clarification.
 
 ## 2. Write the smallest failing test
 
@@ -35,9 +35,9 @@ missing, attempt with the most literal reading of the report.
 
 Run it. The failure mode must match the reported symptom:
 
-- Test passes immediately → either bug is already fixed (comment on the ticket
-  saying so, close via babysit flow) or you misread the report. Do not invent a
-  different bug to have something red.
+- Test passes immediately: investigate whether the bug is already fixed or the
+  reproduction missed a condition. Report the evidence; comment on or close the
+  ticket only when that tracker action is authorized. Do not invent another bug.
 - Failure is unrelated (env broken, import error) → fix the harness, not yet
   the product code.
 
