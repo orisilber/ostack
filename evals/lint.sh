@@ -17,36 +17,16 @@ declare -a FAILURES=()
 err() { fail=$((fail + 1)); FAILURES+=("FAIL $1"); }
 wrn() { warn=$((warn + 1)); echo "WARN $1" >&2; }
 
-# ---------------------------------------------------------------- frontmatter
-for dir in "$SKILLS"/*/; do
-	name="$(basename "$dir")"
-	f="$dir/SKILL.md"
-	[ -f "$f" ] || { err "$name: SKILL.md missing"; continue; }
-
-	grep -q '^name:' "$f" || err "$name: no name in frontmatter"
-	fm_name="$(sed -n 's/^name:[[:space:]]*//p' "$f" | head -1 | tr -d '[:space:]')"
-	[ "$fm_name" = "$name" ] || err "$name: frontmatter name '$fm_name' != folder"
-
-	# description length measured ONLY within the frontmatter block
-	desc_len="$(awk 'NR==1{next} /^---[[:space:]]*$/{exit} /^[a-z-]+:/ && !/^description:/ && seen{exit} /^description:/{seen=1} seen{print}' "$f" | wc -c | tr -d ' ')"
-	grep -q '^description:' "$f" || err "$name: no description in frontmatter"
-	if [ "${desc_len:-0}" -gt 600 ]; then
-		err "$name: description ${desc_len}b > 600b (index bloat)"
-	fi
-
-	# whole-file token budget: SKILL.md is loaded in full whenever the skill
-	# fires, unlike references/ (loaded selectively). Cap well above today's
-	# largest (why, ~23KB) so it only trips on a real bloat regression.
-	body_bytes="$(wc -c < "$f" | tr -d ' ')"
-	if [ "$body_bytes" -gt 32000 ]; then
-		err "$name: SKILL.md ${body_bytes}b > 32000b token budget"
-	fi
-
-	# local file references must exist
-	while IFS= read -r ref; do
-		[ -e "$dir$ref" ] || err "$name: references missing file $ref"
-	done < <(grep -oE '(references/[A-Za-z0-9._/-]+\.(md|tsv|json|yaml|yml))' "$f" | sort -u)
-done
+# ------------------------------------------------ skill metadata and references
+source "$ROOT/evals/lib/py_with_yaml.sh"
+PYTHON="$(resolve_python)"
+"$PYTHON" "$ROOT/evals/lib/check-skill-contracts.py" "$ROOT" || err "skill contract validation failed"
+"$PYTHON" "$ROOT/tests/audit-regressions.py" || err "audit regression tests failed"
+if node -e 'require(process.env.TYPESCRIPT_PATH || "typescript")' >/dev/null 2>&1; then
+	node "$ROOT/tests/typescript-examples.cjs" || err "TypeScript example regression tests failed"
+else
+	wrn "TypeScript compiler unavailable; set TYPESCRIPT_PATH to run the example checks"
+fi
 
 # -------------------------------------------------------------------- agents
 for f in "$ROOT"/agents/*.md; do
@@ -55,18 +35,6 @@ for f in "$ROOT"/agents/*.md; do
 	grep -q "^name: $name$" "$f" || err "agent: frontmatter name must match $name"
 	grep -q '^description:' "$f" || err "agent: $name has no description"
 	grep -q '^readonly: true$' "$f" || err "agent: $name must remain read-only"
-done
-
-# ------------------------------------------------- cross-skill references valid
-all_names="$(ls "$SKILLS")"
-for dir in "$SKILLS"/*/; do
-	name="$(basename "$dir")"
-	for other in $all_names; do
-		[ "$other" = "$name" ] && continue
-		if grep -qE "\`$other\`" "$dir/SKILL.md" && [ ! -d "$SKILLS/$other" ]; then
-			err "$name: mentions skill '$other' which does not exist"
-		fi
-	done
 done
 
 # ----------------------------------------------------- CLI flag accuracy check
@@ -118,8 +86,15 @@ help_at() {
 	[ -z "$level" ] && key="${cli}_ROOT"
 	local cache="$TMP/help_${key}.cache"
 	if [ ! -f "$cache" ]; then
-		# shellcheck disable=SC2086
-		"$cli" $level --help > "$cache" 2>&1 || true
+		# Bound help probes: some CLIs try network access even for --help.
+		"$PYTHON" - "$cli" "$level" > "$cache" 2>&1 <<'PY' || printf '\nOSTACK_HELP_UNAVAILABLE\n' >> "$cache"
+import subprocess
+import sys
+result = subprocess.run([sys.argv[1], *sys.argv[2].split(), "--help"],
+                        capture_output=True, text=True, timeout=10)
+print(result.stdout + result.stderr)
+sys.exit(result.returncode)
+PY
 	fi
 	cat "$cache"
 }
@@ -130,15 +105,20 @@ check_cli() {
 		wrn "lint: $cli not installed; flag checks skipped"
 		return 0
 	}
+	if [[ "$(help_at "$cli" '')" = *OSTACK_HELP_UNAVAILABLE* ]]; then
+		wrn "lint: $cli --help unavailable; flag checks skipped"
+		return 0
+	fi
 
 	# collect fenced bash content across all skills, plus inline `glab ...` code
 	local joined
 	joined="$(mktemp "$TMP/cli.XXXX")"
-	for f in "$SKILLS"/*/"SKILL.md"; do
+	while IFS= read -r f; do
 		sed -n '/^```bash/,/^```/p' "$f" \
+			| awk '{ while (sub(/\\$/, "")) { next_line=""; if (getline next_line <= 0) break; $0=$0 next_line }; print }' \
 			| grep "^$cli " >> "$joined" 2>/dev/null || true
 		grep -oE "\`$cli [^\`]+\`" "$f" | sed 's/^`//; s/`$//' >> "$joined" 2>/dev/null || true
-	done
+	done < <(find "$SKILLS" -type f -name "*.md" -print)
 	# join continuation lines, then split compound lines at every cli invocation
 	awk '{ while (sub(/\\$/,"")) { buf=buf $0; getline; buf=buf $0 }; if (buf!="") { print buf; buf="" } else print }' \
 		"$joined" > "$joined.j" || cp "$joined" "$joined.j"
@@ -150,12 +130,16 @@ check_cli() {
 
 	while IFS= read -r line; do
 		case "$line" in *lint-ignore*) continue ;; esac
+		line="$(printf '%s' "$line" | "$PYTHON" "$ROOT/evals/lib/cli-command.py")" || {
+			err "cli: cannot parse documented command"
+			continue
+		}
 		# subcommand path: leading non-flag words after the cli token
 		local rest subcmd=""
 		rest="${line#$cli }"
 		for word in $rest; do
 			case "$word" in
-				-*|\"*|\`*|\$*|\#*|\<*|[A-Z_]+=*|*[/?]*) break ;;
+				-*|\"*|\'*|\`*|\$*|\#*|\<*|[A-Z_]+=*|*[/?]*) break ;;
 				*) subcmd="$subcmd $word" ;;
 			esac
 		done
@@ -166,9 +150,14 @@ check_cli() {
 		# exits on first match and SIGPIPEs the producer, which pipefail
 		# then reports as a pipeline failure regardless of grep's verdict.
 		# stop after "api": it takes a raw REST endpoint/path, not a subcommand.
-		local level="" bad_word="" ok=1 avail
+		local level="" bad_word="" ok=1 avail level_help
 		for word in $subcmd; do
-			avail="$(commands_in_help "$(help_at "$cli" "$level")")"
+			level_help="$(help_at "$cli" "$level")"
+			if [[ "$level_help" = *OSTACK_HELP_UNAVAILABLE* ]]; then
+				ok=0; bad_word="$word (help unavailable)"; break
+			fi
+			avail="$(commands_in_help "$level_help")"
+			[ -n "$avail" ] || break   # the remaining words are positional arguments
 			if ! grep -qxF "$word" <<< "$avail"; then
 				ok=0; bad_word="$word"; break
 			fi
@@ -182,7 +171,11 @@ check_cli() {
 
 		# every long flag must appear in the leaf level's help text
 		local help_cache
-		help_cache="$(help_at "$cli" "$subcmd")"
+		help_cache="$(help_at "$cli" "$level")"
+		if [[ "$help_cache" = *OSTACK_HELP_UNAVAILABLE* ]]; then
+			err "cli: '$cli $level --help' unavailable"
+			continue
+		fi
 		for word in $rest; do
 			case "$word" in
 				--[a-zA-Z][a-zA-Z-]*)
@@ -207,7 +200,7 @@ while IFS= read -r -d '' f; do
 	LC_ALL=C grep -q "$EMDASH" "$f" && err "style: em dash in $rel"
 	grep -nE "[[:blank:]]+$" "$f" >/dev/null && err "style: trailing whitespace in $rel"
 	[ -n "$(tail -c 1 "$f")" ] && err "style: no trailing newline in $rel"
-done < <(find "$SKILLS" "$ROOT/README.md" -name "*.md" -print0 2>/dev/null)
+done < <(find "$SKILLS" "$ROOT/agents" "$ROOT/README.md" -name "*.md" -print0 2>/dev/null)
 
 # ---------------------------------------------------- hand-written contracts
 # Add project-specific invariants here as skills evolve.
@@ -215,6 +208,7 @@ grep -q 'last_seen_note' "$SKILLS/babysit-gitlab-mr/SKILL.md" || \
 	err "contract: babysit cursor field renamed but doc still says otherwise"
 grep -qE 'declared budget|budget.*declared' "$SKILLS/escalate/SKILL.md" || \
 	err "contract: escalate must allow calling skills to declare their own budget"
+
 grep -qF 'named `comment-sicko` subagent' "$SKILLS/no-comments/SKILL.md" || \
 	err "contract: no-comments must delegate to the named comment-sicko subagent"
 [ -f "$ROOT/agents/comment-sicko.md" ] || \
@@ -267,11 +261,6 @@ grep -qF 'disable-model-invocation: true' "$SKILLS/create-verification-skill/SKI
 	err "contract: create-verification-skill must remain explicitly invoked"
 grep -qF 'disable-model-invocation: true' "$SKILLS/maintain-verification-skill/SKILL.md" || \
 	err "contract: maintain-verification-skill must remain explicitly invoked"
-for skill in create-verification-skill maintain-verification-skill; do
-	grep -qF 'allow_implicit_invocation: false' "$SKILLS/$skill/agents/openai.yaml" || \
-		err "contract: $skill must remain explicitly invoked in Codex"
-done
-
 bash "$ROOT/tests/install-upgrade.sh" || err "installer upgrade fixtures failed"
 
 # ---------------------------------------------------- blahaj-mode contracts

@@ -53,17 +53,30 @@ if [ -f "$ROUTES" ] && jq empty "$ROUTES" >/dev/null 2>&1; then
 	[ "$(jq -r '.version // empty' "$ROUTES")" = 1 ] || usage_error 'route registry version must be 1'
 	[ "$(jq -r '.routes | type' "$ROUTES" 2>/dev/null || true)" = array ] || usage_error 'routes must be an array'
 	[ "$(jq -r '.outcomeTails | type' "$ROUTES" 2>/dev/null || true)" = object ] || usage_error 'outcomeTails must be an object'
+	if ! jq -e '.routes | type == "array" and length > 0 and all(.[];
+		type == "object" and
+		(.id | type == "string" and length > 0 and (test("[\\r\\n]") | not)) and
+		(.match | type == "string" and length > 0) and
+		(.playbook | type == "string" and length > 0 and (test("[\\r\\n]") | not)))' "$ROUTES" >/dev/null 2>&1; then
+		usage_error 'routes require nonempty string IDs, matches, and single-line playbook paths; IDs must be single-line'
+		exit 1
+	fi
 
-	declare -A seen_ids=()
-	declare -A reachable=()
+	# Keep this validator runnable with the Bash shipped by macOS. IDs and
+	# playbook paths are newline-free, so newline-delimited sets are sufficient
+	# and avoid Bash 4-only associative arrays.
+	seen_ids=$'\n'
+	reachable=$'\n'
 	while IFS= read -r route; do
 		id="$(jq -r '.id // empty' <<< "$route")"
 		match="$(jq -r '.match // empty' <<< "$route")"
 		playbook="$(jq -r '.playbook // empty' <<< "$route")"
 		[ -n "$id" ] || usage_error 'route ID is empty'
 		if [ -n "$id" ]; then
-			[ -z "${seen_ids[$id]+x}" ] || usage_error "route ID is duplicated: $id"
-			seen_ids[$id]=1
+			if grep -Fqx -- "$id" <<< "$seen_ids"; then
+				usage_error "route ID is duplicated: $id"
+			fi
+			seen_ids+="$id"$'\n'
 		fi
 		[ -n "$match" ] || usage_error "route '$id' has an empty match statement"
 		[ -n "$playbook" ] || usage_error "route '$id' has no playbook"
@@ -71,7 +84,7 @@ if [ -f "$ROUTES" ] && jq empty "$ROUTES" >/dev/null 2>&1; then
 			case "$playbook" in
 				playbooks/*.md)
 					[ -f "$MODE_SKILLS/$playbook" ] || usage_error "route '$id' references missing playbook: $playbook"
-					reachable[$playbook]=1 ;;
+				reachable+="$playbook"$'\n' ;;
 				*) usage_error "route '$id' playbook must be playbooks/*.md: $playbook" ;;
 			esac
 		fi
@@ -119,7 +132,7 @@ if [ -f "$ROUTES" ] && jq empty "$ROUTES" >/dev/null 2>&1; then
 			case "$item" in
 				playbooks/*.md)
 					[ -f "$MODE_SKILLS/$item" ] || usage_error "outcome tail '$outcome' references missing playbook: $item"
-					reachable[$item]=1 ;;
+					reachable+="$item"$'\n' ;;
 				skill:*)
 					skill_name="${item#skill:}"
 					[ -n "$skill_name" ] && [ -d "$ROOT/skills/$skill_name" ] || usage_error "outcome tail '$outcome' references unknown skill: $item" ;;
@@ -132,7 +145,7 @@ if [ -f "$ROUTES" ] && jq empty "$ROUTES" >/dev/null 2>&1; then
 	if [ -d "$playbooks_dir" ]; then
 		while IFS= read -r file; do
 			rel="playbooks/${file#"$playbooks_dir/"}"
-			[ -n "${reachable[$rel]+x}" ] || usage_error "playbook is not reachable from a route or tail: $rel"
+			grep -Fqx -- "$rel" <<< "$reachable" || usage_error "playbook is not reachable from a route or tail: $rel"
 		done < <(find "$playbooks_dir" -type f -name '*.md' -print)
 
 		# Playbooks must stay generic and defer repository-specific commands to
@@ -186,7 +199,7 @@ if [ -f "$MODELS" ]; then
 
 		# The body carries role lines only. An alwaysApply or description that
 		# drifted out of the frontmatter trips the unknown-role check below.
-		declare -A seen_roles=()
+		seen_roles=$'\n'
 		while IFS= read -r line; do
 			case "$line" in ''|'#'*) continue ;; esac
 			case "$line" in *:*) ;; *) usage_error "model rule line is not 'role: value': $line"; continue ;; esac
@@ -198,17 +211,23 @@ if [ -f "$MODELS" ]; then
 				[ "$role" = "$candidate" ] && known=1 && break
 			done
 			[ "$known" -eq 1 ] || { usage_error "model rule has an unknown role: $role"; continue; }
-			[ -z "${seen_roles[$role]+x}" ] || usage_error "model rule role is duplicated: $role"
-			seen_roles[$role]=1
+			if grep -Fqx -- "$role" <<< "$seen_roles"; then
+				usage_error "model rule role is duplicated: $role"
+			fi
+			seen_roles+="$role"$'\n'
 
 			count=0 inherit=0
-			declare -A seen_values=()
+			seen_values=$'\n'
+			values="$(printf '%s' "$values" | sed 's/[[:space:]]*$//')"
+			case "$values" in *,) usage_error "model rule role '$role' has a trailing empty entry" ;; esac
 			IFS=',' read -ra entries <<< "$values"
 			for entry in "${entries[@]}"; do
 				entry="$(printf '%s' "$entry" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
 				[ -n "$entry" ] || { usage_error "model rule role '$role' has an empty entry"; continue; }
-				[ -z "${seen_values[$entry]+x}" ] || usage_error "model rule role '$role' repeats entry: $entry"
-				seen_values[$entry]=1
+				if grep -Fqx -- "$entry" <<< "$seen_values"; then
+					usage_error "model rule role '$role' repeats entry: $entry"
+				fi
+				seen_values+="$entry"$'\n'
 				[ "$entry" = inherit ] && inherit=1
 				count=$((count + 1))
 			done
@@ -218,10 +237,9 @@ if [ -f "$MODELS" ]; then
 				usage_error "model rule role '$role' combines inherit with a model ID"
 		done <<< "$body"
 
-		# Every role a delegating skill resolves must be documented, or setup
-		# writes a line nothing reads.
-		for role in "${MODEL_ROLES[@]}"; do
-			[ -n "${seen_roles[$role]+x}" ] || usage_error "model example omits role: $role"
+		# Generic defaults are required; exact overrides are intentionally optional.
+		for role in exploration implementation judgment prose; do
+			grep -Fqx -- "$role" <<< "$seen_roles" || usage_error "model example omits role: $role"
 		done
 	fi
 fi
@@ -231,11 +249,16 @@ fi
 for caller in architect arena how interrogate swarm why; do
 	caller_file="$ROOT/skills/$caller/SKILL.md"
 	[ -f "$caller_file" ] || continue
-	grep -qF '~/.cursor/rules/ostack-models.mdc' "$caller_file" || \
+	model_doc="$caller_file"
+	case "$caller" in
+		how) model_doc="$ROOT/skills/how/references/exploration.md" ;;
+		why) model_doc="$ROOT/skills/why/references/investigation.md" ;;
+	esac
+	grep -qF '~/.cursor/rules/ostack-models.mdc' "$model_doc" || \
 		usage_error "$caller does not resolve models from the ostack rule"
-	grep -qF 'then `inherit`' "$caller_file" || \
+	grep -qF 'then `inherit`' "$model_doc" || \
 		usage_error "$caller does not fall back to inherit"
-	grep -qF 'subagent `model` argument' "$caller_file" || \
+	grep -qF 'subagent `model` argument' "$model_doc" || \
 		usage_error "$caller never passes the resolved model to a subagent"
 done
 

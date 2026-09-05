@@ -135,8 +135,10 @@ inheriting the parent. `setup-blahaj-mode` writes that configuration to
 loads its role lines into every session.
 
 Resolve a role by taking its skill-role line (`how critics`), then its generic
-role line (`judgment`), then `inherit`. A panel runs one subagent per entry. A
-single-agent role uses the first entry. A resolved `inherit` means omit the
+role line (`judgment`), then `inherit`. Review panels run one reviewer per entry.
+Architecture and arena choose candidate count from useful directions, assigning
+available model entries to those candidates. A single-agent role uses the first
+entry. A resolved `inherit` means omit the
 subagent `model` argument and run on the parent chat model, and no line mixes
 `inherit` with a model ID. When the host rejects an entry, drop it and run the
 rest, falling back to `inherit` only when nothing is left. Do not swap in a

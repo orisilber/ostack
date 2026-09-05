@@ -1,6 +1,6 @@
 ---
 name: typescript-best-practices
-description: TypeScript type discipline. Discriminated unions, branded types, no `as`, exhaustiveness, parse at the boundary, with worked examples. Triggers reading or editing any .ts or .tsx file. Use as a lens while writing TypeScript; repo-local rules win on style, this wins on types.
+description: "TypeScript type design and review: discriminated unions, boundary parsing, exhaustiveness, and safe examples. Use when a change designs or reviews TypeScript types; do not trigger for merely reading a .ts/.tsx file."
 ---
 
 # TypeScript best practices
@@ -11,7 +11,7 @@ Apply the **type-system-discipline** principle first; this skill grounds it in T
 |------|---------|
 | Discriminated unions | Model variants with a `kind` literal discriminant so impossible states can't be represented. No optional-field bags. |
 | Branded types | Brand primitives with `& { readonly __brand: "X" }` so they can't be mixed up. Validate once at creation. |
-| Constructive modeling | Build the shape so the illegal value can't be constructed. `[T, ...T[]]` for non-empty, `[T, T][]` for even length, `start` plus `duration` for a range. Not a runtime guard, not a wish for refinement types. |
+| Constructive modeling | Choose a shape that removes illegal combinations. Readonly tuples restrict mutation through that view; use a frozen copy for ownership. Validate numeric invariants such as non-negative durations at the boundary. |
 | Simplest total type | Keep `T[]` while every operation on it stays total. Strengthen to `NonEmpty<T>` only where the loose type forces `!`, a cast, or a "should never happen" throw. |
 | `unknown` over `any` | External data is `unknown`. `any` disables type checking everywhere it touches. |
 | No `as` casts | Every `as` is a runtime crash waiting. Cast only after validation. |

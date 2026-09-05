@@ -5,23 +5,24 @@ description: For bug tickets. Write a failing test that reproduces the reported 
 
 # Reproduce First
 
-A bug you can't reproduce, you can't fix, and a fix without a failing test
-first is a guess that might regress later.
+Establish the reported failure before changing product code. Prefer a focused
+test; use the executable or manual fallback below when a new test is impractical.
 
-## Order is mandatory
+## Default order
 
 1. RED: test exists, fails for the reported reason
-2. Fix code (never touch the test's assertions)
+2. Fix code without weakening a valid assertion
 3. GREEN: same test passes
-4. `verify-changes` → commit as two commits:
-   - `test: reproduce #<iid>` (the failing-state test)
-   - `fix: <what> (#<iid>)`
+4. `verify-changes` → preserve the red-before/green-after evidence. Use two
+   commits (`test: reproduce #<iid>` and `fix: <what> (#<iid>)`) when the
+   repository or review process benefits from that separation; one coherent
+   commit is fine when it keeps the evidence reviewable.
 
 ## 1. Extract repro conditions from the report
 
 From the ticket: expected vs actual, exact input, environment, steps. Anything
-missing → that's what clarify-requirements should have covered; if still
-missing, attempt with the most literal reading of the report.
+missing: inspect the linked evidence first, then ask only for a material fact
+that cannot be recovered. New evidence can justify a later clarification.
 
 ## 2. Write the smallest failing test
 
@@ -34,18 +35,20 @@ missing, attempt with the most literal reading of the report.
 
 Run it. The failure mode must match the reported symptom:
 
-- Test passes immediately → either bug is already fixed (comment on the ticket
-  saying so, close via babysit flow) or you misread the report. Do not invent a
-  different bug to have something red.
+- Test passes immediately: investigate whether the bug is already fixed or the
+  reproduction missed a condition. Report the evidence; comment on or close the
+  ticket only when that tracker action is authorized. Do not invent another bug.
 - Failure is unrelated (env broken, import error) → fix the harness, not yet
   the product code.
 
 ## 4. Fix, then protect
 
 Implement the minimal fix. Re-run the repro test AND its neighbors in the same
-file/directory to catch regressions. If fixing requires changing the test's
-assertions, stop: either the report was wrong (escalate) or you're writing a
-different feature than reported.
+file/directory to catch regressions. Do not weaken an assertion merely to make
+the implementation pass. If the report or test encoded the wrong expected
+behavior, stop and document that correction, then update the assertion only
+after the intended behavior is established. A changed expectation is a behavior
+decision, not a test workaround.
 
 ## When a unit test is the wrong tool
 
@@ -64,8 +67,9 @@ broken behavior is observable and failing before you touch product code.
 
 Guardrails either way:
 
-- Never change an existing test to match a wrong implementation, and never weaken
-  an assertion unless the expected behavior genuinely changed and you can say how.
+- Never change an existing test to match a wrong implementation. Change an
+  assertion only when the expected behavior genuinely changed or the original
+  report was shown to be mistaken, and record why.
 - Keep the repro focused on this bug. Sibling coverage, if it's warranted, lands
   after the focused fix.
 - A flaky bug gets a deterministic repro where possible; name the signal you

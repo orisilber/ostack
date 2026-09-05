@@ -13,8 +13,10 @@ resolve_python() {
 	evals_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 	venv="$evals_dir/.venv"
 	if [ ! -x "$venv/bin/python3" ]; then
-		python3 -m venv "$venv" >&2
-		"$venv/bin/pip" install -q pyyaml >&2
+		python3 -m venv "$venv" >&2 || return $?
+	fi
+	if ! "$venv/bin/python3" -c 'import yaml' >/dev/null 2>&1; then
+		"$venv/bin/pip" install -q pyyaml >&2 || return $?
 	fi
 	echo "$venv/bin/python3"
 }

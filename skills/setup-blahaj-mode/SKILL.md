@@ -49,8 +49,9 @@ and leave it on disk; do not delete a file the user did not ask you to remove.
 
 ## 3. Map and confirm
 
-Show every role with its current model, and flag any slug outside the detected
-set as needing a choice. Then ask whether to keep the set as-is or change
+Show the relevant roles with their current models, and flag any slug outside
+the detected set as needing a choice. If the user already supplied valid choices,
+apply them without asking again. Otherwise ask whether to keep the set or change
 specific roles, offering the detected models plus `inherit`. Use a question
 tool rather than free text, and ask for every role in one batch instead of one
 prompt per role.
@@ -66,9 +67,10 @@ The remaining lines are per-skill overrides of those four. Do not walk a
 first-time setup through them. Offer them when the existing rule already sets
 one, or when the user asks for per-skill control.
 
-For panel roles (`architect runners`, `arena runners`, `how critics`,
-`interrogate reviewers`) the value is a list and one subagent runs per entry,
-so the list length sets the fan-out. `arena cross-judge` is also a list, but
+For `how critics` and `interrogate reviewers`, one reviewer runs per list entry.
+For `architect runners` and `arena runners`, the list supplies models; candidate
+count follows the task's useful design directions, reusing a model when needed.
+`arena cross-judge` is also a list, but
 arena picks one entry from it whose model family differs from the parent's
 when possible. `swarm workers` is the model for every worker unless a race or
 comparison assigns another model per arm.
@@ -128,4 +130,5 @@ new sessions. Say that a role with no line falls back to its generic role line
 and then to `inherit`, and that `inherit` runs the role on the parent chat
 model. Never claim a successful delegation proves which model ran. The host may
 substitute one without saying so. Do not offer to change pstack's
-configuration.
+configuration. Omit exact override lines unless the user intentionally chose
+them; otherwise they mask future changes to the generic defaults.

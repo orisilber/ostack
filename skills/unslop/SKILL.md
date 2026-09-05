@@ -11,18 +11,22 @@ Edit text to remove AI patterns and add human voice.
 
 1. Scan for the patterns below.
 2. Rewrite. Preserve meaning, match intended tone.
-3. Add soul (see next section).
+3. Match the requested voice. Add personality only when the genre and audience
+   support it; do not manufacture opinions or informality in a reference,
+   incident report, or technical decision record.
 4. Self-audit: "What makes this obviously AI generated?" Fix remaining tells.
 
 ## Adding soul
 
 Removing patterns is half the job. Sterile, voiceless writing is just as obvious.
 
-- **Have opinions.** React to facts instead of neutrally listing pros and cons.
+- **Have a clear point when the genre calls for one.** Do not replace evidence
+  with a forced opinion or a neutral technical record with personality.
 - **Vary rhythm.** Short sentences. Then longer ones that take their time. Mix it up.
 - **Acknowledge complexity.** "Impressive but also kind of unsettling" beats "impressive."
 - **Use "I" when it fits.** First person isn't unprofessional.
-- **Let some mess in.** Perfect structure looks machine-made.
+- **Keep useful structure.** A clean document is not a defect; remove only
+  formulaic structure that hides the point.
 - **Be specific.** Not "this is concerning" but "there's something unsettling about agents churning away at 3am."
 
 ## Patterns to detect and fix

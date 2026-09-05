@@ -77,4 +77,7 @@ before searching GitLab by hand.
 - **Ticket key in the commit but no such issue**: the project was renamed or the item was moved. Search `text ~ "PROJ-1234"` before calling it missing.
 - **Description is one line and the work is large**: the real rationale is in comments or Confluence. Follow the links; don't conclude "undocumented."
 - **Status history mistaken for rationale**: a transition to Done tells you when, never why.
-- A null result is a finding: "the change was never ticketed" is real evidence. Report it.
+- A null result is scoped evidence: report "no matching ticket found in the
+  searched Jira scope" and include the query, time range, and permission limits.
+  Do not infer that the change was never ticketed; renamed keys, indexing,
+  pagination, and access gaps can all produce an empty result.

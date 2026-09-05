@@ -6,8 +6,9 @@ description: "Verify UI changes through a repository's project-local verifier or
 # E2E verify
 
 Static checks can't see a broken UI. For user-facing changes, drive the real
-thing before pushing. The deliverable is a script a reviewer can re-run, not a
-description of what you clicked.
+thing before pushing. Prefer a script a reviewer can re-run when the flow is
+likely to regress; for a one-off visual check, the captured evidence and exact
+steps are enough.
 
 ## 0. Prefer the project-local verifier
 
@@ -21,17 +22,19 @@ cleanup. This skill owns browser assertions, console-error capture, traces,
 and the flake protocol. Do not install or create a second browser tool when the
 local verifier provides one.
 
-If a local instruction disagrees with current source or fails before reaching
-the changed behavior, report the drift and point to
-`maintain-verification-skill`. Do not hide stale instructions with an unrelated
-fallback.
+If a local instruction drifts, report it and use a current repository command
+or observed path that exercises the same affected behavior. Point to
+`maintain-verification-skill`; fail only when the behavior fails or remains
+unverified. An unrelated passing flow does not substitute for that evidence.
 
 ## 1. Choose browser control
 
 If the project-local verifier supplies a rerunnable browser command, use it. If
 not, use a browser MCP to explore real selectors and confirm that the flow is
-reachable. Then encode what you learned as a Playwright or Cypress script and
-run it. An interactive browser session is not rerunnable evidence.
+reachable. Encode what you learned as a script when the flow merits durable
+coverage; otherwise record the observed path and run the focused check. An
+interactive browser session is not rerunnable evidence, but it can be the right
+scope for a one-off change.
 
 ## 2. Reuse the repository setup
 
@@ -92,12 +95,14 @@ If neither exists, `escalate` rather than inventing a test user.
   `page.waitForResponse`, `locator.waitFor()`. A `waitForTimeout` in the final
   script is a bug.
 - Prefer role/label/test-id locators over CSS paths. If the only stable handle is
-  a CSS chain, add a `data-testid` in the product code. That's a real fix, not
-  test scaffolding.
+  a CSS chain and the flow merits durable coverage, add a stable accessible
+  handle or `data-testid` with the product change. Do not expand a one-off UI
+  change solely to manufacture a selector.
 
 ## 5. Run the pass
 
-Script the ticket's acceptance criteria as one user journey:
+Exercise the ticket's acceptance criteria as one user journey, using a script
+when durable coverage is warranted and direct browser control otherwise:
 
 1. **Arrange**: navigate, authenticate via `storageState`, seed state.
 2. **Act**: perform the changed flow the way a user would.
@@ -132,7 +137,7 @@ map audit to `maintain-verification-skill`.
 E2E: PASS|FAIL
 Verifier: <project-local path | fallback>
 Flows: <what was driven>
-Script: <path, re-runnable command>
+Script or steps: <path and command | exact interactive path>
 Screenshots: <paths>
 Console errors: <none | list>
 Suppressed: <none | the pre-existing noise you filtered>
@@ -140,14 +145,16 @@ Suppressed: <none | the pre-existing noise you filtered>
 
 On FAIL: the failing assertion, the last screenshot path, and the trace
 (`npx playwright show-trace <path>`). Fix product code, adjust selectors freely
-when the UI intentionally changed, re-run max 3 times, then `escalate`.
+when the UI intentionally changed, and rerun the affected check. After three
+failed fix-and-rerun cycles, `escalate`. Two unchanged transient failures require
+diagnosis before any further retry.
 
 ## 7. Flake protocol
 
-One automatic re-run for a transient failure (a timeout with no assertion
-mismatch). A step that fails twice is a real bug or a bad selector: open the
-trace and diagnose. Never retry a third time, and never mark a flaky pass as
-PASS.
+Allow one automatic re-run for a transient failure (a timeout with no assertion
+mismatch). A step that fails twice without a change is a real bug or a bad
+selector: open the trace and diagnose. Fix-and-rerun cycles are separate from
+that transient retry budget. Never mark a flaky pass as PASS.
 
 ## 8. Cleanup
 

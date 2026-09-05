@@ -6,7 +6,9 @@ disable-model-invocation: true
 
 # Interrogate
 
-Spawn one reviewer per configured model to adversarially review code changes. Each model gets the same prompt and rubric. The adversarial signal comes from model diversity, not assigned personas. Models differ in blind spots, priors, and reasoning patterns. Agreement across models is high-confidence signal; lone-model findings are worth reading but lower confidence.
+Spawn the configured reviewers with the same intent and rubric. Judge their
+findings by demonstrated impact and source evidence. Independent agreement can
+direct attention, but one concrete counterexample can outweigh consensus.
 
 The deliverable is a synthesized verdict. Do not auto-apply changes.
 
@@ -80,8 +82,8 @@ Each reviewer produces structured findings as described in the prompt template.
 As results come back, build a unified picture:
 
 1. **Parse all findings** from the reviewers
-2. **Identify consensus**. Findings raised by 2+ models independently are highest signal.
-3. **Identify lone-model findings**. Still worth reading, but weight accordingly.
+2. **Check evidence**. Trace the claimed failure and its actual impact.
+3. **Identify agreement and lone findings** without using vote count as severity.
 4. **Deduplicate**. Different models may describe the same issue differently. Merge these and note which models raised it.
 5. **Note disagreements**. If one model flags something and another explicitly says the opposite, that's useful context for the verdict.
 
@@ -111,7 +113,7 @@ Present the verdict in this structure:
 > [The stated intent paragraph from Step 2]
 
 ### Reviewers
-- Reviewer [label]: [model name], [N findings] (one bullet per reviewer)
+- Reviewer [label]: requested model, confirmed actual model if available, and findings
 
 ### Act On
 [Findings that should be addressed. For each: description, which models raised it, why it matters.]

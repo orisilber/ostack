@@ -28,7 +28,10 @@ When verifying delegated work, inspect the actual output artifact (git diff, fil
 
 ### Script the check when you can
 
-The strongest proof is a deterministic script that re-runs the same comparison, not a one-time eyeball. Write the script, run it, and keep its output as an artifact a reviewer can re-run instead of trusting your word. A script comparing the old and new compiled output catches what a glance misses.
+A deterministic script is useful when the comparison needs repetition or would
+be hard to check by hand. Reuse an existing check when it proves the same fact;
+create a helper when its value justifies maintaining it. A direct manual check
+can be sufficient for a small, reversible change. Record what was observed.
 
 Keep the artifact visible for the human. Commit it only for large or complex work where the trail has to be auditable later, like a big port or migration (the **show-me-your-work** skill). Most work just needs it visible, not committed.
 
@@ -58,14 +61,19 @@ Order work as a sequence of small units, each ending in a state you can check, a
 
 **Why:** A break caught at the unit that caused it is cheap to localize. A break caught after a batch is buried, and you have already built further on a broken base. Sequencing those same units into a delivery a reviewer can replay turns "trust me" into "watch it go red, then green."
 
-**Execution.** In a sweep, migration, or any run of similar edits, verify each change before starting the next. Never batch the edits and verify once at the end. Each unit is a before/after bracket: known-good state, one change, run the check, then proceed. Rebase onto clean trunk first so every check measures against the real baseline. When a lever does the edits, the per-unit check is nearly free; run it anyway.
+**Execution.** In a sweep or migration, verify each change before starting the
+next when failures would be expensive to localize. For a cohesive low-risk edit,
+batch the change and run one focused check at the end. Each unit should have a
+known-good baseline and a check appropriate to its risk; rebasing onto trunk is
+useful when the baseline matters, but is not a prerequisite for local work.
 
 **Delivery.** Stack commits and PRs in the order that proves the work. For a bug fix, the canonical shape is the failing test first, then the fix on top. The first unit shows the bug is real (red), the next shows it resolved (green). For a feature, implement and exercise the accepted behavior first, then add retention tests that preserve the finished contract. Other story orders are a subtraction before the reshape, a baseline capture before the treatment, or a scaffold before the feature. Each commit lands on its own and the sequence reads as an argument.
 
 **Pattern:**
-- Pick the smallest unit that ends in a check: an edit plus an existing or temporary behavior check, or a commit that stands alone.
-- Verify before advancing. Bugs move red to green. Features reach accepted real behavior before permanent retention tests are written.
+- Pick a unit with an existing or temporary behavior check. Bugs move red to
+  green; features reach accepted real behavior before permanent retention tests.
+- Verify at boundaries that make failures easy to localize; batch cohesive edits
+  when one focused check covers the unit.
 - Order the units so the sequence builds confidence on its own, for you while executing and for a reviewer reading the stack.
 
 The sequencing complement to the **prove-it-works** principle skill, which keeps each check real, and the **build-the-lever** principle skill, which makes the per-unit check cheap.
-

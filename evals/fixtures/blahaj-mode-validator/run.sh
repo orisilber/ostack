@@ -38,6 +38,9 @@ expect_model_fail() {
 
 expect_fail bad-version '.version = 2'
 expect_fail empty-id '.routes[0].id = ""'
+expect_fail numeric-id '.routes[0].id = 7'
+expect_fail newline-id '.routes[0].id = "one\ntwo"'
+expect_fail newline-playbook '.routes[0].playbook = "playbooks/one\ntwo.md"'
 expect_fail duplicate-id '.routes += [.routes[0]]'
 expect_fail empty-match '.routes[0].match = ""'
 expect_fail missing-playbook '.routes[0].playbook = "playbooks/missing.md"'
@@ -77,7 +80,8 @@ expect_model_fail model-duplicates 's/^exploration: .*/exploration: foo, foo/'
 expect_model_fail model-inherit-mixed 's/^exploration: .*/exploration: inherit, foo/'
 expect_model_fail model-empty-entry 's/^how critics: .*/how critics: gpt-5.6-sol-high, /'
 expect_model_fail model-unknown-role 's/^exploration:/exploartion:/'
-expect_model_fail model-missing-role '/^why synthesizer:/d'
+expect_model_fail model-missing-role '/^prose:/d'
+expect_model_fail model-trailing-comma 's/^exploration: .*/exploration: foo,/'
 expect_model_fail model-duplicate-role 's/^prose: \(.*\)/prose: \1\
 prose: \1/'
 expect_model_fail model-no-rule-block '/^```$/d'
@@ -90,6 +94,16 @@ sed 's/^\(exploration\|implementation\|judgment\|prose\): .*/\1: inherit/' \
 mv "$TMP/model-inherit-only/models.tmp" "$INHERIT_ONLY"
 if ! "$VALIDATOR" --root "$TMP/model-inherit-only" >/dev/null 2>&1; then
 	echo 'expected an inherit-only model rule to pass' >&2
+	exit 1
+fi
+
+cp -R "$VALID" "$TMP/generic-only"
+GENERIC_ONLY="$TMP/generic-only/skills/blahaj-mode/references/models.example.md"
+sed '/^\(architect\|arena\|how\|interrogate\|swarm\|why\) [a-z-]*:/d' \
+	"$GENERIC_ONLY" > "$TMP/generic-only/models.tmp"
+mv "$TMP/generic-only/models.tmp" "$GENERIC_ONLY"
+if ! "$VALIDATOR" --root "$TMP/generic-only" >/dev/null 2>&1; then
+	echo 'expected generic defaults without exact overrides to pass' >&2
 	exit 1
 fi
 

@@ -3,10 +3,10 @@
 Use this route when new behavior spans multiple independently verifiable
 implementation scopes or cannot reasonably finish in one agent session.
 
-1. State the complete done predicate and route through `how` over every affected
-   subsystem.
-2. When a public type, function, class, or ownership boundary crosses modules,
-   route through `architect` in `design-only` mode. Its design comparison
+1. State the complete done predicate and reuse current grounding. Route through
+   `how` for material gaps in affected behavior or ownership.
+2. When a consequential type, interface, or ownership decision remains unresolved,
+   route through `architect` in `design-only` mode. A comparison it actually ran
    satisfies `arena` for that decision. Otherwise, route through `arena` when at
    least two viable approaches exist and choosing the wrong one would cause
    substantial rework. For this pre-decomposition arena, the candidate artifact

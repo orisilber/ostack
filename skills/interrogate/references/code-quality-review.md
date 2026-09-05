@@ -1,26 +1,32 @@
 # Code Quality Review
 
-Each reviewer applies this code-quality lens in addition to the rubric. It is a strict standard focused on implementation quality, maintainability, abstraction quality, and codebase health.
+Each reviewer applies this code-quality lens in addition to the rubric. Tie
+findings to the diff and a concrete impact on implementation quality,
+maintainability, abstraction quality, or codebase health.
 
-Above all, be ambitious about code structure. Do not merely identify local cleanup. Actively search for "code judo" moves, restructurings that preserve behavior while making the implementation dramatically simpler, smaller, more direct, and more elegant.
+Look for structural simplifications that preserve behavior and remove moving
+parts, but do not demand a redesign when the current shape is coherent.
 
 ## Core Prompt
 
 Start from this baseline:
 
-> Perform a deep code quality audit of the current branch's changes.
-> Rethink how to structure / implement the changes to meaningfully improve code quality without impacting behavior.
-> Work to improve abstractions, modularity, reduce Spaghetti code, improve succinctness and legibility.
-> Be ambitious, if there is a clear path to improving the implementation that involves restructuring some of the codebase, go for it.
-> Be extremely thorough and rigorous. Measure twice, cut once.
+> Review the current branch's changes for concrete code-quality regressions.
+> Identify structural improvements that materially improve maintainability without
+> changing behavior, and explain the execution path or evidence behind each one.
 
 ## Dimensions
 
 Each dimension is stated once. Apply the ones that are relevant.
 
-0. **Be ambitious about structural simplification.** Do not stop at "this could be a bit cleaner." Look for reframings that make whole branches, helpers, modes, conditionals, or layers disappear. Assume a "code judo" move is often available. It uses the existing architecture more effectively and makes the change dramatically simpler. If you can delete complexity rather than rearrange it, push hard for that.
+0. **Structural simplification.** Look for reframings that make branches,
+   helpers, modes, conditionals, or layers disappear. Raise the finding when the
+   diff leaves concrete incidental complexity that a smaller shape would remove.
 
-1. **Do not let a PR push a file from under 1k lines to over 1k lines without a very strong reason.** Treat this as a strong smell. Prefer extracting helpers, subcomponents, or modules. If the diff crosses that threshold, ask whether the code should be decomposed first. Waive only for a compelling structural reason where the resulting file stays clearly organized.
+1. **Use file size as a signal, not a gate.** A file that becomes hard to
+   navigate or mixes ownership may need helpers, subcomponents, or modules.
+   Line count alone is not a defect; tie the finding to a concrete loss of
+   cohesion or maintainability.
 
 2. **Do not allow spaghetti growth in existing code.** Be suspicious of new ad-hoc conditionals, scattered special cases, or one-off branches inserted into unrelated flows. Treat "weird if statements in random places" as a design problem, not a style nit. Prefer pushing the logic into a dedicated helper, state machine, or module instead of tangling an existing path.
 
@@ -40,7 +46,13 @@ Prioritize structural code-quality regressions and missed simplifications first,
 
 ## Approval Bar
 
-Do not approve merely because behavior seems correct. Treat these as presumptive blockers unless the author can justify them: the PR keeps a lot of incidental complexity when a code-judo move would delete it; pushes a file from below 1000 lines to above 1000 lines; adds ad-hoc branching that tangles an existing flow; scatters feature checks across shared code; adds an unnecessary abstraction, wrapper, or cast-heavy contract; or duplicates an existing helper or puts logic in the wrong layer when there is a clear canonical home. If those conditions are not met, leave explicit, actionable feedback and push for a cleaner decomposition.
+Do not approve merely because behavior seems correct. Raise a blocking finding
+when the diff shows a concrete structural regression: incidental complexity a
+small redesign would remove, ad-hoc branching that tangles an existing flow,
+feature checks scattered across shared code, an unnecessary abstraction or
+cast-heavy contract, or duplicated logic with a clear canonical home. A file's
+line count can support that case, but it cannot establish it by itself. Keep
+the feedback actionable and proportional to the change.
 
 ## Review Tone
 

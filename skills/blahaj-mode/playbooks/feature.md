@@ -3,14 +3,17 @@
 Use this route when the user asks for new behavior.
 
 1. Name the data shape, boundary, and acceptance behavior before editing.
-2. Route through `how` over the affected subsystem.
-3. Route through `architect` in `design-only` mode when a public function,
-   class, type, or ownership boundary crosses modules. Record
+2. Reuse current grounding; route through `how` for a material gap in behavior
+   or ownership.
+3. Route through `architect` in `design-only` mode when a consequential type,
+   interface, or ownership decision remains unresolved. Record
    `architect skipped: <reason>` for a small change that follows an existing
    local pattern.
 4. Route through `arena` when the user requests competing implementations, the
    task exposes incompatible boundaries or interactions, or one attempt would
-   lock in a consequential choice between viable approaches. Give every arena
+   lock in a consequential choice between viable approaches. Reuse a sufficient
+   existing comparison unless the user requested new implementation candidates.
+   Give every arena
    candidate the complete acceptance scope and the same test-last constraint as
    this playbook: do not add or edit feature-specific tests; existing tests may
    run. If step 3 produced an Architect design package, pass it to every arena

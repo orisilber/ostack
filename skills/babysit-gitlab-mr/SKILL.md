@@ -1,154 +1,122 @@
 ---
 name: babysit-gitlab-mr
-description: "Drive a GitLab MR to merge-ready: \"!review\" loop with the bot until it approves, then a CI pipeline gate, then optional watch mode for human comments. Triggers \"babysit mr\", \"!review\", \"watch my merge request\". GitLab MRs, not GitHub PRs."
+description: "Drive a GitLab MR through bot review and its pipeline, or watch requested human feedback. Use for babysit MR, !review, or watch my merge request. GitLab only."
 ---
 
 # Babysit GitLab MR
 
-Drive one MR through the review-bot loop and green pipeline, hands-off. This is a
-long-running task: every wasted token is multiplied by dozens of iterations. The
-rules below are not optional.
+Resolve the requested MR and outcome first. A review-and-fix request authorizes
+the relevant replies and fixes; a read-only status request does not. Create a
+missing MR only when the user requested creation. A watch request selects watch
+mode directly; do not make it wait for an unrequested bot-review workflow.
 
-## Hard token-efficiency rules
+Resolve the GitLab host from the MR URL or remote, then the numeric
+`PROJECT_ID`, `MR_IID`, source branch, authenticated username `ME`, and bot
+usernames `BOTS` (a JSON array). Verify that the checkout belongs to this MR
+before editing. Use the MR API's current `sha` as the remote head; local HEAD
+alone cannot identify what a review or pipeline checked.
 
-1. **Never dump raw JSON or full diffs/logs.** Always project with `--jq` and cap
-   with `head`/`tail`. If output would exceed ~50 lines, you projected wrong.
-2. **Block, don't busy-poll.** Waiting for comments/CI = ONE bash call that loops
-   internally with `sleep` and returns only when there is news or timeout. Never
-   spend LLM turns checking "anything yet?".
-3. **Persist state** in `.git/babysit-mr-state.json` (inside `.git`, never
-   committed). Read it once at phase start, write it after changes. Never re-read
-   it between consecutive tool calls in the same turn.
-4. **Chain commands** with `&&` into single bash calls. One step = one call.
-5. **Summarize before acting**: reduce each review round to a compact table of
-   threads (id / author / verdict: FIX|REJECT / one-line gist) in your working
-   memory. Work from the summary, not repeated API reads.
-6. Commits are terse (`fix: address review: X, Y`). Push silently.
+## Persist state per MR and worktree
 
-## State file
-
-```json
-{ "mr_iid": 0, "project_id": "", "branch": "", "me": "", "last_seen_note": 0,
-  "round": 0, "mode": "", "bot_usernames": [], "done_marker": "" }
-```
-
-Create/update it with a single `cat > .git/babysit-mr-state.json <<'EOF'` call.
-If resuming an interrupted run, rebuild missing fields from `glab mr view`.
-Capture `me` once via `glab api user | jq -r .username`.
-
-## Phase 0: Resolve the MR
-
-- User gave a URL: extract project path + IID from it.
-- Otherwise derive from the current branch:
-  `glab mr view <branch> -F json --jq '{iid,project_id,web_url,state}'`
-  (empty result ⇒ no MR exists).
-- If none: `git push -u origin HEAD` then
-  `glab mr create --fill --fill-commit-body --source-branch <branch> --yes`
-  (never interactive prompts; if `--fill` fails because branch is pushed, drop it).
-- Record `mr_iid`, `project_id` (numeric), `branch` in state.
-- Detect the review bot: from existing bot comments or project CI config
-  (e.g. a reviewer bot username). Store in `bot_usernames`. Ask the user only if
-  genuinely ambiguous.
-
-Self-hosted GitLab: export `GITLAB_HOST=<host>` once at session start if
-`glab repo view` fails against gitlab.com defaults.
-
-## Phase 1: Review loop
-
-Round structure:
-
-1. Kick off: `glab mr note <iid> -m '!review'` (skip re-posting if the previous
-   round already triggered this exact push; track via `round` vs latest commit SHA).
-2. **Wait for review comments**: one blocking call (~10 min budget), repeat as needed.
-   Payload shape per discussion: `{id, individual_note, notes:[{body, system,
-   author:{username}}]}`. Verify the query once on the first call, then freeze it.
-   Exclude `$ME` (your own `!review` notes and replies) and system notes;
-   everything else counts, including the bot:
+After resolving IDs, set:
 
 ```bash
-# ME='orisilber'; LAST=123   # last_seen_note from state file
-for i in $(seq 1 20); do
-  OUT=$(glab api "projects/$PROJECT_ID/merge_requests/$MR_IID/discussions?per_page=100&sort=asc" \
-    | jq "[.[] | select(any(.notes[]; .system | not)) | select(any(.notes[]; .author.username != \"$ME\" and .id > $LAST)) | {disc: .id, nid: ([.notes[].id] | max), by: (.notes | map(select(.author.username != \"$ME\" and .id > $LAST)) | last | .author.username), text: ((.notes | map(select(.id > $LAST) | .body)) | join(\" || \"))[0:400]}]")
-  [ -n "$OUT" ] && [ "$OUT" != "[]" ] && [ "$OUT" != "null" ] && { echo "$OUT"; exit 0; }
-  sleep 30
-done
-echo NO_CHANGE
+STATE_FILE="$(git rev-parse --git-path "babysit-$PROJECT_ID-$MR_IID.json")"
 ```
 
-   Note: discussion `id` is an opaque string, so always use max numeric **note id**
-   (`nid`) as the "last seen" cursor. Trigger rule = a non-system note from
-   someone other than you with id > LAST (so your own replies never re-trigger).
+Persist `project_id`, `mr_iid`, branch, mode, `last_seen_note`, `round`,
+bot identities, `review_sha`, `review_request_note_id`, and
+`approved_sha`. Write atomically, validate identity on resume, and permit only
+one coordinator per MR. Do not confuse another MR's state with this task.
 
-   On `NO_CHANGE`: re-check that the bot actually ran (pipeline status); if the
-   bot never started, investigate CI, do not spam more `!review` comments. Max
-   2 nudges total, then report to user.
-3. **Triage each thread** → verdict per thread:
-   - `FIX`: valid issue. Make the code change.
-   - `REJECT`: wrong/preference/out-of-scope. Reply on the thread with a concrete
-     technical justification (file paths, behavior, constraints, 1 to 3 sentences,
-     no fluff), then resolve it:
-     `glab api -X PUT "projects/$PID/merge_requests/$IID/discussions/$DISC_ID" -f resolved=true`
-   - **Every thread reply must open with an LLM identification line**, e.g.
-     `🤖 Automated reply: LLM agent working for @<me>:` followed by the
-     substance. Applies to REJECT justifications and FIX notifications alike;
-     never post as if a human wrote it.
-   - Ambiguous/breaking user intent: batch ambiguous threads, ask the user once
-     per round (not per thread).
-4. Apply all FIXes in one pass. Run lint/typecheck/tests if the repo defines them.
-5. Commit (`fix: address review round N: <topics>`) and push.
-6. Update `last_seen_note` to the highest note id seen; increment `round`; write state.
-7. Comment `!review` again. Go to 2.
+## Read complete feedback
 
-**Loop exit**: latest bot response reports clean/approved (match markers like
-"no issues|all clear|LGTM|approved|✅", confirmed against the bot's actual
-wording on the first round and reused exactly) AND zero unresolved actionable
-threads.
-Cap: 15 rounds, then stop and report.
-
-## Phase 2: Pipeline gate
-
-Do not trust the bot's word alone. Walk the pipeline:
-
-1. Find head pipeline:
-   `glab ci list --ref <branch> -F json --jq '[.[] | select(.sha=="'<latest_sha>'")][0] | {id,status}'`
-2. **Wait for completion** with the same one-blocking-call pattern:
-   poll `--jq .status` every 30s until `success|failed|canceled`, 20 min budget.
-3. Enumerate jobs:
-   `glab api "projects/$PID/pipelines/$PIPE_ID/jobs?per_page=100" | jq '[.[] | {name,stage,status,allow_failure}] | map(select(.allow_failure | not))'`
-4. Every non-optional job must be `success`. Any failure:
-   pull only the tail of the log
-   (`glab api "projects/$PID/jobs/$JOB_ID/trace" | tail -40`), diagnose, fix,
-   commit, push → this re-enters Phase 1 (new commit may draw new review).
-   Retry-once is allowed only for obvious flakes (network timeouts, runner lost).
-5. Gate passes when: pipeline `success` AND all non-optional jobs `success`.
-
-## Phase 3: Report, then offer watch mode
-
-Report concisely: MR url, rounds used, what was fixed vs rejected, pipeline status.
-
-Then ask the user whether to enter **watch mode**: poll periodically for new
-human comments and handle each (FIX or REJECT per Phase-1 rules), pushing and
-re-commenting `!review` after fixes, over and over until the MR is **approved**
-or the user says stop.
-
-Watch mode = the same wait-loop, but filtering to **human** authors only
-(`select(.notes[0].author.username as $u | ($BOTS + [$ME] | index($u)) | not)`),
-with an approval check folded into each poll:
+Use [scripts/list-pages.sh](scripts/list-pages.sh) to drain list endpoints.
+It emits one combined array only after complete success. An API error, invalid
+JSON, or page ceiling is a failed read, never `NO_CHANGE` or approval.
 
 ```bash
---jq '{comments: <new human discussions>, approved: <approval state>}'
+bash <babysit-skill>/scripts/list-pages.sh "projects/$PROJECT_ID/merge_requests/$MR_IID/discussions" > "$DISCUSSIONS"
+jq --arg me "$ME" --argjson last "$LAST" --argjson bots "$BOTS" \
+  --argjson humans_only false -f <babysit-skill>/scripts/new-notes.jq "$DISCUSSIONS"
 ```
 
-Wake only on news; otherwise sleep inside the script. Between wake-ups, emit one
-line per action taken, nothing else. Exit watch mode on approval, MR close/merge,
-or explicit user stop. Check in with the user at least every hour even if quiet
-(single-line status).
+`DISCUSSIONS` is a task-specific scratch file and `LAST` is the persisted
+cursor. Run the filter only after the fetch succeeds. Use
+[scripts/new-notes.jq](scripts/new-notes.jq) for both bot review and watch mode;
+set `humans_only` to true for watching. Every predicate applies to the same
+note. Results preserve each note's author, ID, full body, and commit metadata.
+Summarize only after reading the complete body; never decide approval from a
+400-character preview or combine two authors into one attributed message.
 
-## Failure handling
+On resume, inspect unresolved actionable discussions as well as new notes.
+Advance `last_seen_note` only after handling the returned notes and persisting
+their outcomes. An initial cursor is a snapshot of existing notes, not permission
+to discard unresolved work.
 
-- glab auth error → tell user to run `glab auth login`, stop.
-- Branch pushed by someone else mid-run → `git pull --rebase`, re-run affected phase.
-- Bot silent > 30 min despite pipeline success → report to user instead of looping.
-- Any point: user interrupt wins immediately; leave a one-line summary of where
-  the loop stopped so it can resume from the state file.
+## Bind each review to its commit
+
+1. Fetch the remote MR SHA. Before asking for review, ensure the intended commits
+   are pushed and the local MR checkout matches that SHA.
+2. Record that SHA as `review_sha`, clear `approved_sha`, and post the
+   configured review trigger once. Persist the returned request note ID as
+   `review_request_note_id`. If posting has an uncertain outcome, inspect
+   recent notes before retrying.
+3. Recheck the remote SHA after posting. If it changed, invalidate the request
+   association and inspect the new head before proceeding.
+4. Read and triage complete new feedback. Accept approval only from the configured
+   bot with evidence binding it to this request and `review_sha`: an explicit
+   reviewed SHA in the response/metadata, or a matching request/job identifier
+   whose review job ran on that SHA. A later timestamp alone is insufficient,
+   since a delayed response can belong to an older run. If the bot exposes no
+   reliable binding, report review as unconfirmed instead of claiming approval.
+5. Match the bot's actual clean verdict, not a loose `approved|✅` regex.
+   Read qualifiers and findings in the full response. Record `approved_sha`
+   only when the matching review is clean and no actionable threads remain.
+6. Fix accepted findings, run `verify-changes`, commit, and push as authorized.
+   Every push starts again at step 1, including state updates and a new request
+   association. Do not keep the first round's SHA after later fixes.
+
+For rejected findings, reply with concrete technical evidence before resolving
+the discussion. Every thread reply must open with
+`🤖 Automated reply: LLM agent working for @<me>:`.
+Batch questions only when findings conflict with unresolved user intent.
+
+Use bounded host waits or polling windows that remain interruptible. Inspect
+whether the bot ran before nudging a silent bot; at most two nudges and 15 review
+rounds, then report the blocker. Do not busy-poll or dump raw logs into context.
+
+## Gate the same remote head
+
+Fetch the MR's current SHA and enumerate branch pipelines completely using the
+list helper. Choose the newest pipeline for that exact SHA and branch; no
+matching pipeline means pending or blocked, never green.
+
+Wait for terminal state within a bounded window (20 minutes by default), then
+fetch its jobs using the same helper:
+
+```bash
+bash <babysit-skill>/scripts/list-pages.sh "projects/$PROJECT_ID/pipelines/$PIPE_ID/jobs" > "$JOBS"
+jq '[.[] | {name,stage,status,allow_failure}]' "$JOBS"
+```
+
+Pipeline success and every required job's success are necessary. For repositories
+using required child/downstream pipelines, follow their bridge jobs too. A failed
+fetch or incomplete job list cannot pass the gate. Diagnose failures from the
+saved full logs, fix within scope, and re-enter the review loop after any push.
+
+Immediately before declaring merge-ready, fetch the MR SHA again and require
+`remote SHA == review_sha == approved_sha == pipeline SHA`. If any differs,
+invalidate the result and verify the current commit.
+
+## Watch and stop
+
+For requested human-feedback watching, reuse the note filter with
+`humans_only=true` and the same cursor. An old human note plus a new bot or
+system note is not new human feedback. Handle changes within the requested
+authority, re-entering review after a fix when that outcome was requested.
+
+Stop at the requested duration, approval of the current head, MR close/merge, or
+user stop. Stay quiet when nothing actionable changes. Do not extend a watch
+because a report happened to finish. Report the MR URL, fixes and rejections,
+reviewed SHA, pipeline result, and any unconfirmed evidence.

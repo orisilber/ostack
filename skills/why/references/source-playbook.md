@@ -1,6 +1,11 @@
 # Source playbooks
 
-The why skill spawns one investigator per available evidence category, each reading a single source-specific playbook below. The playbooks are concrete examples for common MCPs; adapt them for a different MCP in the same category.
+The why skill may spawn one investigator per relevant evidence category, each
+reading a single source-specific playbook below. Start with directly linked
+history and add categories when the question needs them; a narrow question can
+use one investigator across several directly relevant sources. The playbooks
+are concrete examples for common MCPs; adapt them for a different MCP in the
+same category.
 
 | Category | Playbook | Example MCP it documents |
 |---|---|---|

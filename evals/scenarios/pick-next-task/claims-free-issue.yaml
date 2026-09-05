@@ -20,7 +20,12 @@ setup: |
   git push -q -u origin main
 
 prompt: |
-  Pick my next task from the queue and claim it.
+  Pick my next task from Jira project DMI and claim it. This project-wide queue
+  has one dispatcher for automated claims, and this run owns that dispatcher;
+  no other automated claimant may assign work during this run. The verified
+  current account ID is agent-1. Re-read the complete issue before assigning,
+  then use the assignee-only view to confirm ownership. Create its branch and
+  return a handoff without starting implementation or posting a tracker comment.
 
 fixtures:
   - match: auth status
@@ -41,10 +46,10 @@ fixtures:
       DMI-43,Upgrade auth token service,Task,Backlog,High,,2026-08-19
   - match: view.*DMI-41.*assignee
     response: |
-      {"key":"DMI-41","assignee":{"emailAddress":"agent@ostack.dev"}}
+      {"key":"DMI-41","fields":{"assignee":{"accountId":"agent-1","emailAddress":"agent@ostack.dev"}}}
   - match: view.*DMI-41
     response: |
-      {"key":"DMI-41","summary":"Add pagination to user list","description":"Split the user list endpoint. Acceptance criteria: page size 50 default; page param; tests.","labels":["agent-ready"],"status":"Open"}
+      {"key":"DMI-41","fields":{"assignee":null,"summary":"Add pagination to user list","description":"Split the user list endpoint. Acceptance criteria: page size 50 default; page param; tests.","labels":["agent-ready"],"status":{"name":"Open"}}}
   - match: assign.*DMI-41
     response: |
       Assigned DMI-41 to agent@ostack.dev
@@ -63,10 +68,10 @@ assert:
     - "transition.*DMI-41"
   tools_not_called:
     - "assign.*DMI-4[23]"
+    - "workitem comment"
   custom: |
-    grep -qiE "feature|bugfix|fix/" <(cd "$WORK" && git branch --list | cat) || {
-      echo "no branch created"; exit 1
-    }
+    set -eu
     (cd "$WORK" && git branch --list | grep -q "DMI-41") || {
       echo "branch missing ticket key"; exit 1
     }
+    test "$(cat "$WORK/src/app.ts")" = 'console.log(1)'

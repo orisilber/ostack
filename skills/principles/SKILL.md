@@ -1,12 +1,13 @@
 ---
 name: principles
-description: The engineering-judgment layer behind every other ostack skill, 21 one-line rules for how to shape code, verify it, and delegate it, with the full text in references. Triggers "principles", "apply the principles", "what would you change about this design", or any non-trivial implementation, refactor, or review where shape matters. Use as a lens on work you're already doing, not as a task in itself.
+description: Engineering judgment for an explicit design review or request to apply ostack's principles. Provides a short index with deeper references; do not trigger for routine implementation unless a workflow selects it.
 ---
 
 # Principles
 
-Twenty-one rules, one idea each. Read the index below, name the two or three
-that apply, and work from those. Naming all of them means you named none.
+Use the relevant rules from this index and read their references when more
+detail would change a decision. Explain consequential choices in ordinary
+language; naming principles aloud is optional.
 
 The rest of ostack is procedure: how to claim work, gate it, ship it. This is the
 judgment layer that decides whether what you shipped was any good.
@@ -29,7 +30,7 @@ text per group in `references/`: [core](references/core.md),
 | **Outcome-oriented execution** | Planned migrations with phase boundaries. Converge on the target; don't preserve throwaway intermediate states. |
 | **Experience first** | Product and scope tradeoffs. User delight over implementation convenience; fewer polished features over more rough ones. |
 | **Exhaust the design space** | A novel interaction or architectural call with no precedent. Two or three competing prototypes, compared side by side. |
-| **Build the lever** | Any non-trivial work. Build the codemod, script, or generator that does it or proves it. That's the artifact a reviewer can re-run. |
+| **Build the lever** | Repeated work or proof that benefits from a rerunnable helper. Direct edits are enough when a new tool adds more cost than confidence. |
 
 ## Architecture
 

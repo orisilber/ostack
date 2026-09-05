@@ -32,9 +32,11 @@ select one. Ask only when that evidence remains ambiguous.
 
 The project-local verifier supplements this gate. It does not replace declared
 repository checks. Confirm its commands against its source anchors before use.
-If a command or path has drifted, use the current repository declaration for
-diagnosis and return `VERIFY: FAIL project-local verifier is stale`. Point to
-`maintain-verification-skill`.
+If a command or path has drifted, report the documentation defect and use a
+current repository declaration that checks the same behavior. Point to
+`maintain-verification-skill` for repair. Stale instructions alone do not fail
+the product gate when equivalent current evidence passes; an unverified affected
+behavior still does.
 
 ## 2. Discover the commands once per session
 
@@ -82,19 +84,29 @@ gap to `escalate` for a non-trivial change.
 
 - Tests affected by changed files first (`pytest path/to/test.py`,
   `bun test test/foo.test.ts`). Full suite only if scoping is unclear.
-- Typecheck/lint are cheap, always full-repo.
+- Run all repository-required checks at their declared scope. Where the
+  repository supports affected-package lint, typecheck, or tests, use that scope
+  when it covers the change. Do not assume full-repository checks are cheap.
+- Reuse completed checks for unchanged code, dependencies, commands, and
+  environment. Record the result and its scope. Rerun when an edit or environment
+  change invalidates that evidence; do not repeat a check merely because a
+  calling workflow already ran it.
 
 ## 4. Run repository checks
 
-- One bash call per check, chained where independent.
-- Never let full logs hit context. Always cap:
+- Run independent checks concurrently when the repository permits it.
+- Preserve the check's exit status when you cap its output. A trailing `tail`
+  reports the pager's status, not the check's status. Use this shape:
 
 ```bash
-<cmd> 2>&1 | tail -30
+bash <verify-changes-skill>/scripts/run-check.sh /tmp/task-check.log <command> <args...>
 ```
 
-- On failure, re-run only the failed tool with more targeted output (e.g.
-  `| head -60`) to capture the first error, not the last.
+The helper runs in Bash regardless of the caller's shell and returns the original
+check status. It keeps the full log for diagnosis, so inspect that log instead
+of rerunning a failed check just to see its first error. Use a unique log path
+per concurrent check. For a shell pipeline, pass `bash -o pipefail -c '<pipeline>'`.
+A repository helper that preserves the same evidence is also valid.
 
 ## 5. Prove affected user behavior
 
@@ -136,14 +148,29 @@ with the shortest reproduction of the failure.
 
 - `git status --porcelain`: no unintended files staged (build artifacts,
   .DS_Store, secrets).
-- Secret scan over all to-be-committed content (staged + unstaged tracked):
+- Scan new content before publishing. A removed line is not a new exposure,
+  but a secret added in an outgoing commit remains in that published history.
+
+Use the repository's declared scanner first. The fallback scans additions from
+an explicit base through the current worktree, including outgoing commits,
+staged/unstaged edits, and untracked files. It scans each outgoing commit and
+the index separately, so a later removal does not hide a committed secret:
 
 ```bash
-git diff HEAD | grep -inE "sk-[a-z0-9]{8,}|AKIA[A-Z0-9]{8,}|BEGIN.*PRIVATE KEY"
+python3 <verify-changes-skill>/scripts/scan-added-secrets.py <base-commit-or-ref>
 ```
 
-Match means hard stop → `escalate`. Untracked files: eyeball `git status`
-output for filenames that look like env/key files before staging.
+For a PR, resolve the merge base with its target branch. For an incremental push,
+use the verified remote tip; for a new branch, use its target merge base. `HEAD`
+is valid only when checking uncommitted edits. A clean worktree does not mean
+outgoing commits have been scanned. An invalid base or read failure is a scan
+failure, never a clean result.
+
+The fallback reports filenames without printing candidate secrets. Triage
+matches before publishing: a documented placeholder is not an exposed credential.
+Keep real secret additions out of the change and use `escalate` only when
+remediation needs additional authority. Retain the scope and reason for any
+false-positive dismissal.
 
 PASS does not mean done. The calling skill decides whether to push, open MR,
 or continue.

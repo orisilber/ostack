@@ -7,16 +7,18 @@ disable-model-invocation: true
 # Maintain a verification skill
 
 A project-local verification skill becomes stale as the application changes.
-Audit every mapped feature from source and exercise every feature live. Keep the
-run focused on the verification skill. Do not turn each feature bullet into a
-separate terminal session.
+For a full maintenance request, audit every mapped feature from source and
+exercise every feature live. For a targeted request, scope the pass to the
+affected feature set plus the regression controls it can influence, and report
+the uncovered features explicitly. Keep the run focused on the verification
+skill. Do not turn each feature bullet into a separate terminal session.
 
 ## Outcomes
 
 Report one outcome:
 
-- **clean** means every feature received source and live coverage, and no
-  correction was needed. Do not create a commit or an MR.
+- **clean** means every feature in the declared scope received source and live
+  coverage, and no correction was needed. Do not create a commit or an MR.
 - **changed** means the local change contains proven corrections. Commit, push,
   or open one MR only when the user requested that outcome.
 - **blocked** means coverage could not finish or a correction could not be made
@@ -43,18 +45,19 @@ changing the product or hiding the failure in the map.
    dead index entries. Compare each repository check against the file that
    declares it. Do not generate an inventory file.
 
-2. **Read each feature from source.** Launch one read-only worker per feature
-   when parallel agents are available. Each worker returns the feature summary,
-   source entry points, likely drift with file citations, and one concise live
-   recipe. Workers do not drive the app or edit files. Without parallel agents,
-   inspect the features in sequence and keep the same return shape.
+2. **Read each feature from source.** For a large independent feature set,
+   launch bounded read-only workers when parallel agents are available. For a
+   small or tightly coupled set, inspect the features in sequence. Each worker
+   or local pass returns the feature summary, source entry points, likely drift
+   with file citations, and one concise live recipe. Workers do not drive the
+   app or edit files. Keep the same return shape either way.
 
-3. **Reconcile the results.** Require a result for every feature file. Merge
+3. **Reconcile the results.** Require a result for every feature file in scope. Merge
    overlapping recipes into as few app states as practical. Check cited drift.
    Sweep recent changes for a missing user-facing feature. Require a concrete
    source path before adding one.
 
-4. **Run the live pass.** Drive every feature at least once. The coordinator
+4. **Run the live pass.** Drive every feature in scope at least once. The coordinator
    owns the live app. Use one long-lived instance for servers and UIs, or one
    isolated session per short-lived CLI drive, as the target skill specifies.
 

@@ -1,5 +1,5 @@
 skill: blahaj-mode
-description: Requires architect for a public cross-module feature boundary.
+description: Preserves a specified public boundary without inventing an architecture comparison.
 
 setup: |
   git init -q -b main
@@ -29,12 +29,13 @@ prompt: |
   Use blahaj-mode to add a public Parser type in src/parser.py and move the
   implementation across modules while preserving src.api.parse() as the public
   compatibility function. Keep this as a local feature change and run the
-  repository check. Do not open an MR.
+  repository check. The target shape is fixed as stated; there is no unresolved
+  design choice. Reuse that decision. Do not open an MR.
 
 assert:
   output_contains:
     - "Route: feature -> local-change"
-    - "architect"
+    - "architect skipped"
   custom: |
     set -eu
     test -s src/parser.py
