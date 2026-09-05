@@ -23,3 +23,11 @@ Model-behavior scenarios under `evals/scenarios` run separately through
 `evals/run.sh`; their presence is not evidence that an agent completed them.
 The audit report records the checks actually executed and remaining live
 service and model validation.
+
+`python3 tests/autonomy-regressions.py` runs the checkpoint and GitHub collector
+against disposable Git repositories and an offline `gh` fixture. It covers
+pending and failed CI, a changed head with stale approval, fresh approval,
+pagination, API failures, reduced authority, and worktree isolation. These are
+executable helper tests; they do not establish live review-bot or scheduler
+behavior. The GitHub delivery YAML scenario uses a local bare remote and checks
+the final head and readiness result, in addition to the agent's narration.

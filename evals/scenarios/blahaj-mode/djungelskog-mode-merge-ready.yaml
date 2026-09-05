@@ -1,0 +1,79 @@
+skill: djungelskog-mode
+description: Autonomous GitHub delivery verifies current-head readiness and reuses an existing PR.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  mkdir -p tests
+  cat > AGENTS.md <<'MD'
+  # Fixture repo
+
+  ## Checks
+  - test: `bash tests/check.sh`
+
+  The existing GitHub PR is https://github.example/owner/repo/pull/7.
+  The local bare origin is the offline transport for this PR. Use only the
+  fixture gh CLI for GitHub access. Never use a connector, browser, or network.
+  MD
+  echo broken > app.txt
+  cat > tests/check.sh <<'SH'
+  #!/usr/bin/env bash
+  set -eu
+  if grep -qx fixed app.txt; then
+    echo '--- repo verify pass' >> "$CALLS_LOG"
+  else
+    echo '--- repo reproduce fail' >> "$CALLS_LOG"
+    exit 1
+  fi
+  SH
+  git add -A && git commit -qm init
+  git init -q --bare "$SANDBOX/remote.git"
+  git remote add origin "$SANDBOX/remote.git"
+  git push -q origin main
+  git checkout -qb fix/djungelskog-mode
+  git push -qu origin HEAD
+  skill_root="$(cd "$HOME/.agents/skills/blahaj-mode" && pwd -P)"
+  python3 - "$skill_root/../.." "$WORK" <<'PY'
+  import importlib.util, json, pathlib, sys
+  root, work = pathlib.Path(sys.argv[1]).resolve(), pathlib.Path(sys.argv[2])
+  spec = importlib.util.spec_from_file_location('fixtures', root / 'tests/autonomy-regressions.py')
+  module = importlib.util.module_from_spec(spec)
+  spec.loader.exec_module(module)
+  data = module.github_fixture()
+  data['dynamic_head'] = True
+  (work / '.git/github-fixture.json').write_text(json.dumps(data))
+  (work / '.git/github-cli.py').write_bytes((root / 'tests/fixtures/github-cli.py').read_bytes())
+  PY
+
+prompt: |
+  Use djungelskog-mode. Fix app.txt so it contains "fixed". Reproduce the
+  defect with bash tests/check.sh and finish the existing PR properly.
+  The existing PR is https://github.example/owner/repo/pull/7.
+  Use only the fixture gh CLI and local bare origin. Do not use external tools.
+
+assert:
+  output_contains:
+    - "Route: bug-fix -> merge-ready"
+    - "merge.ready"
+  tools_called:
+    - "gh pr list"
+    - "gh pr checks .*--required"
+    - "reviewThreads"
+    - "issues/7/comments"
+  tools_not_called:
+    - "gh pr (create|merge|comment|review)"
+    - "glab "
+  custom: |
+    set -eu
+    grep -qx fixed app.txt
+    git diff --exit-code
+    test "$(git rev-parse HEAD)" = "$(git --git-dir="$SANDBOX/remote.git" rev-parse refs/heads/fix/djungelskog-mode)"
+    reproduce_line="$(grep -n '^--- repo reproduce fail' "$CALLS_LOG" | head -1 | cut -d: -f1)"
+    verify_line="$(grep -n '^--- repo verify pass' "$CALLS_LOG" | head -1 | cut -d: -f1)"
+    checks_line="$(grep -n '^--- gh pr checks' "$CALLS_LOG" | head -1 | cut -d: -f1)"
+    test -n "$reproduce_line" && test -n "$verify_line" && test -n "$checks_line"
+    test "$reproduce_line" -lt "$verify_line" && test "$verify_line" -lt "$checks_line"
+    skill_root="$(cd "$HOME/.agents/skills/blahaj-mode" && pwd -P)"
+    PATH="$skill_root/../../evals/stubs/bin:$PATH" python3 "$skill_root/scripts/github-ready.py" \
+      --repo github.example/owner/repo --pr 7 --expected-head "$(git rev-parse HEAD)"

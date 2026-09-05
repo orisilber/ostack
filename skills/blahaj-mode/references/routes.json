@@ -97,6 +97,6 @@
     "answer": [],
     "local-change": [],
     "mr-open": ["skill:no-comments", "playbooks/opening-an-mr.md"],
-    "merge-ready": ["skill:no-comments", "playbooks/opening-an-mr.md", "skill:babysit-gitlab-mr"]
+    "merge-ready": ["skill:no-comments", "playbooks/opening-an-mr.md", "playbooks/merge-ready.md"]
   }
 }

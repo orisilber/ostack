@@ -38,8 +38,23 @@ route (`investigation`, `bug-fix`, `large-feature`, `feature`, `refactoring`,
 `eval`, `authoring-a-skill`, `session-pickup`, `pause-safely`, `prototype`,
 `visual-parity`, `multi-phase-plan`, `worktree-cleanup`) and an outcome
 (`answer`, `local-change`, `mr-open`, `merge-ready`), reports the pair as
-`Route: <task-kind> -> <outcome>`, and runs the matching playbook. It never
-opens an MR, merges, or releases unless you ask for that outcome.
+`Route: <task-kind> -> <outcome>`, and runs the matching playbook. In normal
+mode it never opens an MR, merges, or releases unless you ask for that outcome.
+
+`djungelskog-mode` is the autonomous entry point. Invoke `/djungelskog-mode <task>` when
+you want the same Blahaj routes and playbooks to research, choose the approach,
+implement, verify, open the change request, and drive it merge-ready without
+routine checkpoints. This explicit entry point opts into delivery; saying
+"work autonomously" alone preserves the outcome you requested. Both modes
+settle routine engineering decisions without asking. Negative constraints always
+win, and djungelskog-mode never merges, releases, or deploys without separate
+explicit authorization.
+
+Delivery supports GitHub PRs and GitLab MRs. Readiness requires review and CI
+for the current head. Longer tasks can save progress outside tracked files and
+resume the original route and scope. Later execution requires an explicitly
+requested and confirmed host schedule; installing the skill does not keep the
+agent running after its host stops.
 
 The model-aware skills (`architect`, `arena`, `how`, `interrogate`, `swarm`,
 `why`) run their subagents on configured models. Configure them in Cursor with
@@ -65,7 +80,7 @@ You do not need to name them in the prompt.
 |---|---|
 | `architect` | Settle a boundary before a feature, bug fix, or refactor crosses it |
 | `arena` | Compare viable implementations when one choice would lock in the wrong shape |
-| `babysit-gitlab-mr` | Run only for the explicit `merge-ready` outcome |
+| `babysit-gitlab-mr` | Run the authorized GitLab `merge-ready` tail |
 | `decompose-epic` | Split work only when the source is a real Jira epic |
 | `e2e-verify` | Verify UI behavior or visual parity on a real UI |
 | `feature-retention-tests` | Add durable feature coverage only after accepted behavior works through the real interface |
@@ -80,7 +95,8 @@ You do not need to name them in the prompt.
 | `technical-writing` and `unslop` | Edit prose that a workflow publishes |
 | `verify-changes` | Run repository checks and affected project-local verification after a code change |
 
-`blahaj-mode` is the workflow entry point. `setup-blahaj-mode` configures its
+`blahaj-mode` is the workflow entry point. `djungelskog-mode` enters that same
+workflow with autonomous execution enabled. `setup-blahaj-mode` configures its
 model roles but does not run inside a task route.
 
 When a repository contains a project-local `verify-*` skill, `verify-changes`
@@ -110,15 +126,18 @@ Skills with `disable-model-invocation: true` do not start from a model-selected
 trigger. Invoke them by name or slash command when no active workflow already
 calls for them:
 
-`blahaj-mode`, `setup-blahaj-mode`, `architect`, `arena`, `blast-radius`,
-`create-verification-skill`, `interrogate`, `maintain-verification-skill`, `no-comments`,
-`recall`, `show-me-your-work`, `swarm`, and `technical-writing`.
+`blahaj-mode`, `djungelskog-mode`, `setup-blahaj-mode`, `architect`, `arena`,
+`blast-radius`, `create-verification-skill`, `interrogate`,
+`maintain-verification-skill`, `no-comments`, `recall`, `show-me-your-work`,
+`swarm`, and `technical-writing`.
 
-For example, `/blahaj-mode Fix the pagination bug` starts the workflow, while
-`/interrogate Review this diff` runs the standalone review directly. Inside
-`blahaj-mode`, a selected playbook can include `architect`, `arena`, `recall`,
-`show-me-your-work`, `swarm`, `technical-writing`, or `no-comments`; you do not
-need to invoke those skills again.
+For example, `/blahaj-mode Fix the pagination bug` starts the normal workflow,
+while `/djungelskog-mode Fix the pagination bug` starts the same workflow in
+autonomous mode and may carry it through merge-ready. `/interrogate Review this
+diff` runs the standalone review directly. Inside `blahaj-mode`, a selected
+playbook can include `architect`, `arena`, `recall`, `show-me-your-work`,
+`swarm`, `technical-writing`, or `no-comments`; you do not need to invoke those
+skills again.
 
 ## Skills
 
@@ -130,7 +149,8 @@ below for what changed).
 
 | Skill | Source | Purpose |
 |---|---|---|
-| `blahaj-mode` | ostack | Cursor-first router for task kind, outcome, and implemented playbooks |
+| `blahaj-mode` | ostack | Cursor-first router for task kind, outcome, execution mode, and implemented playbooks |
+| `djungelskog-mode` | ostack | Explicit autonomous entry point for Blahaj: research, decide, implement, verify, open the change request, and drive it merge-ready |
 | `setup-blahaj-mode` | ostack | Configure ostack's delegated model roles and fallback behavior |
 | `pick-next-task` | ostack | Claim the next Jira work item with `acli`: JQL by agent-ready criteria, self-assign with read-back, transition, branch |
 | `decompose-epic` | ostack | Jira epic → atomic, conflict-free child tickets with acceptance criteria, disjoint file scopes, and real `Blocks` links |

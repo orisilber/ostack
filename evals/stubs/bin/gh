@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+if [ -n "${WORK:-}" ] && [ -f "$WORK/.git/github-cli.py" ]; then
+  GITHUB_FIXTURE="$WORK/.git/github-fixture.json" exec python3 "$WORK/.git/github-cli.py" "$@"
+fi
+CMD=gh
+source "$(dirname "${BASH_SOURCE[0]}")/../replay.sh"

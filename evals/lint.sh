@@ -22,6 +22,7 @@ source "$ROOT/evals/lib/py_with_yaml.sh"
 PYTHON="$(resolve_python)"
 "$PYTHON" "$ROOT/evals/lib/check-skill-contracts.py" "$ROOT" || err "skill contract validation failed"
 "$PYTHON" "$ROOT/tests/audit-regressions.py" || err "audit regression tests failed"
+"$PYTHON" "$ROOT/tests/autonomy-regressions.py" || err "autonomy regression tests failed"
 if node -e 'require(process.env.TYPESCRIPT_PATH || "typescript")' >/dev/null 2>&1; then
 	node "$ROOT/tests/typescript-examples.cjs" || err "TypeScript example regression tests failed"
 else
