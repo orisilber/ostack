@@ -1,12 +1,20 @@
 ---
 name: architect
-description: Settle types, signatures, and module boundaries before writing code, then implement against that sketch and scrap it when implementation proves it wrong. Triggers "architect this", "design this first", or non-trivial work where jumping to code would lock in the wrong shape. Use only when real code follows; a plan nobody implements is not this skill.
+description: Settle types, signatures, and module boundaries before writing code when the user asks to architect or a workflow finds a consequential unresolved shape. Return a usable sketch to the caller, or implement it only in explicit implementation mode. Use only when real code follows; a plan nobody implements is not this skill.
 disable-model-invocation: true
 ---
 
 # Architect
 
 Design before implementing. Sketch types, function signatures, class shapes, and module boundaries with `not implemented` bodies and pseudocode. Synthesize across multiple model perspectives, then fill in code against the chosen sketch. If implementation proves the sketch wrong, throw it out and redesign.
+
+## Invocation contract
+
+Callers that own decomposition or implementation should invoke this skill in
+`design-only` mode. That mode returns the usage sketch, candidate comparison,
+and synthesized contract without editing product code. A standalone invocation
+may use implementation mode when the user asked this skill to carry the change
+through; the mode must be explicit when another workflow owns the files.
 
 ## Model resolution
 
@@ -25,7 +33,10 @@ substitute it.
 
 ## Start
 
-Open a todolist with one entry per phase before starting. Autonomous mode without checkpoints needs the list to show phase position and keep phases from silently disappearing.
+Open a todolist with one entry per phase before starting. In `design-only` mode
+the list ends at Agree; implementation mode includes Implement and Scrap.
+Autonomous mode without checkpoints needs the list to show phase position and
+keep phases from silently disappearing.
 
 1. Ground
 2. Sketch
@@ -43,11 +54,21 @@ Skip Phase A only when the work is genuinely greenfield with no surrounding syst
 
 ## Phase B: Sketch
 
-Run the **arena** skill with the design-sketch task and the Phase A grounding artifacts. Pass `references/runner-prompt.md` as each runner's prompt. Each candidate produces a design package shaped per `references/rationale-template.md`: the caller's usage written first, then the type sketch, function signatures, module map, and prose rationale derived from it.
+Use the **arena** skill with the design-sketch task and the Phase A grounding
+artifacts when Phase A leaves a consequential design choice unresolved or the
+caller explicitly asks for alternatives. Pass `references/runner-prompt.md` as
+each runner's prompt. Each candidate produces a design package shaped per
+`references/rationale-template.md`: the caller's usage written first, then the
+type sketch, function signatures, module map, and prose rationale derived from
+it. For an established or mechanically constrained shape, produce one grounded
+candidate and record why comparison would not change the decision.
 
 Use the resolved `architect.runners` panel for the design candidates.
 
-Design it twice. Require at least two structurally distinct candidates before synthesis, even when the first looks sufficient. This is the **exhaust-the-design-space** principle made concrete. Whole-shape alternatives, not point fixes inside one shape.
+When alternatives are warranted, require at least two structurally distinct
+candidates before synthesis. Whole-shape alternatives are useful here; point
+fixes inside one shape are not. Do not manufacture a second candidate when the
+grounding leaves one viable shape and the decision is reversible.
 
 Screen every candidate against [`references/design-red-flags.md`](references/design-red-flags.md) before synthesis. Reject or revise shallow modules, information leakage, temporal decomposition, and pass-through methods.
 
@@ -57,7 +78,10 @@ Arena returns one synthesized design package. The synthesis decision populates t
 
 ## Phase C: Agree (opt-in)
 
-Default: proceed directly to implementation with the synthesized design. No human checkpoint.
+In `design-only` mode, return the synthesized design package here and stop. The
+caller owns implementation and verification. In standalone implementation mode,
+proceed directly to implementation with the synthesized design. No human
+checkpoint.
 
 Opt in to a checkpoint when the invoker explicitly asks: "/architect with checkpoint," "stop and show me before implementing," or similar. Then surface the synthesized design and pause for sign-off.
 
@@ -65,7 +89,7 @@ The synthesis can ship as its own commit either way. That's the "scaffold first"
 
 If the human pushes back on the shape (in a checkpoint or after the fact), treat that as Phase A evidence. Re-ground and re-run Phase B before writing more code.
 
-## Phase D: Implement against the sketch
+## Phase D: Implement against the sketch (implementation mode only)
 
 Replace `not implemented` bodies with code, pseudocode with logic. The synthesized sketch is the contract.
 

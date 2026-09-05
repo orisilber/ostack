@@ -78,7 +78,10 @@ Then proceed to Step 3.
 
 ### Step 2b. Direct Explain (simple questions)
 
-Spawn a single Task subagent that explores and explains in one pass:
+Answer a simple question in one local pass when the current host can inspect the
+small set of relevant files directly. Use a single read-only explainer agent
+only when delegation materially improves the answer or the host lacks a direct
+read path:
 
 - `subagent_type`: `generalPurpose` in Cursor; `Explore` (read-only) or `general-purpose` in Claude Code
 - `model`: the first entry resolved for `how.explainer`

@@ -1,6 +1,6 @@
 ---
 name: principles
-description: The engineering-judgment layer behind every other ostack skill, 21 one-line rules for how to shape code, verify it, and delegate it, with the full text in references. Triggers "principles", "apply the principles", "what would you change about this design", or any non-trivial implementation, refactor, or review where shape matters. Use as a lens on work you're already doing, not as a task in itself.
+description: Engineering judgment for an explicit design review or request to apply ostack's principles. Provides a short index with deeper references; do not trigger for routine implementation unless a workflow selects it.
 ---
 
 # Principles

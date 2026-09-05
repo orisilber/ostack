@@ -34,10 +34,12 @@ recoverable configuration warning and use `inherit` for this run. Do not
 silently reuse an old pstack configuration and do not overwrite an existing
 valid file until the new candidate passes validation.
 
-## 3. Ask for the four generic roles in one batch
+## 3. Update the generic roles
 
-Show the current value (or `inherit` when no valid value exists) and ask for
-all four generic roles together:
+If the user supplied an unambiguous change for one or more roles, preserve the
+other valid values and ask only about missing or conflicting choices. For a
+first-time setup with no supplied values, show the current value (or `inherit`
+when no valid value exists) and ask for all four generic roles together:
 
 - `exploration`: discovery and investigation workers
 - `implementation`: implementation and bulk workers

@@ -14,10 +14,11 @@ then come back here to make its output agent-shaped.
 ## 1. Read the epic once
 
 ```bash
+PROJECT_KEY="${PROJECT_KEY:-${EPIC%%-*}}"
 acli jira workitem view "$EPIC" --fields "summary,description,labels,status,priority"
 acli jira workitem search --jql "parent = $EPIC" \
-  --fields "key,issuetype,status,assignee,summary" --limit 50 --csv
-acli jira workitem comment list --key "$EPIC" 2>&1 | tail -60
+  --fields "key,issuetype,status,assignee,summary" --limit 50 --paginate --csv
+acli jira workitem comment list --key "$EPIC"
 ```
 
 `search --fields` renders only a fixed display set: key, type, status, priority,
@@ -26,7 +27,9 @@ errors as `field '<name>' is not allowed`; read those per ticket with
 `workitem view` instead.
 
 Children already exist → you are *extending* a decomposition, not starting one.
-Read them first and never duplicate a scope that's already ticketed.
+Drain every page before drafting. If the provider cannot prove that the listing
+is complete, report the inventory as incomplete and do not create tickets yet;
+never rely on the first page to avoid duplicate scope.
 
 If discussion is long, summarize it now and work from the summary. Never
 re-read it later. Then explore the codebase enough to name real files and
@@ -68,14 +71,16 @@ Run this matrix against the draft:
 ## 4. Show ONE approval table, then create
 
 Present `# | summary | type | scope | depends on`. The user edits or approves
-once. Skip the approval entirely when invoked with "auto" or from a loop.
+once unless the caller has already supplied explicit authorization to create
+these children (for example, a trusted automation policy). The words "auto" or
+"from a loop" alone do not grant a new external write.
 
 Write each description to a file rather than inlining it. Jira descriptions are
 multi-line and shell-quoting them is where this step breaks:
 
 ```bash
 acli jira workitem create \
-  --project "$KEY" --type Story --parent "$EPIC" \
+  --project "$PROJECT_KEY" --type Story --parent "$EPIC" \
   --summary "[FE] Add brand column to the prompts table" \
   --description-file /tmp/ticket-1.md \
   --label agent-ready --json
@@ -103,7 +108,7 @@ backwards inverts the whole plan, so verify one edge with
 
 ## 5. Output
 
-One summary block: created keys, the DAG as `DMI-1 → DMI-2` lines, and the
+One summary block: created keys, the DAG as `<KEY>-1 → <KEY>-2` lines, and the
 suggested parallel lanes (which tickets can run simultaneously). Nothing else.
 
 `pick-next-task` picks these up from here. If the lanes matter, say so in the

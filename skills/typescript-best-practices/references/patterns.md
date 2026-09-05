@@ -45,7 +45,7 @@ Build the type from parts that are all legal instead of restricting a loose type
 Non-empty, via a variadic tuple:
 
 ```ts
-type NonEmpty<T> = [T, ...T[]];
+type NonEmpty<T> = readonly [T, ...T[]];
 
 // Don't: T[] plus a length check every caller must repeat
 function pickWinner(entries: string[]): string {
@@ -55,14 +55,15 @@ function pickWinner(entries: string[]): string {
 
 // Do: an empty value of the type can't exist
 function pickWinner(entries: NonEmpty<string>): string {
-  return entries[Math.floor(Math.random() * entries.length)];
+  const index = Math.floor(Math.random() * entries.length);
+  return entries[index] ?? entries[0];
 }
 ```
 
 Where a plain `T[]` arrives, narrow once with a guard. The fact then travels in the type:
 
 ```ts
-const isNonEmpty = <T>(arr: T[]): arr is NonEmpty<T> => arr.length > 0;
+const isNonEmpty = <T>(arr: readonly T[]): arr is NonEmpty<T> => arr.length > 0;
 ```
 
 Even length, as pairs. TypeScript has no refinement types (no `arr.length % 2 === 0` at the type level); you don't need one:
@@ -77,11 +78,23 @@ A time range, as start plus duration:
 // Don't: a comment holds the invariant
 type TimeRange = { start: Date; end: Date }; // start <= end
 
-// Do: a negative range can't be written; derive end when needed
-type TimeRange = { start: Date; durationMs: number };
+// Do: validate the duration at the boundary; derive end when needed
+type NonNegativeDurationMs = { readonly milliseconds: number };
+type TimeRange = { start: Date; duration: NonNegativeDurationMs };
+
+function nonNegativeDurationMs(value: number): NonNegativeDurationMs {
+  if (!Number.isFinite(value) || value < 0) {
+    throw new Error("duration must be a finite non-negative number");
+  }
+  return { milliseconds: value };
+}
 ```
 
-Keep `durationMs` a plain number. Brand it (per Branded types) only if a raw number could be passed where a duration is expected, not by reflex. A `Pairs<T>` is an even-length list under the interpretation you give it, the same way `{ start, durationMs }` is a range. Pick the representation that makes the bad state unconstructable, then expose the reading you need on top (`pairs.flat()`, a `rangeEnd()` helper).
+The object wrapper makes construction go through the boundary check, so a
+`TimeRange` cannot contain a negative duration unless code bypasses the factory.
+A `Pairs<T>` is an even-length list under the interpretation you give it. Pick
+the representation that makes the bad state unconstructable, then expose the
+reading you need on top (`pairs.flat()`, a `rangeEnd()` helper).
 
 ## Simplest total type
 

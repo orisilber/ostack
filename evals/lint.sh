@@ -49,15 +49,17 @@ for dir in "$SKILLS"/*/; do
 done
 
 # ------------------------------------------------- cross-skill references valid
-all_names="$(ls "$SKILLS")"
+# Check the forms used in prose (`how` skill and **how** skill). The old loop
+# iterated only over directories that already existed, so it could never report
+# a missing dependency.
 for dir in "$SKILLS"/*/; do
 	name="$(basename "$dir")"
-	for other in $all_names; do
-		[ "$other" = "$name" ] && continue
-		if grep -qE "\`$other\`" "$dir/SKILL.md" && [ ! -d "$SKILLS/$other" ]; then
-			err "$name: mentions skill '$other' which does not exist"
-		fi
-	done
+	while IFS= read -r other; do
+		[ -n "$other" ] || continue
+		[ -d "$SKILLS/$other" ] || err "$name: mentions skill '$other' which does not exist"
+	done < <(
+		sed -nE 's/.*\*\*([a-z][a-z0-9-]*)\*\*[[:space:]]+skill.*/\1/p; s/.*`([a-z][a-z0-9-]*)`[[:space:]]+skill.*/\1/p' "$dir/SKILL.md" | sort -u
+	)
 done
 
 # ----------------------------------------------------- CLI flag accuracy check
@@ -235,8 +237,11 @@ grep -qF 'disable-model-invocation: true' "$SKILLS/create-verification-skill/SKI
 	err "contract: create-verification-skill must remain explicitly invoked"
 grep -qF 'disable-model-invocation: true' "$SKILLS/maintain-verification-skill/SKILL.md" || \
 	err "contract: maintain-verification-skill must remain explicitly invoked"
-for skill in create-verification-skill maintain-verification-skill; do
-	grep -qF 'allow_implicit_invocation: false' "$SKILLS/$skill/agents/openai.yaml" || \
+for f in "$SKILLS"/*/SKILL.md; do
+	grep -qF 'disable-model-invocation: true' "$f" || continue
+	skill="$(basename "$(dirname "$f")")"
+	policy="$SKILLS/$skill/agents/openai.yaml"
+	[ -f "$policy" ] && grep -qF 'allow_implicit_invocation: false' "$policy" || \
 		err "contract: $skill must remain explicitly invoked in Codex"
 done
 

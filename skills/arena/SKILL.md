@@ -17,13 +17,15 @@ exact override first, then the generic `judgment` role, then `inherit`. A
 missing, invalid, or empty configuration is recoverable: report the fallback
 once and use `inherit`.
 
-The runners are a panel, so launch each resolved entry once. The cross-judge
-pool is also a list; choose one entry that differs from the parent model family
-when the host makes that possible. `inherit` must be the only entry when it is
-selected. If the host rejects a configured entry, remove it and continue with
-the remaining entries; use `inherit` only when none remain. Do not pick a
-nearby model ID. A successful subagent call does not prove which model ran,
-because the host may silently substitute it.
+The configured entries identify available model arms; they do not determine the
+number of candidates. Derive `N` from the task and the declared shape, then
+assign each candidate an available arm, reusing an arm when the host exposes
+only one. The cross-judge pool is also a list; choose one entry that differs
+from the parent model family when the host makes that possible. `inherit` must
+be the only entry when it is selected. If the host rejects a configured entry,
+remove it and continue with the remaining entries; use `inherit` only when none
+remain. Do not pick a nearby model ID. A successful subagent call does not prove
+which model ran, because the host may silently substitute it.
 
 ## Start
 
@@ -42,7 +44,10 @@ The N candidates will receive the same prompt, so the prompt is the contract. Ge
 
 1. State the artifact each candidate is producing.
 2. Derive the rubric. State what success looks like for *this* task, then turn it into 3-6 concrete gradeable criteria. Concrete: `Adds a --dry-run flag that skips writes`. Vague: `code is correct`. The rubric is the picker's tool in Phase D; candidates only see the task.
-3. Pick the runners from the resolved `arena.runners` panel. Spawn more when the arena covers multiple design directions. Same model N times when the work is generation-bound rather than judgment-sensitive.
+3. Pick the runners from the resolved `arena.runners` panel. Spawn one candidate
+   per declared design direction, up to `N`. Same model N times is valid when
+   the work is generation-bound rather than judgment-sensitive; model diversity
+   is useful evidence only when the host actually provides it.
 4. Assign output paths. Each candidate writes to its own location (a git worktree where possible, otherwise `/tmp/arena-<slug>/candidate-<n>/`). N candidates writing to the same path is shared mutable state and fails the the **separate-before-serializing-shared-state** principle test.
 
 ## Phase B: Fan out

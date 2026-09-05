@@ -94,7 +94,7 @@ the mode's name. Check files, network calls, git refs, or other affected state.
 
 Create `features/README.md` and one file for each of the three to five most
 important user-facing features. Derive the list from routes, commands, menus,
-or product docs. Use
+or product docs. Mark entries that are not yet exercised as drafts. Use
 [`references/feature-map-example/`](references/feature-map-example/) as the
 shape.
 
@@ -111,11 +111,13 @@ Testing one convenient entry point does not verify the others.
 
 ## 5. Prove the generated skill
 
-Run the generated instructions end to end once:
+Run the generated instructions end to end for every feature recipe you claim as
+verified. If time or environment limits the run to one recipe, label the rest
+as unverified drafts:
 
 1. Run the repository checks.
 2. Launch the app and run the doctor check.
-3. Drive one mapped feature.
+3. Drive each mapped feature being marked verified.
 4. Capture evidence.
 5. Clean up.
 6. Confirm that the evidence still exists.

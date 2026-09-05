@@ -16,9 +16,11 @@ rules below are not optional.
 2. **Block, don't busy-poll.** Waiting for comments/CI = ONE bash call that loops
    internally with `sleep` and returns only when there is news or timeout. Never
    spend LLM turns checking "anything yet?".
-3. **Persist state** in `.git/babysit-mr-state.json` (inside `.git`, never
-   committed). Read it once at phase start, write it after changes. Never re-read
-   it between consecutive tool calls in the same turn.
+3. **Persist state** at the path Git assigns for this worktree (never committed).
+   Resolve it once with `STATE_FILE="$(git rev-parse --git-path
+   babysit-mr-state.json)"`, read it at phase start, and write it after changes.
+   Never re-read it between consecutive tool calls in the same turn. This works
+   when `.git` is a file in a linked worktree.
 4. **Chain commands** with `&&` into single bash calls. One step = one call.
 5. **Summarize before acting**: reduce each review round to a compact table of
    threads (id / author / verdict: FIX|REJECT / one-line gist) in your working
@@ -29,10 +31,10 @@ rules below are not optional.
 
 ```json
 { "mr_iid": 0, "project_id": "", "branch": "", "me": "", "last_seen_note": 0,
-  "round": 0, "mode": "", "bot_usernames": [], "done_marker": "" }
+  "round": 0, "mode": "", "bot_usernames": [], "review_sha": "", "done_marker": "" }
 ```
 
-Create/update it with a single `cat > .git/babysit-mr-state.json <<'EOF'` call.
+Create/update it with a single write to `$STATE_FILE`.
 If resuming an interrupted run, rebuild missing fields from `glab mr view`.
 Capture `me` once via `glab api user | jq -r .username`.
 
@@ -42,9 +44,11 @@ Capture `me` once via `glab api user | jq -r .username`.
 - Otherwise derive from the current branch:
   `glab mr view <branch> -F json --jq '{iid,project_id,web_url,state}'`
   (empty result ⇒ no MR exists).
-- If none: `git push -u origin HEAD` then
-  `glab mr create --fill --fill-commit-body --source-branch <branch> --yes`
-  (never interactive prompts; if `--fill` fails because branch is pushed, drop it).
+- If none and the caller explicitly selected an outcome that creates an MR:
+  `git push -u origin HEAD` then `glab mr create --fill --fill-commit-body
+  --source-branch <branch> --yes` (never interactive prompts; if `--fill`
+  fails because the branch is pushed, drop it). For watch-only or review-only
+  requests, report that no MR exists and stop; do not create one implicitly.
 - Record `mr_iid`, `project_id` (numeric), `branch` in state.
 - Detect the review bot: from existing bot comments or project CI config
   (e.g. a reviewer bot username). Store in `bot_usernames`. Ask the user only if
@@ -57,8 +61,9 @@ Self-hosted GitLab: export `GITLAB_HOST=<host>` once at session start if
 
 Round structure:
 
-1. Kick off: `glab mr note <iid> -m '!review'` (skip re-posting if the previous
-   round already triggered this exact push; track via `round` vs latest commit SHA).
+1. Resolve and record `latest_sha="$(git rev-parse HEAD)"`, then kick off:
+   `glab mr note <iid> -m '!review'` (skip re-posting if the previous round
+   already triggered this exact push; track the request SHA in state).
 2. **Wait for review comments**: one blocking call (~10 min budget), repeat as needed.
    Payload shape per discussion: `{id, individual_note, notes:[{body, system,
    author:{username}}]}`. Verify the query once on the first call, then freeze it.
@@ -68,8 +73,22 @@ Round structure:
 ```bash
 # ME='orisilber'; LAST=123   # last_seen_note from state file
 for i in $(seq 1 20); do
-  OUT=$(glab api "projects/$PROJECT_ID/merge_requests/$MR_IID/discussions?per_page=100&sort=asc" \
-    | jq "[.[] | select(any(.notes[]; .system | not)) | select(any(.notes[]; .author.username != \"$ME\" and .id > $LAST)) | {disc: .id, nid: ([.notes[].id] | max), by: (.notes | map(select(.author.username != \"$ME\" and .id > $LAST)) | last | .author.username), text: ((.notes | map(select(.id > $LAST) | .body)) | join(\" || \"))[0:400]}]")
+  OUT='[]'
+  for page in $(seq 1 100); do
+    PAGE=$(glab api "projects/$PROJECT_ID/merge_requests/$MR_IID/discussions?per_page=100&page=$page&sort=asc")
+    NEW=$(jq --arg me "$ME" --argjson last "$LAST" '
+      [ .[]
+        | (.notes | map(select((.system // false) | not)
+          | select(.author.username != $me)
+          | select((.id | tonumber) > ($last | tonumber)))) as $new
+        | select(($new | length) > 0)
+        | {disc: .id, nid: ([.notes[].id | tonumber] | max),
+           by: ($new | last | .author.username),
+           text: (($new | map(.body)) | join(" || "))[0:400] }
+      ]' <<<"$PAGE")
+    OUT=$(jq -s 'add' <<<"$OUT $NEW")
+    [ "$(jq length <<<"$PAGE")" -lt 100 ] && break
+  done
   [ -n "$OUT" ] && [ "$OUT" != "[]" ] && [ "$OUT" != "null" ] && { echo "$OUT"; exit 0; }
   sleep 30
 done
@@ -100,10 +119,11 @@ echo NO_CHANGE
 6. Update `last_seen_note` to the highest note id seen; increment `round`; write state.
 7. Comment `!review` again. Go to 2.
 
-**Loop exit**: latest bot response reports clean/approved (match markers like
-"no issues|all clear|LGTM|approved|✅", confirmed against the bot's actual
-wording on the first round and reused exactly) AND zero unresolved actionable
-threads.
+**Loop exit**: the bot response for `review_sha` reports clean/approved (match
+markers like "no issues|all clear|LGTM|approved|✅", confirmed against the bot's
+actual wording on the first round and reused exactly) AND zero unresolved
+actionable threads. A clean response for an older SHA does not approve the
+current head.
 Cap: 15 rounds, then stop and report.
 
 ## Phase 2: Pipeline gate
@@ -114,8 +134,17 @@ Do not trust the bot's word alone. Walk the pipeline:
    `glab ci list --ref <branch> -F json --jq '[.[] | select(.sha=="'<latest_sha>'")][0] | {id,status}'`
 2. **Wait for completion** with the same one-blocking-call pattern:
    poll `--jq .status` every 30s until `success|failed|canceled`, 20 min budget.
-3. Enumerate jobs:
-   `glab api "projects/$PID/pipelines/$PIPE_ID/jobs?per_page=100" | jq '[.[] | {name,stage,status,allow_failure}] | map(select(.allow_failure | not))'`
+3. Enumerate every page of jobs before judging the gate:
+
+   ```bash
+   pages=()
+   for page in $(seq 1 100); do
+     PAGE=$(glab api "projects/$PID/pipelines/$PIPE_ID/jobs?per_page=100&page=$page")
+     pages+=("$PAGE")
+     [ "$(jq length <<<"$PAGE")" -lt 100 ] && break
+   done
+   printf '%s\n' "${pages[@]}" | jq -s 'add | map({name,stage,status,allow_failure}) | map(select(.allow_failure | not))'
+   ```
 4. Every non-optional job must be `success`. Any failure:
    pull only the tail of the log
    (`glab api "projects/$PID/jobs/$JOB_ID/trace" | tail -40`), diagnose, fix,
@@ -127,14 +156,14 @@ Do not trust the bot's word alone. Walk the pipeline:
 
 Report concisely: MR url, rounds used, what was fixed vs rejected, pipeline status.
 
-Then ask the user whether to enter **watch mode**: poll periodically for new
-human comments and handle each (FIX or REJECT per Phase-1 rules), pushing and
-re-commenting `!review` after fixes, over and over until the MR is **approved**
-or the user says stop.
+If the selected outcome includes **watch mode**, enter it after reporting. If
+watching was not requested, stop after the report. Never create a missing MR or
+enter a long-running watch loop merely because this skill was selected.
 
 Watch mode = the same wait-loop, but filtering to **human** authors only
-(`select(.notes[0].author.username as $u | ($BOTS + [$ME] | index($u)) | not)`),
-with an approval check folded into each poll:
+(`any(.notes[]; ((.system // false) | not) and
+(.author.username as $u | ($BOTS + [$ME] | index($u)) | not))`), with an approval
+check folded into each poll:
 
 ```bash
 --jq '{comments: <new human discussions>, approved: <approval state>}'

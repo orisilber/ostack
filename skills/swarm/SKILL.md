@@ -38,7 +38,11 @@ Open a todolist with one entry per phase before launching anything.
 4. Pick the worker model from the resolved `swarm.workers` role; workers are
    bulk labor, so use the first configured entry. For a model race, name each
    arm's model up front and use only configured entries.
-5. Give each worker its own writable output when it writes. Use a worktree, branch, or `/tmp/swarm-<slug>/worker-<n>/`.
+5. Give each worker its own writable output when it writes. Use a distinct
+   worktree or directory such as `/tmp/swarm-<slug>/worker-<n>/`. A branch name
+   alone does not isolate files when workers share one checkout; if the host
+   cannot create separate worktrees, keep write scopes disjoint and state that
+   constraint in each brief.
 
 ## Phase B: Fan out
 

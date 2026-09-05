@@ -87,14 +87,26 @@ gap to `escalate` for a non-trivial change.
 ## 4. Run repository checks
 
 - One bash call per check, chained where independent.
-- Never let full logs hit context. Always cap:
+- Preserve the check's exit status when you cap its output. A trailing `tail`
+  reports the pager's status, not the check's status. Use this shape:
 
 ```bash
-<cmd> 2>&1 | tail -30
+log_file="$(mktemp)"
+set +e
+<cmd> >"$log_file" 2>&1
+status=$?
+set -e
+tail -30 "$log_file"
+rm -f "$log_file"
+if [ "$status" -ne 0 ]; then
+  exit "$status"
+fi
 ```
 
-- On failure, re-run only the failed tool with more targeted output (e.g.
-  `| head -60`) to capture the first error, not the last.
+  A repository helper may implement the same contract. Do not declare PASS from
+  a pipeline whose final command succeeded while the check failed.
+- On failure, re-run only the failed tool with more targeted output (for example,
+  `head -60`) to capture the first error, not the last.
 
 ## 5. Prove affected user behavior
 
@@ -136,14 +148,21 @@ with the shortest reproduction of the failure.
 
 - `git status --porcelain`: no unintended files staged (build artifacts,
   .DS_Store, secrets).
-- Secret scan over all to-be-committed content (staged + unstaged tracked):
+- Secret scan over newly added tracked content (staged + unstaged). Do not scan
+  removed lines as if they were being committed:
 
 ```bash
-git diff HEAD | grep -inE "sk-[a-z0-9]{8,}|AKIA[A-Z0-9]{8,}|BEGIN.*PRIVATE KEY"
+added_lines="$(git diff --unified=0 --no-color --diff-filter=ACMRT HEAD -- \
+  | awk '/^\+\+\+ / { next } /^\+/ { sub(/^\+/, ""); print }')"
+matches="$(printf '%s\n' "$added_lines" \
+  | grep -inE "sk-[a-z0-9]{8,}|AKIA[A-Z0-9]{8,}|BEGIN.*PRIVATE KEY" || true)"
+[ -z "$matches" ] || { printf '%s\n' "$matches"; exit 1; }
 ```
 
-Match means hard stop → `escalate`. Untracked files: eyeball `git status`
-output for filenames that look like env/key files before staging.
+Match means hard stop → `escalate`. Run the repository's declared scanner when
+one exists; the diff check above is only a last-resort guard. Inspect untracked
+files with `git status` and the repository scanner before staging because they
+are not included in `git diff HEAD`.
 
 PASS does not mean done. The calling skill decides whether to push, open MR,
 or continue.

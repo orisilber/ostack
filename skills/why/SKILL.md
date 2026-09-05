@@ -1,6 +1,6 @@
 ---
 name: why
-description: "Recover why code is the way it is: design rationale, regressions, where a number came from, by querying every reachable evidence source in parallel (git/GitLab, Jira via acli, Confluence, chat, observability, error tracking, analytics) and returning a cited read. Triggers \"why does X work this way\", \"why did we pick Y\", postmortems, data-backed thresholds. Use only for motivation and history; runtime behavior belongs to how."
+description: "Recover why code is the way it is: design rationale, regressions, or where a number came from, starting with directly linked history and expanding to other reachable evidence when needed. Triggers \"why does X work this way\", \"why did we pick Y\", postmortems, and data-backed thresholds. Use only for motivation and history; runtime behavior belongs to how."
 ---
 
 # Why
@@ -26,7 +26,13 @@ silently substitute it.
 
 ## How this skill works
 
-Historical context spreads across seven evidence categories: source control history, issue or ticket tracking, long-form documents, real-time team chat, infrastructure observability, error or exception tracking, and product analytics warehouses. You cannot predict from the question alone which one holds the answer, so the skill enumerates available MCPs at run time, maps each to a category, queries all seven in parallel, then synthesizes with explicit confidence calibration. Null results from searched categories are first-class evidence about how the decision was made; report them alongside positive findings. The default is coverage, not minimalism.
+Historical context can live in source control, tickets, documents, chat,
+observability, error tracking, or analytics. Start with the code anchor and the
+directly linked records, then enumerate and query additional reachable sources
+when the first pass leaves a material gap or conflict. Synthesize with explicit
+confidence calibration. Null results from searched categories are scoped
+evidence; report them alongside positive findings. The default is enough
+evidence to answer the question, with broad coverage available when requested.
 
 ## Operating Posture
 
@@ -111,9 +117,14 @@ glab mr view <iid> --comments
 
 Capture this as seed context (file paths, symbols, commits, PR numbers, linked ticket IDs). Pass it to the investigators so they don't rediscover it.
 
-## Step 3. Spawn Parallel Investigators (default posture)
+## Step 3. Choose the investigation depth
 
-**Default to the full parallel investigation.** Each evidence category lives in a different kind of system, and you cannot tell from the question alone which one holds the answer without looking. So look across every available category, in parallel, by default.
+Start with the smallest evidence set that can answer the question: code history
+and the directly linked ticket, review, incident, or design document. Expand to
+parallel investigators when the first pass leaves a material gap, the sources
+conflict, or the user explicitly asks for a broad historical sweep. Do not make
+seven-source coverage the default for a question already answered by direct
+evidence.
 
 ### Discovery
 
@@ -131,9 +142,15 @@ Map each available MCP to one evidence category:
 
 Three categories are reachable without any MCP, so never mark them unavailable before trying the CLI: source control through `git` plus `glab`/`gh`, the issue tracker through `acli jira` (see `references/sources/jira.md`), and long-form docs partially through `acli confluence` once a page ID is in hand. For the rest, classify using the MCP name, server instructions, tool names, and resource descriptors. If an MCP could fit more than one category, choose the one matching its primary evidence. Record ambiguous cases in the coverage map.
 
-Aim for a complete **coverage map**, not a minimal one. A null result from an issue tracker is evidence the decision was not ticketed, a useful fact in itself. Document the null, don't skip the search.
+Record the sources actually searched and any meaningful gaps. A null result is
+only evidence that no matching record was found within that source, query, and
+permission scope; it is not proof that the decision was never ticketed. Document
+the query and scope so another investigator can extend it.
 
-Launch all matching investigators in a single message so they run concurrently. One investigator per category lets each specialize in one tool's query vocabulary and result shape. Don't ask one agent to cover multiple MCPs.
+When expansion is justified, launch matching investigators in a single message
+so they run concurrently. One investigator per category lets each specialize in
+one tool's query vocabulary and result shape. For a narrow question, one
+investigator or the parent can cover several directly relevant sources.
 
 Subagent config (each):
 - `subagent_type`: `generalPurpose` in Cursor; `Explore` (read-only) or `general-purpose` in Claude Code
@@ -147,13 +164,19 @@ Each investigator gets:
 4. The code anchor from Step 2 (file paths, symbols, commit hashes, PR numbers, ticket IDs)
 5. The user's original question
 
-### Investigator roster. One per available evidence category
+### Investigator roster. One per relevant evidence category
 
-Spawn one investigator per category that has a matching MCP. Each owns exactly one tool or MCP.
+Spawn one investigator per relevant category that has a matching tool or MCP.
+Each owns exactly one tool or MCP. The source-control and ticket investigators
+are the usual first pass; add the others only when the target or an evidence gap
+calls for them.
 
-Each entry lists what the category physically contains and the kind of "why" it uniquely surfaces. Use it to know what to expect back, how to name a gap when a category returns empty, and (only in the rare provably-irrelevant case) to justify a skip. Every category overlaps, but each owns a kind of evidence the others cannot recover.
+Each entry lists what the category physically contains and the kind of "why" it
+uniquely surfaces. Use it to choose the smallest useful next search and to name
+a gap when a searched category returns empty. Every category overlaps, but each
+owns a kind of evidence the others may not recover.
 
-1. **Source control investigator**. Git history, `glab` for MRs or `gh` for PRs, code comments, tests. Always spawn; the only guaranteed source. Best at surfacing *implementation-time rationale captured during review*. PR descriptions stating the problem, review threads debating alternatives, inline comments encoding non-obvious constraints, test names that encode motivating edge cases, and commit messages linking tickets or incidents. Most trustworthy because it ties directly to the diff that shipped.
+1. **Source control investigator**. Git history, `glab` for MRs or `gh` for PRs, code comments, tests. Usually spawn first; it is the only guaranteed source. Best at surfacing *implementation-time rationale captured during review*. PR descriptions stating the problem, review threads debating alternatives, inline comments encoding non-obvious constraints, test names that encode motivating edge cases, and commit messages linking tickets or incidents. Most trustworthy because it ties directly to the diff that shipped.
 
 2. **Issue / ticket tracker investigator** (Jira via `acli`, no MCP required; or Linear, GitHub Issues, Plane, Shortcut MCP). Tickets, project docs, status updates, spec attachments. Best at surfacing *the product or business forcing function*. Customer requests ("Acme needs X for their SOC2 audit"), compliance deadlines, parent-initiative framing ("Q3 enterprise readiness"), ticket-level scope changes, and labels that categorize the motivation (`customer:*`, `incident-followup`, `compliance`, `perf-regression`). Strongest when the why is external to engineering.
 
@@ -169,14 +192,18 @@ Each entry lists what the category physically contains and the kind of "why" it 
 
 ### When to skip an investigator
 
-Only skip with an **explicit, written justification** that goes in the final "Sources Consulted" section. Two valid reasons:
+Skip an investigator when it is unavailable, outside the target's evidence
+surface, or redundant with a direct source that already answers the question.
+Record the reason in the final "Sources Consulted" section. Two common reasons:
 
 - **No MCP and no CLI is available for that category** in this environment. Flag this as a gap, not a choice. Example: "Real-time team chat skipped. No matching MCP available, so the conversational record was not searchable." This reason never applies to source control or the issue tracker while `git`, `glab`/`gh`, and `acli` are on the machine. Run those first.
 - **The source is provably irrelevant**, not just "probably irrelevant." A high bar. Example: "Error / exception tracking skipped. Target is a build-time script with no runtime code path." Not "probably not in error tracking, it's a feature not an error."
 
-"It's pure feature code, error tracking won't have anything" is **not** sufficient, and neither is "I doubt long-form docs would have this." Run the search; let the null result speak. The cost of an investigator returning empty is one subagent. The cost of missing a design doc that actually exists is a wrong answer.
-
-If your scope assessment suggests a single-commit trivial target where the PR description already contains the complete answer, you may answer inline **only after** confirming all seven available category searches would be redundant. Say so explicitly. This should be rare.
+Do not skip a source merely because it sounds unlikely when the answer remains
+uncertain and the source is cheap to search. Conversely, do not launch every
+available investigator after a single commit, linked decision record, or direct
+code comment already establishes the answer. Say which evidence supports the
+stopping point.
 
 ## Step 4. Synthesize
 
@@ -237,8 +264,13 @@ After the Sources Consulted block, if the user's `why` question is a precursor t
 - **Recency bias**. Assuming the most recent commit is authoritative. The current shape is often the accretion of many earlier decisions. Trace back.
 - **Sycophantic agreement**. If the user suggests a reason ("I assume this is for performance?"), treat it as a hypothesis and check the evidence independently, don't just confirm it.
 - **Skipping the gaps section**. An honest accounting of what you couldn't find out is part of the value.
-- **Skipping investigators by anticipation**. Deciding up front that "long-form docs probably don't have this" or "this isn't an error tracking thing" without searching. The default-to-all-seven posture prevents this. A null result is a data point; a skipped search is a blind spot.
-- **Collapsing investigators into one agent**. Each MCP has its own query vocabulary, result shape, and pitfalls; pooling them dilutes specialization and makes coverage harder to reason about. Always one investigator per category.
+- **Skipping relevant evidence without recording why**. Decide from the target
+  and the evidence gap, not from a vendor stereotype. A null result is a data
+  point; an unrecorded skip is a blind spot.
+- **Collapsing useful investigators into one agent**. Each MCP has its own query
+  vocabulary, result shape, and pitfalls. Keep separate investigators when
+  expansion is justified; one parent can cover several directly relevant
+  sources when the question is narrow.
 
 ## Reference Files
 

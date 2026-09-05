@@ -33,21 +33,18 @@ stacks:
 }
 ```
 
-No contract found → this is a soft stop, not a hard escalate. Ask the human
-once, batched: (a) run first-time setup now (§0a) and produce a contract, or
-(b) stop until one exists. Never assume (a) silently: the contract encodes
-a trust boundary (auto-rollback authorization) that only a human can grant.
-Watching without defined triggers produces noise, not safety either way:
-never invent a threshold, and never invent a metric a trigger doesn't name.
+No contract found → prepare the smallest reviewable setup request. If the user
+explicitly asked for first-time setup and watching, continue through §0a after
+one batched question set. Otherwise pause before writing a contract. The
+contract encodes a trust boundary (auto-rollback authorization) that only a
+human can grant. Never invent a threshold, metric, or rollback permission.
 
 ## 0a. First-time setup (no contract exists)
 
-Run only after the human picked (a) above. Exploring the repo first (CI
-config, existing monitoring code, README/AGENTS.md) to pre-fill or
-smart-guess answers is encouraged, since it makes the ask shorter, but always
-show what was found and let the human confirm or correct it. Never answer
-one of these for them and skip the question; a silently-guessed source is
-the same failure the "never invent a metric" rule already forbids.
+Run when setup is requested. Explore the repo first (CI config, existing
+monitoring code, README/AGENTS.md) to pre-fill source details, then ask only for
+missing consequential choices. Show discovered values and let the human correct
+them. Never guess rollback permission or a threshold and silently write it.
 
 Ask once, batched, free text (this is intentionally open-ended, not
 multiple-choice: "I don't know" is a valid answer for 1-4, and just leaves
@@ -120,9 +117,15 @@ relative to the repo root regardless of where `deploy-watch.json` landed or
 where this command runs from:
 
 ```bash
+repo_root="$(git rev-parse --show-toplevel)"
+contract_path="${CONTRACT_PATH:-$repo_root/deploy-watch.json}"
 exclude="$(git rev-parse --git-path info/exclude)"
-entry="$(git rev-parse --show-prefix)deploy-watch.json"
-grep -qxF "$entry" "$exclude" 2>/dev/null || echo "$entry" >> "$exclude"
+case "$contract_path" in
+  "$repo_root"/*) entry="${contract_path#"$repo_root/"}" ;;
+  *) echo "contract must be inside the repository" >&2; exit 1 ;;
+esac
+grep -qxF "$entry" "$exclude" 2>/dev/null || printf '%s\n' "$entry" >> "$exclude"
+git -C "$repo_root" check-ignore -q --no-index "$entry"
 ```
 
 Only report the contract as untracked after this command exits 0. If it
@@ -130,7 +133,9 @@ fails, say so explicitly instead of claiming success; a written contract
 that `git add -A` can still pick up is worse than one you flagged as still
 tracked.
 
-Close with one line: `Wrote deploy-watch.json (untracked via .git/info/exclude). Re-run deploy-watch now?`
+Close with one line: `Wrote deploy-watch.json (untracked via .git/info/exclude).`
+If watching was part of the original request and the contract is complete, start
+the watch; otherwise stop with the contract ready for review.
 
 ## 1. Discover the sources (fresh every run, never hardcoded)
 
@@ -177,9 +182,12 @@ One line: `Baseline: err 0.4% · p95 210ms · uptime 100%`.
 
 ## 3. Watch: blocking poll, never busy-loop
 
-One bash call per ~10 min window (loop + sleep inside, like babysit-gitlab-mr),
-projecting each metric to a single number via the mapped source's CLI/API
-with `--jq` or equivalent. Wake only on trigger match or window end.
+For CLI or HTTP sources, use one bounded polling call per window (loop + sleep
+inside, like babysit-gitlab-mr), projecting each metric to a single number via
+the mapped source's CLI/API with `--jq` or equivalent. For MCP-only sources,
+poll through the host's MCP or scheduling interface instead of pretending a
+model-callable tool is a shell command. Wake only on trigger match or window
+end.
 
 Each wake emits exactly one line:
 `t+12m: OK (err 0.5% · p95 220ms · up 100%)` or

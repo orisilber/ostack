@@ -57,16 +57,21 @@ if [ -f "$ROUTES" ] && jq empty "$ROUTES" >/dev/null 2>&1; then
 	[ "$(jq -r '.routes | type' "$ROUTES" 2>/dev/null || true)" = array ] || usage_error 'routes must be an array'
 	[ "$(jq -r '.outcomeTails | type' "$ROUTES" 2>/dev/null || true)" = object ] || usage_error 'outcomeTails must be an object'
 
-	declare -A seen_ids=()
-	declare -A reachable=()
+	# Keep this validator runnable with the Bash shipped by macOS. IDs and
+	# playbook paths are newline-free, so newline-delimited sets are sufficient
+	# and avoid Bash 4-only associative arrays.
+	seen_ids=$'\n'
+	reachable=$'\n'
 	while IFS= read -r route; do
 		id="$(jq -r '.id // empty' <<< "$route")"
 		match="$(jq -r '.match // empty' <<< "$route")"
 		playbook="$(jq -r '.playbook // empty' <<< "$route")"
 		[ -n "$id" ] || usage_error 'route ID is empty'
 		if [ -n "$id" ]; then
-			[ -z "${seen_ids[$id]+x}" ] || usage_error "route ID is duplicated: $id"
-			seen_ids[$id]=1
+			if grep -Fqx -- "$id" <<< "$seen_ids"; then
+				usage_error "route ID is duplicated: $id"
+			fi
+			seen_ids+="$id"$'\n'
 		fi
 		[ -n "$match" ] || usage_error "route '$id' has an empty match statement"
 		[ -n "$playbook" ] || usage_error "route '$id' has no playbook"
@@ -74,7 +79,7 @@ if [ -f "$ROUTES" ] && jq empty "$ROUTES" >/dev/null 2>&1; then
 			case "$playbook" in
 				playbooks/*.md)
 					[ -f "$OSTACK_SKILLS/$playbook" ] || usage_error "route '$id' references missing playbook: $playbook"
-					reachable[$playbook]=1 ;;
+				reachable+="$playbook"$'\n' ;;
 				*) usage_error "route '$id' playbook must be playbooks/*.md: $playbook" ;;
 			esac
 		fi
@@ -122,7 +127,7 @@ if [ -f "$ROUTES" ] && jq empty "$ROUTES" >/dev/null 2>&1; then
 			case "$item" in
 				playbooks/*.md)
 					[ -f "$OSTACK_SKILLS/$item" ] || usage_error "outcome tail '$outcome' references missing playbook: $item"
-					reachable[$item]=1 ;;
+					reachable+="$item"$'\n' ;;
 				skill:*)
 					skill_name="${item#skill:}"
 					[ -n "$skill_name" ] && [ -d "$ROOT/skills/$skill_name" ] || usage_error "outcome tail '$outcome' references unknown skill: $item" ;;
@@ -135,7 +140,7 @@ if [ -f "$ROUTES" ] && jq empty "$ROUTES" >/dev/null 2>&1; then
 	if [ -d "$playbooks_dir" ]; then
 		while IFS= read -r file; do
 			rel="playbooks/${file#"$playbooks_dir/"}"
-			[ -n "${reachable[$rel]+x}" ] || usage_error "playbook is not reachable from a route or tail: $rel"
+			grep -Fqx -- "$rel" <<< "$reachable" || usage_error "playbook is not reachable from a route or tail: $rel"
 		done < <(find "$playbooks_dir" -type f -name '*.md' -print)
 
 		# Playbooks must stay generic and defer repository-specific commands to

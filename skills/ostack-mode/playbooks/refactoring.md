@@ -3,10 +3,14 @@
 Use this route for behavior-preserving structural work such as rename,
 extract, inline, move, or deduplication.
 
-1. Run `how` over the affected subsystem and pin the current behavior with a
-   characterization test, snapshot, or equivalence harness.
+1. Inspect the affected subsystem and pin current behavior with a
+   characterization test, snapshot, or equivalence harness when the behavior is
+   unclear or the move could change an external contract. Reuse existing proof
+   for a mechanical rename or move with a clear target.
 2. Name the missing structure and the target shape before moving code.
-3. Run `architect` when the target crosses a function or module boundary.
+3. Run `architect` in `design-only` mode when the target crosses a function or
+   module boundary and introduces a new shape. A boundary crossing alone does
+   not require competing designs for an established pattern.
 4. Apply Subtract Before You Add: remove dead weight and redundant wrappers
    before introducing a new layer. Keep `principles` and its Laziness Protocol
    as the review lens.

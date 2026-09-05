@@ -39,9 +39,13 @@ changes the implementation, don't ask it. That's what defaults are for.
 
 ## 3. Persist the answers
 
-Append to the ticket description (`glab api -X PUT ... -f description=...` with
-a `## Decisions` section: question → decision → date). This is the record a
-resumed session reads instead of re-asking.
+Append to the originating ticket's description or decision field through the
+same provider that supplied the ticket. A Jira item uses the configured Jira
+client; a GitLab issue uses `glab`; another tracker uses its own write path.
+Preserve the existing description and add a `## Decisions` section containing
+question → decision → date. This is the record a resumed session reads instead
+of re-asking. Do not send Jira decisions to GitLab merely because the eventual
+code lands in GitLab.
 
 ## 4. Then never ask again
 

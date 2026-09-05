@@ -99,7 +99,9 @@ Source: Kohl, The Global English Style Guide (SAS Press). Guideline text fetched
 
 ## Voice and repo specifics
 
-- Apply the **unslop** skill to every doc this skill touches. That skill owns the slop-pattern catalog: AI vocabulary, filler, hedging, formatting tells.
+- Apply **unslop** as an optional final pass when the user wants a more personal
+  voice or the draft shows the listed tells. This skill owns document structure
+  and correctness; unslop owns the narrower pattern catalog.
 - PR descriptions and commit messages are writing too. Every layer except Diátaxis applies to them.
 - Product UI strings are not documentation. Use your product's copy guidelines for those.
 - Indent code snippets with tabs. Write real paths and real symbols. Make every count or tree claim true at the commit that lands it, and include the command that regenerates it.

@@ -5,17 +5,5 @@
     "implementation": ["inherit"],
     "judgment": ["inherit"],
     "prose": ["inherit"]
-  },
-  "overrides": {
-    "architect.runners": ["inherit"],
-    "arena.runners": ["inherit"],
-    "arena.cross-judge": ["inherit"],
-    "how.explorer": ["inherit"],
-    "how.explainer": ["inherit"],
-    "how.critics": ["inherit"],
-    "interrogate.reviewers": ["inherit"],
-    "swarm.workers": ["inherit"],
-    "why.investigators": ["inherit"],
-    "why.synthesizer": ["inherit"]
   }
 }

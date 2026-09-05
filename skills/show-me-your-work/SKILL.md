@@ -41,7 +41,7 @@ Log decision points and checkpoints, not every action: a fork chosen, a unit com
 
 ## Where it lives
 
-By default the log is a working artifact, not committed. Keep it at `decisions.tsv` in the work dir, or `.audit/<task-slug>.tsv` when several efforts run at once, and leave it out of git. In an ostack loop, put it beside the run's state file: `.git/<ticket>-decisions.tsv` next to `.git/<skill>-state.json`, so a resumed session finds the trail and the state in the same place, and neither gets committed by accident. Most work doesn't need a committed trail; the local log still keeps the run honest and can be discarded after.
+By default the log is a working artifact, not committed. Keep it at `decisions.tsv` in the work dir, or `.audit/<task-slug>.tsv` when several efforts run at once, and leave it out of git. In an ostack loop, put it beside the run's state file using Git's resolved path (for example, `git rev-parse --git-path <ticket>-decisions.tsv`), not a literal `.git/` directory. In a linked worktree `.git` is a file, and the resolved path keeps the trail with the active worktree without committing it. Most work doesn't need a committed trail; the local log still keeps the run honest and can be discarded after.
 
 Commit it only when the work is ambitious enough that a reviewer needs the trail to trust the result: a large cross-language port, a multi-week migration, anything where confidence has to be shown rather than assumed. A committed log renders as a table in the PR.
 
@@ -53,25 +53,34 @@ Commit it only when the work is ambitious enough that a reviewer needs the trail
 
 ## Audit the log against the transcript
 
-At the end of the run, before handing back, check the log told the truth. Read this run's transcript for the active workspace only (`agent-transcripts/` under the Cursor project dir, or `~/.claude/projects/<slug>/<uuid>.jsonl` in Claude Code). Don't glob across all projects; that reads unrelated private chats. Walk the log against what actually happened:
+At the end of the run, before handing back, check the log told the truth when a
+transcript or equivalent event history is available. Use the active workspace
+only (`agent-transcripts/` under the Cursor project dir, `~/.claude/projects/<slug>/<uuid>.jsonl` in Claude Code, or the host's native task history). Don't glob across all projects; that reads unrelated private chats. If no history is available, validate each row against the recorded evidence and say that the transcript audit was unavailable. Walk the log against what actually happened:
 
-- Every row maps to a real action. Cut invented or aspirational entries.
+- Every row maps to a real action. Append a correction for invented or aspirational entries; do not rewrite an immutable committed trail.
 - Each row's evidence resolves and shows what the row claims.
-- A fork, pivot, or abandoned approach that shaped the work but isn't logged is a gap. Add it.
-- Drop padding. If nobody would audit a row, it doesn't earn its place.
+- A fork, pivot, or abandoned approach that shaped the work but isn't logged is a gap. Append it.
+- Drop padding from a draft log. In a committed log, append a superseding note rather than deleting history.
 
 Fix the log, not the story. If the work diverged from what a row claims, the row is wrong.
 
 ## Cross-model review of the trail
 
-Before handing back, you must spawn a subagent on a different model family from the one that did the work. Self-review is not a substitute; the point is fresh eyes you cannot bring yourself. The subagent reads the audit trail and the run's transcript, then flags what the user should pay attention to. Not a redo of the work, a scan for what's suboptimal or risky.
+When the run is long or high-risk and a second model family is available, spawn a
+reviewer for fresh eyes. This is an optional quality pass, not a completion gate;
+the self-audit and evidence remain sufficient when no reviewer or transcript is
+available. The reviewer reads the audit trail and the run's history, then flags
+what the user should pay attention to. It is not a redo of the work.
 
 - Decisions logged with weak or absent evidence.
 - Verification steps skipped or claimed without proof in the transcript.
 - Choices that look risky in hindsight (premature, scope-creeping, papering over a symptom).
 - Gaps the user would otherwise miss on a casual skim.
 
-Every reply for a run that produced a trail ends with an "Attention" section. Lead with the reviewer's model on its own line (`reviewed by <model>`), then list each flag pointing to specific rows or moments. "No flags" is a valid value; the model name is not. The self-audit asks if the log told the truth; this asks what the user should still scrutinize even when it did.
+When a reviewer ran, end with an "Attention" section. Identify the reviewer
+only when the host exposes the actual model; otherwise say `reviewer identity
+unavailable`. "No flags" is a valid value. If no reviewer ran, report the
+self-audit result and why the optional review was skipped.
 
 ## Reviewing the trail
 
