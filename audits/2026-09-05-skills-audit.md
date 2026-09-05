@@ -115,7 +115,7 @@ architect design-only ownership, and Codex manual-invocation metadata.
 | GitLab review | State is scoped by project/MR and resolved through Git. List helpers fail on incomplete pagination, and every feedback predicate applies to the same note. Full bodies retain authorship and qualifiers. Approval needs evidence associating the bot response with the current remote MR SHA and request; every push invalidates older approval. Pipeline, review, and final remote head must agree. |
 | Deployment contracts and workers | The ignore helper resolves the actual contract path, escapes literal names, works in linked worktrees, and rejects already tracked contracts without changing the index. MCP-only watching uses host tools. Overlapping worker writes require separate directories/worktrees or disjoint ownership. |
 | Models and invocation | All manual skills have parsed Codex policy metadata. The current Cursor-rule model source is preserved. Its default example contains only generic roles so optional exact overrides cannot mask them; candidate count is separate from available models. |
-| Examples and validation | Non-negative durations use a validated number brand; nonempty snapshots copy and freeze array membership. The validator supports stock macOS Bash, including the new model-rule format. Lint parses YAML, checks all explicit dependency mentions (including reference files and plural lists), and uses an explicit external-provider allowlist. |
+| Examples and validation | Non-negative durations use a validated number brand; nonempty snapshots copy and freeze array membership. The validator supports stock macOS Bash, including the new model-rule format. Lint parses YAML, checks formatted skill dependency mentions (including reference files and plural lists), and uses an explicit external-provider allowlist. |
 
 The second review found the first PR's zsh `status` variable was still invalid,
 tracked contracts could pass `check-ignore --no-index`, duration wrappers could
@@ -138,9 +138,12 @@ Executed on the reconciled branch:
 
 - `TYPESCRIPT_PATH=<installed TypeScript package> /bin/bash evals/lint.sh`:
   **PASS, zero warnings**, with installed CLI help probes enabled.
-- The lint run includes **20 deterministic regression tests**, all passing:
+- A final run with `OSTACK_LINT_SKIP_CLI_CHECKS=1` also passed with zero
+  warnings after tightening secret-pattern boundaries. The prior installed-CLI
+  results were reused because no CLI examples or probing logic changed.
+- The final lint run includes **22 deterministic regression tests**, all passing:
   Bash/zsh status and log retention; outgoing/staged/unstaged/untracked secret
-  handling and redaction; literal deployment paths and tracked-file rejection;
+  handling, redaction, and rejection of prose/regex false positives; literal deployment paths and tracked-file rejection;
   linked worktrees; multi-page and failed GitLab reads; per-note filtering;
   YAML invocation policy; missing dependencies; and CLI pipeline parsing.
 - The lint run also includes installer-upgrade fixtures, route/model validation,
@@ -155,7 +158,9 @@ Executed on the reconciled branch:
   authorized local auth edit and avoid a mandatory design panel for a specified
   shape. Ticket scenarios now state the claim policy, verify provider identity,
   and cover absence of serialization.
-- `git diff --check`: **PASS**.
+- `git diff --check`: **PASS**. The final added-secret scan is clean; its initial
+  matches were task-word suffixes and documented regex syntax, verified as false
+  positives and covered by the new boundary tests.
 
 Commands and dependencies are documented in [tests/README.md](../tests/README.md).
 The CLI-help checks verify documented command shapes and flags, not production

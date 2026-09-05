@@ -6,7 +6,10 @@ import re
 import subprocess
 import sys
 
-PATTERN = re.compile(rb"sk-[a-z0-9]{8,}|AKIA[A-Z0-9]{8,}|BEGIN[^\r\n]*PRIVATE KEY", re.I)
+PATTERN = re.compile(
+    rb"(?<![a-z0-9_-])(?:sk-[a-z0-9_-]{8,}|AKIA[A-Z0-9]{8,})"
+    rb"|-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----", re.I
+)
 
 
 def git(*args):

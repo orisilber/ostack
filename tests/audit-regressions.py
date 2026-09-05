@@ -113,6 +113,17 @@ class SecretScan(Sandbox):
     def test_invalid_base_is_scan_failure(self):
         self.scan(2, base="missing-base")
 
+    def test_prose_and_pattern_source_are_not_credentials(self):
+        (self.root / "prose").write_text("Use a task-specific path.\n")
+        (self.root / "scanner-source.py").write_bytes(self.helper.read_bytes())
+        self.scan(0)
+
+    def test_aws_and_pem_markers_are_redacted(self):
+        for token in ("AKIA" + "X" * 16, "-----BEGIN " + "RSA PRIVATE KEY-----"):
+            (self.root / "candidate").write_text(token)
+            result = self.scan(1)
+            self.assertNotIn(token, result.stdout + result.stderr)
+
     def test_symlink_does_not_read_destination(self):
         with tempfile.TemporaryDirectory() as other:
             secret = Path(other) / "outside"
