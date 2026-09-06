@@ -50,6 +50,12 @@ settle routine engineering decisions without asking. Negative constraints always
 win, and djungelskog-mode never merges, releases, or deploys without separate
 explicit authorization.
 
+<p align="center">
+  <a href="https://www.ikea.com/us/en/p/blahaj-soft-toy-shark-90373590/"><img src="https://www.ikea.com/us/en/images/products/blahaj-soft-toy-shark__0710175_pe727378_s5.jpg" alt="IKEA BLÅHAJ plush shark" width="240"></a>
+  <a href="https://www.ikea.com/us/en/p/djungelskog-soft-toy-brown-bear-70578535/"><img src="https://www.ikea.com/us/en/images/products/djungelskog-soft-toy-brown-bear__1133990_pe878622_s5.jpg" alt="IKEA DJUNGELSKOG plush bear" width="240"></a>
+</p>
+<p align="center"><sub>BLÅHAJ and DJUNGELSKOG, the IKEA plushies behind the names.</sub></p>
+
 Delivery supports GitHub PRs and GitLab MRs. Readiness requires review and CI
 for the current head. Longer tasks can save progress outside tracked files and
 resume the original route and scope. Later execution requires an explicitly
