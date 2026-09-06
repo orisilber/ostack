@@ -1,6 +1,8 @@
 ---
 name: djungelskog-mode
 description: Explicit autonomous entry point for blahaj-mode. Use when you want the agent to research, decide, implement, verify, open the change request, and drive it merge-ready without routine checkpoints.
+icon: paw
+color: orange
 disable-model-invocation: true
 ---
 
