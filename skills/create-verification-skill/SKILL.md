@@ -15,10 +15,11 @@ capture proof. The generated skill complements `verify-changes` and
 
 Report one outcome:
 
-- **created** means every feature in the map carries a status and each
-  `verified` entry drove end to end in this run.
-- **draft** means the skill exists but at least one claimed recipe is
-  unproven. Name the unproven features.
+- **created** means every feature in the map carries a status, no feature is
+  `draft`, and each `verified` entry drove end to end in this run.
+- **draft** means at least one feature remains undriven. Name those features.
+- **existing** means a current verifier already covers the application and
+  this run wrote nothing. Name that verifier.
 - **blocked** means the checkout cannot build or start, or a required fact
   exists only with the user. Name the exact blocker.
 
@@ -36,9 +37,10 @@ Search `.agents/skills/verify-*`, `.cursor/skills/verify-*`, and
 `.claude/skills/verify-*` from the repository root before writing anything. A
 second skill for the same application splits the feature map and forces every
 consumer to guess between candidates. If a verifier already covers this
-application, extend it when the request adds features, and otherwise stop and
-point the user at `maintain-verification-skill`. Continue here only for an
-application that no current verifier covers, and name the verifiers you found.
+application, extend it when the request adds features, and otherwise report
+the `existing` outcome and point the user at `maintain-verification-skill`.
+Continue here only for an application that no current verifier covers, and
+name the verifiers you found.
 
 ## 2. Interview the repository
 
