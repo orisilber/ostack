@@ -71,10 +71,11 @@ changing the product or hiding the failure in the map.
      drive still needs it.
 
    If skill drift breaks the doctor check, fix it within the edit scope and
-   retry once. Restart only what the correction invalidated. Mark a feature
-   `verified-unreachable` only when you name the prerequisite and attempted
-   route. Re-drive every control-script correction. Tear down the final
-   instance after the last drive and keep the evidence.
+   retry once. Restart only what the correction invalidated. Keep each index
+   status current: promote a `draft` entry to `verified` only after a live
+   drive, and mark a feature `verified-unreachable` only when you name the
+   prerequisite and attempted route. Re-drive every control-script correction.
+   Tear down the final instance after the last drive and keep the evidence.
 
 5. **Triage each mismatch.** Correct a wrong user description as documentation
    drift. Correct a control script that cannot drive working behavior as a

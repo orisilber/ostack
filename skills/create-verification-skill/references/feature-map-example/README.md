@@ -43,5 +43,7 @@ Keep implementation details out of the map. Name only user paths, stable handles
 
 ## Features
 
-- [Create a note](./create-note.md) covers browser and CLI creation, cancellation, persistence, and cleanup.
-- [Search notes](./search.md) covers toolbar, keyboard, and CLI search with matching, empty, and clear states.
+Each entry ends with its status: `verified` drove end to end, `draft` has not been driven, and `verified-unreachable` names an unmet prerequisite.
+
+- [Create a note](./create-note.md) covers browser and CLI creation, cancellation, persistence, and cleanup. Status: `verified`.
+- [Search notes](./search.md) covers toolbar, keyboard, and CLI search with matching, empty, and clear states. Status: `verified`.
