@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Layer 0 — static lint for ostack skills. No LLM calls, runs in seconds.
 # Checks: frontmatter, local file refs, cross-skill refs, CLI flag accuracy
-# (against real --help output), style rules, and hand-written contract rules.
+# (against real --help output), style rules, and structural contracts.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -203,65 +203,11 @@ while IFS= read -r -d '' f; do
 	[ -n "$(tail -c 1 "$f")" ] && err "style: no trailing newline in $rel"
 done < <(find "$SKILLS" "$ROOT/agents" "$ROOT/README.md" -name "*.md" -print0 2>/dev/null)
 
-# ---------------------------------------------------- hand-written contracts
-# Add project-specific invariants here as skills evolve.
-grep -q 'last_seen_note' "$SKILLS/babysit-gitlab-mr/SKILL.md" || \
-	err "contract: babysit cursor field renamed but doc still says otherwise"
-grep -qE 'declared budget|budget.*declared' "$SKILLS/escalate/SKILL.md" || \
-	err "contract: escalate must allow calling skills to declare their own budget"
-
-grep -qF 'named `comment-sicko` subagent' "$SKILLS/no-comments/SKILL.md" || \
-	err "contract: no-comments must delegate to the named comment-sicko subagent"
+# ---------------------------------------------------- structural contracts
+# Wording lives in skills and behavior lives in evals/scenarios. Only check
+# facts a rename or deletion can silently break.
 [ -f "$ROOT/agents/comment-sicko.md" ] || \
 	err "contract: comment-sicko subagent is missing"
-for outcome in mr-open merge-ready; do
-	first_tail="$(jq -r --arg outcome "$outcome" '.outcomeTails[$outcome][0] // empty' \
-		"$SKILLS/blahaj-mode/references/routes.json")"
-	[ "$first_tail" = 'skill:no-comments' ] || \
-		err "contract: $outcome must run no-comments before the MR review tail"
-done
-grep -qF 'preceding `no-comments` outcome-tail step' \
-	"$SKILLS/blahaj-mode/playbooks/opening-an-mr.md" || \
-	err "contract: opening-an-mr must consume the no-comments review gate"
-
-# Feature work proves the implementation before permanent retention coverage.
-grep -qF 'without adding or editing' "$SKILLS/blahaj-mode/playbooks/feature.md" || \
-	err "contract: feature playbook must defer feature-specific tests"
-grep -qF 'feature-retention-tests' "$SKILLS/blahaj-mode/playbooks/feature.md" || \
-	err "contract: feature playbook must invoke retention coverage after acceptance"
-grep -qF 'Workers must not add or edit' "$SKILLS/blahaj-mode/playbooks/large-feature.md" || \
-	err "contract: large-feature workers must not author feature tests"
-grep -qF 'Start only after the caller provides' "$SKILLS/feature-retention-tests/SKILL.md" || \
-	err "contract: retention tests require completed, accepted behavior"
-
-# verify-changes' retry loop must match escalate's soft-stop default, numerically
-escalate_n="$(grep -oE 'default N=[0-9]+' "$SKILLS/escalate/SKILL.md" | grep -oE '[0-9]+' | head -1)"
-verify_n="$(grep -oE 'Loop max [0-9]+ attempts' "$SKILLS/verify-changes/SKILL.md" | grep -oE '[0-9]+' | head -1)"
-if [ -z "${escalate_n:-}" ] || [ -z "${verify_n:-}" ]; then
-	err "contract: could not find escalate's default N or verify-changes' loop max to compare"
-elif [ "$escalate_n" != "$verify_n" ]; then
-	err "contract: verify-changes loop max ($verify_n) != escalate default N ($escalate_n)"
-fi
-
-# Project-local verification is one layered contract. The generator writes the
-# repository knowledge, verify-changes selects it, and e2e-verify supplies the
-# browser mechanics. Keep all supported local skill roots discoverable.
-for skill in create-verification-skill maintain-verification-skill verify-changes e2e-verify; do
-	for root in .agents/skills .cursor/skills .claude/skills; do
-		grep -qF "$root" "$SKILLS/$skill/SKILL.md" || \
-			err "contract: $skill does not discover project-local root $root"
-	done
-done
-grep -qF 'maintain-verification-skill' "$SKILLS/verify-changes/SKILL.md" || \
-	err "contract: verify-changes must report project-local verifier drift"
-grep -qF 'unmapped affected' "$SKILLS/verify-changes/SKILL.md" || \
-	err "contract: verify-changes must reject unmapped affected behavior"
-grep -qF 'project-local verifier' "$SKILLS/e2e-verify/SKILL.md" || \
-	err "contract: e2e-verify must prefer repository-specific instructions"
-grep -qF 'disable-model-invocation: true' "$SKILLS/create-verification-skill/SKILL.md" || \
-	err "contract: create-verification-skill must remain explicitly invoked"
-grep -qF 'disable-model-invocation: true' "$SKILLS/maintain-verification-skill/SKILL.md" || \
-	err "contract: maintain-verification-skill must remain explicitly invoked"
 bash "$ROOT/tests/install-upgrade.sh" || err "installer upgrade fixtures failed"
 
 # ---------------------------------------------------- blahaj-mode contracts

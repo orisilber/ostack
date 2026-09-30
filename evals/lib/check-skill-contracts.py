@@ -15,6 +15,21 @@ DEPENDENCY = re.compile(
 )
 LOCAL_REFERENCE = re.compile(r"(?<![\w/-])(references/[A-Za-z0-9._/-]+\.(?:md|tsv|json|ya?ml))\b")
 SCRIPT_REFERENCE = re.compile(r"(?:\]\(|<[^>\n]+>/)(scripts/[A-Za-z0-9._/-]+\.(?:sh|py|jq))\b")
+MARKDOWN_LINK = re.compile(r"\]\(([^)\s]+)\)")
+NAMED_AGENT = re.compile(rf"`({NAME})` subagent")
+
+
+def broken_links(document, root):
+    failures = []
+    for target in MARKDOWN_LINK.findall(document.read_text()):
+        if re.match(r"[a-z]+:", target) or target.startswith(("#", "<")):
+            continue
+        path = target.split("#", 1)[0]
+        if "/" not in path and "." not in path:
+            continue
+        if path and not (document.parent / path).exists():
+            failures.append(f"{document.relative_to(root)}: broken link '{target}'")
+    return failures
 
 
 def check(root):
@@ -68,6 +83,13 @@ def check(root):
                 # use paths relative to the reference document itself.
                 if not (directory / reference).exists() and not (document.parent / reference).exists():
                     failures.append(f"{relative}: missing file '{reference}'")
+            for agent in NAMED_AGENT.findall(prose):
+                if not (root / "agents" / f"{agent}.md").is_file():
+                    failures.append(f"{relative}: unknown subagent '{agent}'")
+            failures.extend(broken_links(document, root))
+    for document in [root / "README.md", *sorted((root / "agents").glob("*.md"))]:
+        if document.is_file():
+            failures.extend(broken_links(document, root))
     return failures
 
 

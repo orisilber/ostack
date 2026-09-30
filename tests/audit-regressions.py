@@ -283,6 +283,23 @@ class SkillContracts(Sandbox):
             stream.write("Run [helper](scripts/missing.py).\n")
         self.assertTrue(any("missing.py" in e for e in self.module.check(self.root)))
 
+    def test_broken_relative_link_is_detected(self):
+        (self.skill / "playbooks").mkdir()
+        (self.skill / "playbooks/one.md").write_text("See [two](two.md) and [web](https://example.com).\n")
+        errors = self.module.check(self.root)
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("two.md", errors[0])
+        (self.skill / "playbooks/two.md").write_text("Back to [one](one.md#top).\n")
+        self.assertEqual(self.module.check(self.root), [])
+
+    def test_unknown_named_subagent_is_detected(self):
+        with (self.skill / "SKILL.md").open("a") as stream:
+            stream.write("Spawn the named `ghost` subagent.\n")
+        self.assertTrue(any("ghost" in e for e in self.module.check(self.root)))
+        (self.root / "agents").mkdir()
+        (self.root / "agents/ghost.md").write_text("---\nname: ghost\n---\n")
+        self.assertEqual(self.module.check(self.root), [])
+
     def test_plural_dependency_list(self):
         with (self.skill / "SKILL.md").open("a") as stream:
             stream.write("Use **first-missing** and `second-missing` skills.\n")
