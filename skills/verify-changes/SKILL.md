@@ -96,6 +96,9 @@ user behavior.
 - With a matching project-local verifier, use its source anchors and feature
   index to identify the affected features. Drive every matching feature. Run
   its launch, doctor, evidence, and cleanup steps.
+- A feature marked `draft` in the index has never been driven. Use its recipe
+  as a lead, not as proof: when it cannot drive the behavior, apply the drift
+  rule above instead of failing the product on unproven instructions.
 - If a changed path cannot be classified from those anchors, treat it as
   affected user behavior instead of assuming that it is internal.
 - If changed user-facing code has no mapped feature, use the repository's

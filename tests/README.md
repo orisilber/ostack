@@ -36,4 +36,4 @@ the final head and readiness result, in addition to the agent's narration.
 shipped feature-map example and requires `lint-verifier.py` to reject each
 structural break: template markers, missing sections, a bad `Last verified:`
 line, missing or unknown anchors, unanchored features, wrong feature sections,
-and broken index links. `evals/lint.sh` runs it.
+missing feature statuses, and broken index links. `evals/lint.sh` runs it.

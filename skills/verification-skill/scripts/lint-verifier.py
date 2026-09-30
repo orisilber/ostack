@@ -29,6 +29,7 @@ FEATURE_SECTIONS = (
 MARKER = re.compile(r"\{\{[^}]*\}\}")
 LAST_VERIFIED = re.compile(r"^Last verified: `?([0-9a-f]{7,40}|never)`?\s*$", re.M)
 LINK = re.compile(r"\]\(\./?([^)#\s]+\.md)\)")
+STATUS = re.compile(r"Status: `(verified|draft|verified-unreachable)`\.?\s*$")
 
 
 def headings(text):
@@ -92,7 +93,12 @@ def lint(verifier, root):
     if not index.is_file():
         errors.append("features/README.md: missing")
     else:
-        linked = set(LINK.findall(index.read_text()))
+        index_text = index.read_text()
+        linked = set(LINK.findall(index_text))
+        for line in index_text.splitlines():
+            for target in LINK.findall(line):
+                if not STATUS.search(line):
+                    errors.append(f"features/README.md: entry for {target} has no status")
         for target in sorted(linked):
             if not (features_dir / target).is_file():
                 errors.append(f"features/README.md: broken link {target}")

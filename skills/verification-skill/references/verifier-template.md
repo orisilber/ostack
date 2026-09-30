@@ -52,7 +52,8 @@ Last verified: {{commit sha, or `never` for a draft}}
 - Every path in the anchors table exists in the repository.
 - Every feature ID in the anchors table has `features/<id>.md`, and every
   feature file is named by at least one anchor row.
-- `features/README.md` links every feature file, and every link resolves.
+- `features/README.md` links every feature file, every link resolves, and each
+  linked entry ends with a status of `verified`, `draft`, or `verified-unreachable`.
 - Each feature file has the H2 sections `Sub-features`,
   `How to get to it (user POV)`, `Driving it with <harness>`, and `Gotchas`,
   in that order.

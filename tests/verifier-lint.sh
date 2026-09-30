@@ -107,6 +107,9 @@ expect fail "feature with no anchor" "$d"
 d="$(build feature-h2)"; edit "$d/.agents/skills/verify-notes/features/search.md" "## Gotchas" "## Notes"
 expect fail "feature file sections" "$d"
 
+d="$(build status)"; edit "$d/.agents/skills/verify-notes/features/README.md" " Status: \`verified\`." ""
+expect fail "index entry without status" "$d"
+
 d="$(build index)"; edit "$d/.agents/skills/verify-notes/features/README.md" "(./search.md)" "(./find.md)"
 expect fail "index link" "$d"
 
