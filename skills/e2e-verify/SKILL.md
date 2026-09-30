@@ -24,7 +24,7 @@ local verifier provides one.
 
 If a local instruction drifts, report it and use a current repository command
 or observed path that exercises the same affected behavior. Point to
-`maintain-verification-skill`; fail only when the behavior fails or remains
+`verification-skill audit`; fail only when the behavior fails or remains
 unverified. An unrelated passing flow does not substitute for that evidence.
 
 ## 1. Choose browser control
@@ -129,7 +129,7 @@ declaring PASS; a blank page passes a lazy gate.
 
 If an intentional change alters a mapped UI route, entry point, or result,
 update only the affected feature-map file before the final run. Leave a full
-map audit to `maintain-verification-skill`.
+map audit to `verification-skill audit`.
 
 ## 6. Verdict format
 

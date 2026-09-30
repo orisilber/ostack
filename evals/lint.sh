@@ -209,6 +209,7 @@ done < <(find "$SKILLS" "$ROOT/agents" "$ROOT/README.md" -name "*.md" -print0 2>
 [ -f "$ROOT/agents/comment-sicko.md" ] || \
 	err "contract: comment-sicko subagent is missing"
 bash "$ROOT/tests/install-upgrade.sh" || err "installer upgrade fixtures failed"
+bash "$ROOT/tests/verifier-lint.sh" || err "verifier lint fixtures failed"
 
 # ---------------------------------------------------- blahaj-mode scenarios
 # A blahaj-mode scenario must prove an observable effect or preserved invariant. An

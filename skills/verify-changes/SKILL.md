@@ -34,7 +34,7 @@ The project-local verifier supplements this gate. It does not replace declared
 repository checks. Confirm its commands against its source anchors before use.
 If a command or path has drifted, report the documentation defect and use a
 current repository declaration that checks the same behavior. Point to
-`maintain-verification-skill` for repair. Stale instructions alone do not fail
+`verification-skill audit` for repair. Stale instructions alone do not fail
 the product gate when equivalent current evidence passes; an unverified affected
 behavior still does.
 
@@ -102,7 +102,7 @@ user behavior.
   existing integration or end-to-end tool. Invoke `e2e-verify` for a browser.
   If no executable fallback exists, report `Behavior: FAIL unmapped affected
   user behavior` and emit `VERIFY: FAIL project-local verifier has no recipe
-  for affected user behavior`. Point to `maintain-verification-skill`.
+  for affected user behavior`. Point to `verification-skill audit`.
 - For browser behavior, invoke `e2e-verify`. The project-local verifier owns
   launch, authentication, exact feature recipes, and evidence locations.
   `e2e-verify` owns browser assertions, console errors, traces, and retries.
@@ -116,7 +116,7 @@ user behavior.
 
 When an intentional product change alters a mapped route, command, or result,
 update the affected feature file in the same change and run that recipe. Do not
-audit unrelated features. `maintain-verification-skill` owns the full audit.
+audit unrelated features. `verification-skill audit` owns the full audit.
 
 ## 6. On failure
 
