@@ -33,105 +33,55 @@ target.
 ## Orchestration
 
 `blahaj-mode` is the Cursor-first entry point: activate it as a Custom Mode to
-keep it active across turns, or invoke `/blahaj-mode` per turn. It picks a
-route (`investigation`, `bug-fix`, `large-feature`, `feature`, `refactoring`,
-`eval`, `authoring-a-skill`, `session-pickup`, `pause-safely`, `prototype`,
-`visual-parity`, `multi-phase-plan`, `worktree-cleanup`) and an outcome
-(`answer`, `local-change`, `mr-open`, `merge-ready`), reports the pair as
-`Route: <task-kind> -> <outcome>`, and runs the matching playbook. In normal
-mode it never opens an MR, merges, or releases unless you ask for that outcome.
+keep it active across turns, or invoke `/blahaj-mode` per turn. It is a working
+agreement, not a router. It resolves one outcome (`answer`, `local-change`,
+`mr-open`, `merge-ready`) from what you asked for, reports it as
+`Outcome: <outcome>`, and applies the gates for the kind of work: a failing
+check before a bug fix, real-interface proof for a feature, unchanged behavior
+for a refactor, a browser check for UI. It never opens an MR, merges, or
+releases unless you ask for that outcome.
 
-`djungelskog-mode` is the autonomous entry point. Invoke `/djungelskog-mode <task>` when
-you want the same Blahaj routes and playbooks to research, choose the approach,
-implement, verify, open the change request, and drive it merge-ready without
-routine checkpoints. This explicit entry point opts into delivery; saying
-"work autonomously" alone preserves the outcome you requested. Both modes
-settle routine engineering decisions without asking. Negative constraints always
-win, and djungelskog-mode never merges, releases, or deploys without separate
-explicit authorization.
+`/blahaj-mode deliver <task>` is the autonomous form. It researches, chooses the
+approach, implements, verifies, opens the change request, and drives it
+merge-ready without routine checkpoints. Saying "work autonomously" alone keeps
+the outcome you requested. Negative constraints always win, and no outcome
+authorizes merge, release, or deploy.
 
 Delivery supports GitHub PRs and GitLab MRs. Readiness requires review and CI
 for the current head. Longer tasks can save progress outside tracked files and
-resume the original route and scope. Later execution requires an explicitly
+resume with the same outcome and scope. Later execution requires an explicitly
 requested and confirmed host schedule; installing the skill does not keep the
 agent running after its host stops.
 
-Delegating skills (`arena`, `how`, `interrogate`, `swarm`, `why`) run their
-subagents on the parent model. Name a model in the request to get a second
-opinion from it, for example a second `interrogate` reviewer.
+Everything runs on the model you are already using. Delegating skills (`arena`,
+`how`, `interrogate`, `swarm`, `why`) delegate only for isolation, real
+parallelism, or a fresh reviewer, and their subagents run on the parent model.
+Name a model in the request to get a second opinion from it, for example a
+second `interrogate` reviewer.
 
 ## How skills participate
 
-Workflow membership and invocation policy are separate. A skill can be part of
-an `blahaj-mode` workflow and still require explicit invocation when you use it
-outside the mode.
-
-### Workflow components
-
-When `blahaj-mode` selects a route, its playbook selects these skills as needed.
-You do not need to name them in the prompt.
-
-| Skill | Workflow use |
-|---|---|
-| `architect` | Settle a boundary before a feature, bug fix, or refactor crosses it |
-| `arena` | Compare viable implementations when one choice would lock in the wrong shape |
-| `babysit-gitlab-mr` | Run the authorized GitLab `merge-ready` tail |
-| `decompose-epic` | Split work only when the source is a real Jira epic |
-| `e2e-verify` | Verify UI behavior or visual parity on a real UI |
-| `feature-retention-tests` | Add durable feature coverage only after accepted behavior works through the real interface |
-| `escalate` | Stop a route at a safety or authority boundary |
-| `how` and `why` | Recover runtime structure and design history |
-| `no-comments` | Review and clean the branch diff before an MR is opened or driven merge-ready |
-| `principles` | Review the shape of implementation and refactoring work |
-| `recall` | Reconstruct context for `session-pickup` |
-| `reproduce-first` | Establish failing evidence before a bug fix |
-| `show-me-your-work` | Preserve decisions when a long run needs a trail |
-| `swarm` | Implement disjoint ready tasks for a large feature in parallel |
-| `technical-writing` and `unslop` | Edit prose that a workflow publishes |
-| `verify-changes` | Run repository checks and affected project-local verification after a code change |
-
-`blahaj-mode` is the workflow entry point. `djungelskog-mode` enters that same
-workflow with autonomous execution enabled.
+Skills with automatic invocation start whenever the request matches their
+description, inside or outside `blahaj-mode`. Inside the mode, the gates also
+reach for `reproduce-first`, `feature-retention-tests`, `verify-changes`,
+`e2e-verify`, `escalate`, `how`, `why`, `recall`, and `babysit-gitlab-mr`, and
+a large feature can use `decompose-epic` and `swarm`.
 
 When a repository contains a project-local `verify-*` skill, `verify-changes`
 uses it automatically for affected user behavior. Creating or auditing that
-skill remains explicit through `create-verification-skill` or
-`maintain-verification-skill`.
-
-### Standalone skills
-
-These skills are not selected by any current `blahaj-mode` route. Use them for
-their own task when the need arises.
-
-| Skill | Use |
-|---|---|
-| `blast-radius` | Check what a specific change can break outside its diff |
-| `clarify-requirements` | Resolve ticket ambiguity before implementation starts |
-| `deploy-watch` | Watch a deployment after release |
-| `interrogate` | Run an adversarial review over a diff |
-| `create-verification-skill` | Generate a project-local verifier and feature map |
-| `maintain-verification-skill` | Audit a project-local verifier against source and live behavior |
-| `pick-next-task` | Claim the next ready Jira item |
-| `typescript-best-practices` | Apply TypeScript type discipline when TypeScript files are in scope |
+skill stays explicit through `/verification-skill create` or
+`/verification-skill audit`.
 
 ### Explicit invocation
 
-Skills with `disable-model-invocation: true` do not start from a model-selected
-trigger. Invoke them by name or slash command when no active workflow already
-calls for them:
+Skills with `disable-model-invocation: true` start only when you name them:
 
-`blahaj-mode`, `djungelskog-mode`, `architect`, `arena`,
-`blast-radius`, `create-verification-skill`, `interrogate`,
-`maintain-verification-skill`, `no-comments`, `recall`, `show-me-your-work`,
-`swarm`, and `technical-writing`.
+`blahaj-mode`, `arena`, `blast-radius`, `interrogate`, `no-comments`, `swarm`,
+and `verification-skill`.
 
-For example, `/blahaj-mode Fix the pagination bug` starts the normal workflow,
-while `/djungelskog-mode Fix the pagination bug` starts the same workflow in
-autonomous mode and may carry it through merge-ready. `/interrogate Review this
-diff` runs the standalone review directly. Inside `blahaj-mode`, a selected
-playbook can include `architect`, `arena`, `recall`, `show-me-your-work`,
-`swarm`, `technical-writing`, or `no-comments`; you do not need to invoke those
-skills again.
+For example, `/blahaj-mode Fix the pagination bug` works the bug to a local
+change, `/blahaj-mode deliver Fix the pagination bug` carries it through
+merge-ready, and `/interrogate Review this diff` runs the review directly.
 
 ## Skills
 
@@ -143,15 +93,13 @@ below for what changed).
 
 | Skill | Source | Purpose |
 |---|---|---|
-| `blahaj-mode` | ostack | Cursor-first router for task kind, outcome, execution mode, and implemented playbooks |
-| `djungelskog-mode` | ostack | Explicit autonomous entry point for Blahaj: research, decide, implement, verify, open the change request, and drive it merge-ready |
+| `blahaj-mode` | ostack | Working agreement: resolve the outcome, apply per-kind gates, and `deliver` to merge-ready on request |
 | `pick-next-task` | ostack | Claim the next Jira work item with `acli`: JQL by agent-ready criteria, self-assign with read-back, transition, branch |
 | `decompose-epic` | ostack | Jira epic → atomic, conflict-free child tickets with acceptance criteria, disjoint file scopes, and real `Blocks` links |
 | `clarify-requirements` | ostack | One batched round of upfront questions per ticket, defaults included, then never interrupts |
 | `reproduce-first` | ostack | Bug tickets: an executable failing check before any fix, and the honest path when a unit test is the wrong tool |
 | `feature-retention-tests` | ostack | Features: permanent behavioral coverage only after implementation and real-interface acceptance |
-| `create-verification-skill` | pstack | Generate and prove a project-local verifier with exact checks, control instructions, and a user-facing feature map |
-| `maintain-verification-skill` | pstack | Audit a project-local verifier against source and live behavior without changing product code |
+| `verification-skill` | pstack | Create or audit a project-local verifier with exact checks, control instructions, a feature map, and a structural linter |
 | `verify-changes` | ostack | Pre-push gate: run declared checks and affected project-local verification, block on failure |
 | `e2e-verify` | ostack | Browser verification through a project-local verifier or Playwright fallback |
 | `babysit-gitlab-mr` | ostack | Drive a GitLab MR end-to-end: `!review` loop with the review bot, pipeline gate, optional comment watch mode |
@@ -160,21 +108,20 @@ below for what changed).
 
 | Skill | Source | Purpose |
 |---|---|---|
-| `how` | pstack | How a subsystem works: runtime flow, architecture, ownership and layering, with an optional critique panel |
-| `why` | pstack | Why it's shaped that way: parallel investigators over git/GitLab, Jira, Confluence, chat, observability, error tracking, analytics |
+| `how` | pstack | How a subsystem works: runtime flow, architecture, ownership and layering, with an optional critique |
+| `why` | pstack | Why it's shaped that way: evidence from git/GitLab, Jira, Confluence, chat, observability, error tracking, analytics |
 | `blast-radius` | pstack | What a change breaks outside its own diff, with the one safety fact proven by running code |
-| `recall` | pstack | Rebuild working context on a topic from your own transcripts plus the shared record |
+| `recall` | pstack | Rebuild working context on a topic from your chat history plus MRs, tickets, and errors |
 
 ### Shaping code
 
 | Skill | Source | Purpose |
 |---|---|---|
-| `principles` | pstack | The judgment layer: 21 rules for shape, verification, and delegation, indexed with full text in references |
-| `architect` | pstack | Types, signatures, and module boundaries settled before code, and scrapped when implementation disproves them |
+| `principles` | pstack | The judgment layer: 18 rules for shape, verification, and delegation, plus design red flags, indexed with full text in references |
 | `typescript-best-practices` | pstack | TypeScript type discipline grounded in syntax, with worked examples |
 | `arena` | pstack | N parallel candidates at one artifact, judged, then grafted into a single base |
 | `swarm` | pstack | N parallel workers over slices or races, drained into one report |
-| `interrogate` | pstack | Adversarial review panel over a diff, sorted into act-on / consider / noted / dismissed |
+| `interrogate` | pstack | Fresh-context adversarial review over a diff, sorted into act-on / consider / noted / dismissed |
 | `no-comments` | pstack | Remove unjustified comments and turn accepted findings into root-cause fixes |
 
 ### Safety & delivery
@@ -182,15 +129,13 @@ below for what changed).
 | Skill | Source | Purpose |
 |---|---|---|
 | `escalate` | ostack | Stop-and-ask policy: hard stops, soft stops after N attempts, batched ask with a declared default |
-| `show-me-your-work` | pstack | Reviewable decision trail for long or unattended runs, one TSV row per decision |
 | `deploy-watch` | ostack | Post-deploy metric watch against contract-defined triggers, authorized auto-rollback |
 
 ### Writing
 
 | Skill | Source | Purpose |
 |---|---|---|
-| `unslop` | pstack | Cut AI tells from prose about to be published |
-| `technical-writing` | pstack | Diátaxis structure, Google developer style, simplified technical English, global English |
+| `unslop` | pstack | Write and edit published prose: cut AI tells, pick the document mode, apply sentence style |
 
 ### Memory
 
@@ -198,9 +143,8 @@ Not vendored here. `memory-admin`, `memory-capture`, `memory-loop`, and
 `memory-recall` ship from
 [agent-memory](https://github.com/orisilber/agent-memory), a separate local-first
 memory service with its own installer. Install that repo and its skills land in
-`~/.agents/skills` next to these, same runtime location, same symlink
-mechanism, picked up by `recall` and every other skill that references
-`memory-capture` or `memory-recall`.
+`~/.agents/skills` next to these. `recall` rebuilds working context for a task;
+`memory-recall` holds durable preferences and facts across tasks.
 
 ## Where the loop runs
 
@@ -217,23 +161,28 @@ step if you want the agent doing the mechanics under supervision.
 
 ## Provenance
 
-`blahaj-mode`, `principles`, `how`, `why`, `blast-radius`, `architect`, `arena`,
-`swarm`, `interrogate`, `no-comments`, `recall`, `show-me-your-work`, `unslop`,
-`technical-writing`, `typescript-best-practices`, `create-verification-skill`,
-and `maintain-verification-skill` are adapted from
+`blahaj-mode`, `principles`, `how`, `why`, `blast-radius`, `arena`, `swarm`,
+`interrogate`, `no-comments`, `recall`, `unslop`, `typescript-best-practices`,
+and `verification-skill` are adapted from
 [pstack](https://github.com/poteto/pstack) by Lauren Tan (MIT). See
 [`NOTICE`](NOTICE). Changes from upstream:
 
-- `blahaj-mode` adapts the mode and playbook mechanism from pstack's
-  `poteto-mode`. Its route registry, outcome tails, and playbook text are
-  specific to ostack.
+- `blahaj-mode` adapts the mode mechanism from pstack's `poteto-mode` into a
+  single working agreement with outcome tails and per-kind gates, without a
+  route registry or per-role model routing.
 - 21 standalone principle skills consolidated into one `principles` skill with
-  grouped references, so the skill index costs one entry instead of twenty-one.
+  grouped references. Rules that restated harness behavior were dropped, and
+  pstack's `architect` design red flags live there instead.
+- `unslop` absorbs `technical-writing`'s document modes and sentence style.
+- `verification-skill` merges `create-verification-skill` and
+  `maintain-verification-skill`, adds a template linter, and scopes audits from
+  the last verified commit.
 - Cursor-specific hooks kept as the default path, with a fallback named for
   single-vendor hosts: subagent types and transcript locations.
 - GitHub/graphite replaced by GitLab (`glab`) and Linear/Notion by Jira and
   Confluence (`acli`) in `why`'s evidence playbooks.
-- `never-block-on-the-human` scoped by `escalate`, which owns the hard stops.
+- `never-block-on-the-human` becomes "decide, then present", with `escalate`
+  owning the exceptions.
 - `tdd`'s impractical-test guardrails folded into `reproduce-first` rather than
   shipped as a second, overlapping skill.
 - Project-local verification defaults to `.agents/skills`, detects existing
@@ -246,7 +195,7 @@ and `maintain-verification-skill` are adapted from
 Not vendored as pstack workflows, deliberately: the full `poteto-mode` and
 `figure-it-out` playbook sets (tied to Graphite and GitHub), `setup-pstack`,
 `automate-me`, `reflect`, `teach`, `bro`,
-`tdd`.
+`tdd`, `architect`, `show-me-your-work`, `technical-writing`.
 
 `make-bot-ui` is also excluded. It depends on Cursor-team internals, including
 a Grok Bot webhook, `update_state`, and sender-key handling. Ostack does not
