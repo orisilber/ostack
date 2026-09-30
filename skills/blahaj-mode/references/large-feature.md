@@ -1,20 +1,12 @@
-# Large feature playbook
+# Large feature
 
-Use this route when new behavior spans multiple independently verifiable
+Use this when new behavior spans multiple independently verifiable
 implementation scopes or cannot reasonably finish in one agent session.
 
 1. State the complete done predicate and reuse current grounding. Route through
    `how` for material gaps in affected behavior or ownership.
-2. When a consequential type, interface, or ownership decision remains unresolved,
-   route through `architect` in `design-only` mode. A comparison it actually ran
-   satisfies `arena` for that decision. Otherwise, route through `arena` when at
-   least two viable approaches exist and choosing the wrong one would cause
-   substantial rework. For this pre-decomposition arena, the candidate artifact
-   is the implementation design only: pass the complete done predicate, require
-   structurally distinct approaches, and forbid production-code changes or
-   feature implementation. Arena returns the synthesized design decision that
-   step 3 decomposes. Record why an arena was not needed when the target follows
-   an established pattern.
+2. Settle any new public boundary before decomposing: write the caller's usage
+   and types first. Use `arena` only when the user asks for competing designs.
 3. Decompose the work into atomic tasks with acceptance checks, explicit file
    ownership, and a dependency DAG. Put shared foundations first. Acceptance
    checks use existing repository checks or temporary commands against real
@@ -40,4 +32,4 @@ implementation scopes or cannot reasonably finish in one agent session.
 
 Do not let workers share a writable file, branch, or external object. Do not
 read or write Jira unless the user supplied a real epic and authorized Jira
-work. MR creation and reviewer interaction remain outcome tails.
+work. Opening a PR/MR and contacting reviewers depend on the authorized outcome.

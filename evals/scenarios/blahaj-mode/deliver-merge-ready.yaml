@@ -1,4 +1,4 @@
-skill: djungelskog-mode
+skill: blahaj-mode
 description: Autonomous GitHub delivery verifies current-head readiness and reuses an existing PR.
 
 setup: |
@@ -31,7 +31,7 @@ setup: |
   git init -q --bare "$SANDBOX/remote.git"
   git remote add origin "$SANDBOX/remote.git"
   git push -q origin main
-  git checkout -qb fix/djungelskog-mode
+  git checkout -qb fix/deliver
   git push -qu origin HEAD
   skill_root="$(cd "$HOME/.agents/skills/blahaj-mode" && pwd -P)"
   python3 - "$skill_root/../.." "$WORK" <<'PY'
@@ -47,14 +47,14 @@ setup: |
   PY
 
 prompt: |
-  Use djungelskog-mode. Fix app.txt so it contains "fixed". Reproduce the
+  Use /blahaj-mode deliver. Fix app.txt so it contains "fixed". Reproduce the
   defect with bash tests/check.sh and finish the existing PR properly.
   The existing PR is https://github.example/owner/repo/pull/7.
   Use only the fixture gh CLI and local bare origin. Do not use external tools.
 
 assert:
   output_contains:
-    - "Route: bug-fix -> merge-ready"
+    - "Outcome: merge-ready"
     - "merge.ready"
   tools_called:
     - "gh pr list"
@@ -68,7 +68,7 @@ assert:
     set -eu
     grep -qx fixed app.txt
     git diff --exit-code
-    test "$(git rev-parse HEAD)" = "$(git --git-dir="$SANDBOX/remote.git" rev-parse refs/heads/fix/djungelskog-mode)"
+    test "$(git rev-parse HEAD)" = "$(git --git-dir="$SANDBOX/remote.git" rev-parse refs/heads/fix/deliver)"
     reproduce_line="$(grep -n '^--- repo reproduce fail' "$CALLS_LOG" | head -1 | cut -d: -f1)"
     verify_line="$(grep -n '^--- repo verify pass' "$CALLS_LOG" | head -1 | cut -d: -f1)"
     checks_line="$(grep -n '^--- gh pr checks' "$CALLS_LOG" | head -1 | cut -d: -f1)"

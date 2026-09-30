@@ -1,4 +1,4 @@
-skill: djungelskog-mode
+skill: blahaj-mode
 description: Autonomous entry respects an explicit no-PR constraint and stops at local-change.
 
 setup: |
@@ -9,13 +9,13 @@ setup: |
   git add app.txt && git commit -qm init
 
 prompt: |
-  Use djungelskog-mode for this request. Change app.txt to contain "after".
+  Use /blahaj-mode deliver for this request. Change app.txt to contain "after".
   Do this autonomously, but do not open a PR or MR and do not contact any
   external system.
 
 assert:
   output_contains:
-    - "Route: (feature -> local-change|none)"
+    - "Outcome: local-change"
   custom: |
     set -eu
     grep -qx after app.txt

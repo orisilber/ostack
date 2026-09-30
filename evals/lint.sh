@@ -210,12 +210,9 @@ done < <(find "$SKILLS" "$ROOT/agents" "$ROOT/README.md" -name "*.md" -print0 2>
 	err "contract: comment-sicko subagent is missing"
 bash "$ROOT/tests/install-upgrade.sh" || err "installer upgrade fixtures failed"
 
-# ---------------------------------------------------- blahaj-mode contracts
-bash "$SKILLS/blahaj-mode/scripts/validate.sh" --root "$ROOT" || err "blahaj-mode validator failed"
-bash "$ROOT/evals/fixtures/blahaj-mode-validator/run.sh" || err "blahaj-mode validator fixtures failed"
-
-# A route scenario must prove an observable effect or preserved invariant. An
-# output-only assertion can pass when an agent merely repeats the playbook.
+# ---------------------------------------------------- blahaj-mode scenarios
+# A blahaj-mode scenario must prove an observable effect or preserved invariant. An
+# output-only assertion can pass when an agent merely repeats the skill.
 while IFS= read -r scenario; do
 	if ! awk '
 		/^  custom:[[:space:]]*\|[[:space:]]*$/ {

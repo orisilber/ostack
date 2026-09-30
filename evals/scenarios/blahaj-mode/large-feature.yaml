@@ -52,7 +52,7 @@ prompt: |
 
 assert:
   output_contains:
-    - "Route: large-feature -> local-change"
+    - "Outcome: local-change"
     - "swarm"
     - "retention"
     - "verify"

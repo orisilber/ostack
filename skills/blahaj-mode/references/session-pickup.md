@@ -1,7 +1,7 @@
-# Session-pickup playbook
+# Session pickup
 
-Use this route when the user asks to resume work or reconstruct where a prior
-run stopped.
+Use this when the user asks to resume work or reconstruct where a prior run
+stopped.
 
 1. State the selected outcome and inspect the current branch and worktree.
 2. If the user identifies one specific prior chat or session, open that
@@ -12,10 +12,10 @@ run stopped.
    the Recall brief, with current files, git status, and any durable decision
    log.
 4. When the user says to continue a specific authorized task, restore its
-   original implemented route and outcome from trusted history, applying any
-   newer constraints. Follow [the continuation contract](../references/continuation.md)
-   to reconcile saved evidence. The pickup route's outcomes govern context
-   reconstruction; they do not lower the resumed task's existing authority.
+   original outcome from trusted history, applying any newer constraints.
+   Follow [the continuation contract](continuation.md) to reconcile saved
+   evidence. Reconstructing context is read-only; it does not lower the
+   resumed task's existing authority.
 5. Copy only the resulting next actions into the task list; do not repeat the
    reconstruction procedure or invent completed work.
 6. Continue from the first unfinished atomic boundary and verify before

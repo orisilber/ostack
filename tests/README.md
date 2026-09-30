@@ -1,7 +1,7 @@
 # Local verification
 
 Run `bash evals/lint.sh` from the repository root. It validates skill metadata,
-dependencies, declared CLI examples, installer upgrades, workflow routes, and
+dependencies, relative links, declared CLI examples, installer upgrades, and
 the deterministic audit regression fixtures. It does not launch model agents
 or modify external services. Git, jq, Bash, Python, and PyYAML are required;
 the existing evaluation helper installs missing PyYAML into `evals/.venv`.
@@ -17,7 +17,7 @@ TYPESCRIPT_PATH=/path/to/node_modules/typescript bash evals/lint.sh
 
 Without the compiler, lint explicitly warns that those checks were skipped.
 `OSTACK_LINT_SKIP_CLI_CHECKS=1` skips installed CLI help probes for offline runs.
-It does not skip the executable regression, metadata, route, or installer checks.
+It does not skip the executable regression, metadata, link, or installer checks.
 
 Model-behavior scenarios under `evals/scenarios` run separately through
 `evals/run.sh`; their presence is not evidence that an agent completed them.

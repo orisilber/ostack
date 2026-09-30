@@ -14,7 +14,7 @@ prompt: |
 
 assert:
   output_contains:
-    - "Route: (feature -> local-change|none)"
+    - "Outcome: local-change"
   custom: |
     set -eu
     grep -qx after app.txt

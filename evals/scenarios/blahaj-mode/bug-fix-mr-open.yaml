@@ -1,5 +1,5 @@
 skill: blahaj-mode
-description: Selects the explicit MR tail only after the bug-fix work.
+description: Opens an MR only after the bug is reproduced and verified.
 
 setup: |
   git init -q -b main
@@ -48,8 +48,7 @@ fixtures:
 
 assert:
   output_contains:
-    - "Route: bug-fix -> mr-open"
-    - "no-comments"
+    - "Outcome: mr-open"
     - "https://gitlab.example.com/ostack/-/merge_requests/8"
   tools_called:
     - "glab mr view"

@@ -19,7 +19,7 @@ HEAD = "a" * 40
 def github_fixture():
     return {
         "pr": {"number": 7, "url": "https://github.example/owner/repo/pull/7",
-               "headRefOid": HEAD, "headRefName": "fix/djungelskog-mode",
+               "headRefOid": HEAD, "headRefName": "fix/deliver",
                "baseRefOid": "b" * 40, "baseRefName": "main",
                "state": "OPEN", "isDraft": False, "mergeable": "MERGEABLE",
                "mergeStateStatus": "CLEAN", "reviewDecision": "APPROVED",

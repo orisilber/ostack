@@ -1,4 +1,4 @@
-skill: djungelskog-mode
+skill: blahaj-mode
 description: Explicit delivery entry does not turn a read-only question into an implementation task.
 
 setup: |
@@ -9,12 +9,12 @@ setup: |
   git add design.txt && git commit -qm init
 
 prompt: |
-  Use djungelskog-mode. Explain how the display name is chosen according to
+  Use /blahaj-mode deliver. Explain how the display name is chosen according to
   design.txt. Do not edit any files or contact external systems.
 
 assert:
   output_contains:
-    - "Route: investigation -> answer"
+    - "Outcome: answer"
   custom: |
     set -eu
     test -z "$(git status --porcelain)"

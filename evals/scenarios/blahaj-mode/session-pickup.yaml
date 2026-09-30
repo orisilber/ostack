@@ -15,7 +15,7 @@ prompt: |
 
 assert:
   output_contains:
-    - "Route: session-pickup -> answer"
+    - "Outcome: answer"
     - "recall"
   tools_not_called:
     - "git commit"
