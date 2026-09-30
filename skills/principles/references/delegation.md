@@ -6,34 +6,20 @@ Adapted from pstack (MIT, Lauren Tan). One rule per section; the index lives in
 
 ## Guard the Context Window
 
-The context window is finite and non-renewable within a session. Every token that enters should earn its place.
+The context window is finite within a session. Every token that enters should earn its place.
 
-**Why:** Context overflow degrades reasoning quality, creates compression artifacts, and halts progress. Unlike compute or time, context spent inside a session cannot be reclaimed.
+**Why:** Context overflow degrades reasoning and forces lossy compression. Handing work to a subagent is not free either: the subagent starts without your context, and its summary loses detail you may need.
 
 **Pattern:**
-- **Isolate large payloads.** Route verbose outputs, screenshots, and large documents to subagents. The main context gets summaries, not raw data.
-- **Don't read what you won't use.** Read selectively based on relevance. If a file isn't needed for the current task, skip it.
+- **Read selectively.** Read the parts of a file or log that bear on the question. Search before reading.
+- **Delegate for isolation, not by default.** Use a subagent when work needs an isolated write scope, when parallel slices save real time, when a very large payload would flood the main context, or when a review needs a reader who has not seen your reasoning.
 - **Keep frequently used content inline.** Templates and references used on every invocation belong in the skill file, not in separate files that cost a read each time.
-- **Size phases and cap scope.** Limit files per phase, set turn budgets, account for mechanism costs.
+- **Size phases and cap scope.** Limit files per phase and account for mechanism costs.
 
 
-## Never Block on the Human
+## Decide, Then Present
 
-The human supervises asynchronously. Agents must stay unblocked: make reasonable decisions, proceed, and let the human course-correct after the fact. Code is cheap. Waiting is expensive.
-
-**Why:** Every permission pause stalls the pipeline and makes the human the bottleneck. Since code changes are reversible and reviewable, a wrong decision usually costs less than blocking.
-
-**Pattern:**
-- **Proceed, then present.** Do the work, show the result. Don't ask "should I do X?" Do X, explain why.
-- **Reserve questions for genuine ambiguity.** Ask only when you truly cannot infer intent from context.
-- **Make the system self-healing.** When you notice a problem, log it and fix it in the next round.
-- **Supervision is async.** The human reviews plans, diffs, and changes on their own schedule. Design workflows for review-after-the-fact.
-- **Code is cheap, attention is scarce.** A wrong implementation costs minutes to fix. A blocked agent costs the human's attention to unblock.
-
-**Boundaries:**
-- **Irreversible actions** (force-push, delete production data, send external messages) still require confirmation.
-- **Reversible actions** (write code, edit notes, split tasks) should proceed without blocking.
-- **Product direction** comes from the human; *execution* should not block.
+Settle reversible engineering decisions yourself, do the work, and explain the choice afterward. Code is cheap to change; a blocked task costs the human's attention. The **escalate** skill owns the exceptions: missing authority or access, conflicting requirements, irreversible actions, and repeated attempts that stop producing progress.
 
 
 ## Encode Lessons in Structure

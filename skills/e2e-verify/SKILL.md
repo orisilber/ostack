@@ -145,9 +145,9 @@ Suppressed: <none | the pre-existing noise you filtered>
 
 On FAIL: the failing assertion, the last screenshot path, and the trace
 (`npx playwright show-trace <path>`). Fix product code, adjust selectors freely
-when the UI intentionally changed, and rerun the affected check. After three
-failed fix-and-rerun cycles, `escalate`. Two unchanged transient failures require
-diagnosis before any further retry.
+when the UI intentionally changed, and rerun the affected check. When
+materially different fixes stop making progress, follow `escalate`. Two
+unchanged transient failures require diagnosis before any further retry.
 
 ## 7. Flake protocol
 

@@ -1,6 +1,8 @@
 # Design red flags
 
-Screen every candidate before synthesis. A red flag is a reason to revise or reject the shape.
+Screen a new public boundary before implementing it. Write the caller's usage
+first, derive the types and signatures from it, then check the shape against
+these flags. A red flag is a reason to revise or reject the shape.
 
 ## Shallow module
 

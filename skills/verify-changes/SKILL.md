@@ -46,32 +46,12 @@ Priority order, first source that names a command wins:
    or **Verification** section that lists lint, typecheck, and test commands.
 2. A valid project-local verifier's **Repository checks** section. Confirm each
    command against the source anchor that it names.
-3. Manifests. Use the repository's files to find the declared checks; a
-   manifest tells you where to inspect, but it never authorizes a guessed
-   command. In addition to the common manifests, inspect:
-
-   - Common repositories: `package.json` scripts (`lint`, `typecheck`/`tsc
-     --noEmit`, `test`), `Makefile` targets, `justfile`, `pyproject.toml`
-     (`ruff`, `mypy`, `pytest`), and `Cargo.toml`.
-   - JVM/Scala: `pom.xml`, `build.gradle`, `build.gradle.kts`, and `build.sbt`.
-     Check the Maven/Gradle/SBT wrapper and project or CI documentation for
-     the exact check before running it.
-   - Go: `go.mod` and `go.work`. Look for the check in a `Makefile`,
-     `justfile`, `Taskfile.yml`, repository documentation, or CI configuration.
-   - .NET: `*.sln`, `*.slnx`, `*.csproj`, `global.json`, and
-     `Directory.Build.*`. Confirm the exact `dotnet` invocation in project
-     documentation or CI.
-   - Ruby: `Gemfile`, `*.gemspec`, and `Rakefile`. Confirm the exact Bundler or
-     Rake task in project documentation or CI.
-   - PHP: `composer.json`, `phpunit.xml*`, `phpstan.neon*`, and `psalm.xml*`.
-     Confirm the exact Composer or analysis task in project documentation or
-     CI.
-
-   `Makefile` targets, `justfile` recipes, package scripts, and equivalent
-   task definitions are declarations when they name the check directly. Do
-   not turn the mere presence of a language manifest into an invented command
-   such as `npm test`, `go test ./...`, `dotnet test`, `bundle exec`, or
-   `composer test`.
+3. Task declarations: `package.json` scripts, `Makefile` targets, `justfile`
+   recipes, `Taskfile.yml`, `pyproject.toml` tool sections, and build-tool
+   wrappers (Maven, Gradle, SBT, `dotnet`, Bundler, Composer) named in project
+   documentation. A language manifest shows where to look; it never authorizes
+   a guessed command such as `npm test`, `go test ./...`, or `dotnet test`.
+   Run only a command the repository declares.
 4. CI config as ground truth of what must pass: `.gitlab-ci.yml` or GitHub
    workflows job names → map to local equivalents.
 
@@ -140,9 +120,9 @@ audit unrelated features. `maintain-verification-skill` owns the full audit.
 
 ## 6. On failure
 
-Fix code (that's your job, not the gate's), re-run the failed check only.
-Loop max 3 attempts (matches `escalate` soft-stop default) → call `escalate`
-with the shortest reproduction of the failure.
+Fix code (that's your job, not the gate's) and re-run the failed check only.
+When materially different fixes stop making progress, follow `escalate` with
+the shortest reproduction of the failure.
 
 ## 7. Before PASS
 
