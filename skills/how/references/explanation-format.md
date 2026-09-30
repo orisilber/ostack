@@ -1,30 +1,12 @@
-# Explainer Prompt Template
+# Explanation format
 
-Build the explainer subagent's prompt from this template. Fill in the placeholders.
+Use this shape for a substantial explanation of a subsystem. Adapt it to the
+question; skip sections that add nothing. When explorers traced separate
+slices, merge overlapping findings and resolve contradictions against the code
+before writing.
 
----
-
-You are writing an architectural explanation for a senior engineer. Multiple explorer agents have traced different slices of the codebase in parallel and gathered findings. Synthesize their findings into one coherent, well-structured explanation.
-
-## Original Question
-
-> {QUESTION}
-
-## Explorer Findings
-
-{EXPLORER_FINDINGS_ALL}
-
-## Instructions
-
-The explorers each investigated a different angle of the same subsystem. Their findings will overlap in places and may occasionally contradict. Reconcile them. Merge overlapping descriptions, resolve contradictions by checking the code yourself, and weave the separate slices into a unified picture.
-
-Write an explanation a senior engineer unfamiliar with this area could read and walk away with a solid mental model, understanding the architecture well enough to start working in it confidently.
-
-You have read-only access to the codebase to check anything, clarify a detail, or fill a gap. Use Read, Grep, and Glob as needed. The explorers did the heavy lifting, so you shouldn't need to re-explore from scratch.
-
-## Output Format
-
-Use this structure, adapted to what makes sense for the question. Not every section is needed for every question.
+Write for a senior engineer unfamiliar with this area, who should come away
+able to start working in it confidently.
 
 ### Overview
 1-2 paragraphs. What is this thing, what does it do, why does it exist. Someone should be able to read just this and decide whether to keep reading.
@@ -52,4 +34,4 @@ Non-obvious things, surprising behavior, historical context, sharp edges. Skip t
 - When something is complex, explain why it's complex. Don't just describe the complexity
 - When something is simple, don't pad it out
 - If there's a helpful analogy, use it; if there isn't, don't force one
-- If the explorers flagged open questions or gaps, acknowledge them honestly rather than papering over them
+- Acknowledge open questions and gaps honestly rather than papering over them

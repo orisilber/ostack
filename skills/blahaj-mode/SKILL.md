@@ -146,7 +146,7 @@ When a playbook routes through a workflow skill that owns delegation, invoke
 that installed skill and follow the routed mode or phase completely. Do not
 inline, imitate, or replace its procedure in the coordinator.
 
-Routed workflow skills own their own subagent type, model selection, fan-out,
+Routed workflow skills own their own subagent type, fan-out,
 readonly behavior, and fallback semantics. In ostack this applies to skills
 such as `how`, `why`, `architect`, `arena`, `interrogate`, and `swarm`, plus any
 future skill whose contract explicitly owns delegated execution. Respect those
@@ -206,24 +206,8 @@ If that cleanup changes files after the base playbook's successful verification,
 the opening-MR tail reruns `verify-changes` before any external write. Do not run
 this gate for `answer` or `local-change` unless the user invokes it explicitly.
 
-## Model configuration
+## Models
 
-Delegating skills run their subagents on configured models rather than always
-inheriting the parent. `setup-blahaj-mode` writes that configuration to
-`~/.cursor/rules/ostack-models.mdc` as an always-applied Cursor rule, so Cursor
-loads its role lines into every session.
-
-Resolve a role by taking its skill-role line (`how critics`), then its generic
-role line (`judgment`), then `inherit`. Review panels run one reviewer per entry.
-Architecture and arena choose candidate count from useful directions, assigning
-available model entries to those candidates. A single-agent role uses the first
-entry. A resolved `inherit` means omit the
-subagent `model` argument and run on the parent chat model, and no line mixes
-`inherit` with a model ID. When the host rejects an entry, drop it and run the
-rest, falling back to `inherit` only when nothing is left. Do not swap in a
-nearby model ID, and do not read a successful delegation as proof of which
-model ran, because the host may substitute one without saying so.
-
-Hosts other than Cursor do not load `.mdc` rules, so every role there resolves
-to `inherit` and delegation runs on the parent model. This skill keeps the role
-labels and a filled-in example under `references/`.
+Subagents run on the parent model: omit the subagent `model` argument. Use a
+different model only when the user names one in the request, for the role it
+was named for. If the host rejects it, say so and continue on the parent model.

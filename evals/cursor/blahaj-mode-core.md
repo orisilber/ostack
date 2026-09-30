@@ -26,14 +26,9 @@ Complete these fields before running any case:
    evidence of session persistence.
 3. Before substantive work, capture the exact first routing line. It must be
    either `Route: <task-kind> -> <outcome>` or `Route: none`.
-4. Capture the generated task list, every delegated role and its resolved
-   model, tool calls and their order, changed files, verification result, and
+4. Capture the generated task list, every delegated role, tool calls and their order, changed files, verification result, and
    final response. Redact secrets from the evidence.
-5. For a model substitution, record the requested model and the actual model
-   only when Cursor exposes both. If the host does not expose the model that
-   ran, write `requested, execution not observable`; never infer execution
-   from a successful `Task` call.
-6. A failed or unobservable required assertion is `FAIL`, not `PASS`. Any
+5. A failed or unobservable required assertion is `FAIL`, not `PASS`. Any
    failure blocks `OSM-011` until it is explained and rerun.
 
 ## Core cases
@@ -73,39 +68,6 @@ then set the result to `PASS` or `FAIL`.
 | Observable first progress line | `Route: bug-fix -> mr-open` |
 | Expected route and tail | The first matching `bug-fix` entry wins; run the bug-fix base, then the `mr-open` tail. Do not select the generic feature route. |
 | Evidence to capture | Registry order, selected route, generated task order, `VERIFY: PASS` timestamp/output before `glab mr create`, and no merge-ready/babysit call. |
-| Pass/fail notes | `UNRUN — TODO` |
-
-### C04 — Missing model configuration
-
-| Field | Record |
-|---|---|
-| Setup | Remove `~/.cursor/rules/ostack-models.mdc` (or use the host's isolated rules directory) so no ostack model rule is applied. Run a task that invokes single-agent and panel-capable model-aware skills. |
-| Prompt | `Investigate this issue, compare the competing explanations, and report the answer without changing files.` |
-| Observable first progress line | `Route: investigation -> answer` (or `Route: none` if the registry is intentionally absent) |
-| Expected route and tail | The investigation answer path completes. Every role resolves to `inherit` and delegated subagents omit `model`. Do not guess a nearby model ID. |
-| Evidence to capture | Absence of the rule, role resolution for exploration/implementation/judgment/prose, the omitted `model` argument on each delegated call, and unchanged working tree. |
-| Pass/fail notes | `UNRUN — TODO` |
-
-### C05 — Explicit model rejection and host fallback
-
-| Field | Record |
-|---|---|
-| Setup | Write a valid `~/.cursor/rules/ostack-models.mdc` containing a user-supplied model ID that the current Cursor host explicitly rejects. Do not substitute a different guessed ID in the rule. |
-| Prompt | `Investigate this issue and compare the competing explanations.` |
-| Observable first progress line | `Route: investigation -> answer` (or `Route: none` if the registry is intentionally absent) |
-| Expected route and tail | Continue after one rejection fallback. A single-agent role falls back to `inherit`; a panel drops the rejected entry, keeps the rest, and uses `inherit` only if none remain. |
-| Evidence to capture | The requested ID, host rejection, one fallback report for the affected role, remaining delegated calls, and final answer. |
-| Pass/fail notes | `UNRUN — TODO` |
-
-### C06 — Observable or silent model substitution
-
-| Field | Record |
-|---|---|
-| Setup | Provide a valid model config with a host-supported requested ID for a single-agent role. If Cursor exposes model metadata, enable the view that shows the model used; otherwise leave execution metadata unavailable. |
-| Prompt | `Explain why this bug occurs without editing files.` |
-| Observable first progress line | `Route: investigation -> answer` (or `Route: none` if the registry is intentionally absent) |
-| Expected route and tail | The answer completes. If Cursor exposes a different actual model, record one substitution. If it does not, record requested-only and do not claim the requested model ran. |
-| Evidence to capture | Requested model, actual model when exposed, where the host exposed it, and the exact wording of the fallback/substitution report. |
 | Pass/fail notes | `UNRUN — TODO` |
 
 ### C07 — Investigation answer

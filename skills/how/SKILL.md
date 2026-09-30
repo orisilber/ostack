@@ -16,8 +16,8 @@ non-obvious parts; do not annotate every line or require a subagent.
 
 For a broad subsystem with independent exploration angles, read
 [references/exploration.md](references/exploration.md). Reuse any current
-grounding supplied by the caller. Parallel exploration and a separate
-synthesizer are useful options, not prerequisites.
+grounding supplied by the caller. Parallel exploration is an option, not a
+prerequisite.
 
 For an explicitly requested architectural critique, read
 [references/critique.md](references/critique.md) after establishing the behavior.
@@ -25,5 +25,5 @@ History and motivation questions route to the **why** skill.
 
 Return the explanation at the user's requested depth: the main flow, ownership,
 relevant source pointers, and material gotchas. Use
-[references/explainer-prompt.md](references/explainer-prompt.md) for a substantial
-structured explanation when that format helps.
+[references/explanation-format.md](references/explanation-format.md) for a
+substantial structured explanation when that format helps.

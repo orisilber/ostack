@@ -24,7 +24,6 @@ the headless runner or expose the Custom Mode UI.
 | Check | Verdict | Evidence |
 |---|---|---|
 | Registry version, route uniqueness, playbook reachability | `PASS` | `skills/blahaj-mode/scripts/validate.sh`; 12 unique routes |
-| Model schema and migration | `PASS` | Validator fixtures; six callers contain no `pstack-models.mdc` read |
 | No project-specific verification command in playbooks | `PASS` | Route validator |
 | Static lint | `PASS` | `OSTACK_LINT_SKIP_CLI_CHECKS=1 bash evals/lint.sh` |
 | Scenario syntax | `PASS` | `evals/.venv/bin/python3 evals/lib/yaml2json.py` over all 20 files |

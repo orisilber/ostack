@@ -1,32 +1,12 @@
-# Synthesizer Prompt Template
+# Answer format
 
-Build the synthesizer's prompt from this template; fill in the placeholders.
+Use this shape for a substantial historical answer, especially one built from
+several sources. A single-source answer that directly records the decision
+needs only the claim and its citation.
 
----
+## Epistemics
 
-You are answering a "why" question about a piece of code by synthesizing findings from multiple investigators who searched different historical sources (source control, issue / ticket tracker, long-form documents, real-time team chat, infrastructure observability, error / exception tracking, product analytics warehouse, and code comments). Produce a confidence-weighted, evidence-cited narrative that honestly communicates what the evidence supports and what it doesn't.
-
-## The Question
-
-> {QUESTION}
-
-## The Code Anchor
-
-**Target files:** {FILES_WITH_LINE_RANGES}
-
-**Key symbols:** {SYMBOLS}
-
-## Investigator Findings
-
-{ALL_INVESTIGATOR_FINDINGS}
-
-## Sources That Weren't Searched
-
-{SKIPPED_SOURCES_WITH_REASONS}
-
-## Epistemics Framework
-
-You must follow the framework in `references/epistemics.md`. Read it in full before writing the output. The key rules:
+Follow [epistemics.md](epistemics.md). The key rules:
 
 1. Every claim sits in one of these tiers: **Direct**, **Supported**, **Inferred**, **Speculative**, **Unknown**. The tier determines what section the claim goes in and how it's phrased.
 2. Every Direct/Supported claim must have a citation (PR #, ticket ID, doc URL, chat permalink, commit hash, or file:line).
@@ -35,20 +15,15 @@ You must follow the framework in `references/epistemics.md`. Read it in full bef
 5. Gaps in the evidence must be documented. Don't fill them with plausible-sounding guesses.
 6. If the user's question embedded a hypothesis, treat it as a candidate, not a conclusion. Check the evidence independently.
 
-## Instructions
+## Before writing
 
-1. **Read all investigator findings.** They gathered raw evidence, not conclusions. You weigh it.
-2. **Reconcile overlapping findings.** Multiple investigators may have cited the same PR, ticket, or doc. Merge into a single, authoritative reference.
-3. **Identify contradictions.** If two items of evidence disagree, don't pick one. Surface both.
-4. **Calibrate confidence.** For each claim, identify the evidence and the tier. State Direct claims plainly with a citation. Hedge Inferred claims and explain the inference. Mark Speculative claims explicitly. Put claims with no evidence in the gaps section.
-5. **Verify citations by spot-checking.** You can read the codebase and call MCP tools to verify citations; do not write files, commit, or modify external state. If you're uncertain a cited item exists or says what's claimed, check it. Don't propagate errors.
-6. **Don't overreach.** The user will act on your output. Better to leave an open question open than to fill it with a confident-sounding guess.
+1. **Reconcile overlapping findings.** Merge repeated citations of the same PR, ticket, or doc into one reference.
+2. **Surface contradictions.** If two items of evidence disagree, show both rather than picking one.
+3. **Calibrate every claim** to its tier. Put claims with no evidence in the gaps section.
+4. **Spot-check citations** you are unsure of. Do not propagate an unverified citation.
+5. **Don't overreach.** Leave an open question open rather than filling it with a confident guess.
 
-## Output Format
-
-Write the output for the user. Use this exact structure:
-
----
+## Structure
 
 ### The Question
 
@@ -113,8 +88,6 @@ Bulleted list of what was actually searched, so the user can judge coverage and 
 One or two sentences summarizing your overall confidence. E.g.:
 
 > "The core rationale (A) is well-supported by direct PR and ticket evidence. The specific threshold value (100) is inferred from the surrounding context but not explicitly documented. The question of whether this was driven by a customer request could not be answered. No relevant issue tracker or long-form doc content surfaced, and real-time team chat search was unavailable."
-
----
 
 ## Quality Check Before Returning
 

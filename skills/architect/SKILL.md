@@ -42,18 +42,7 @@ the **arena** skill. Pass the grounding and
 [references/runner-prompt.md](references/runner-prompt.md). Candidates produce
 design packages only; no production implementation edits.
 
-Set Arena's supported runner-role override to `architect runners`. Arena owns
-candidate spawning, fallback handling, and its separate `arena cross-judge`
-role. Do not merge `arena runners` into the design-candidate panel.
-
-The selected role resolves from its line in
-`~/.cursor/rules/ostack-models.mdc`, then generic `judgment`, then `inherit`.
-Arena passes each resolved value as the subagent `model` argument; `inherit`
-omits that argument. Hosts that do not load the rule use `inherit`. Do not
-substitute nearby model IDs or claim the requested model was the one that ran
-without host evidence.
-
-Candidate count follows the useful design directions, not model-list length.
+Arena owns candidate spawning and model choice. Candidate count follows the useful design directions, not model-list length.
 Reuse an available model for distinct directions when necessary. When there
 is one established, reversible shape, produce that grounded candidate directly
 and record why a comparison would not change the decision.

@@ -1,33 +1,25 @@
 ---
 name: interrogate
-description: Adversarial review panel over a diff. Independent reviewers attack it from different angles, then one lead judgment sorts every finding into act-on / consider / noted / dismissed. Triggers "interrogate", "adversarial review", "stress test this", "tear this apart". Use only on a changeset you want broken; it never auto-applies fixes, and a repo-local review skill wins where one exists.
+description: Adversarial review of a diff. A fresh-context reviewer attacks it, then one lead judgment sorts every finding into act-on / consider / noted / dismissed. Triggers "interrogate", "adversarial review", "stress test this", "tear this apart". Use only on a changeset you want broken; it never auto-applies fixes, and a repo-local review skill wins where one exists.
 disable-model-invocation: true
 ---
 
 # Interrogate
 
-Spawn the configured reviewers with the same intent and rubric. Judge their
-findings by demonstrated impact and source evidence. Independent agreement can
-direct attention, but one concrete counterexample can outweigh consensus.
+Spawn a reviewer that has not seen the authoring work, give it the intent and
+rubric, and judge its findings by demonstrated impact and source evidence. The
+value comes from the fresh context, not from the number of reviewers.
 
 The deliverable is a synthesized verdict. Do not auto-apply changes.
 
-## Model resolution
+## Reviewers
 
-Resolve `interrogate reviewers`, generic role `judgment`, from
-`~/.cursor/rules/ostack-models.mdc`. Use the skill-role line first, then the
-generic role line, then `inherit`.
-
-This is a panel. Run one subagent per resolved entry, so the entry count sets
-the fan-out. If the host rejects an entry, drop it and run the rest. Fall back
-to `inherit` only when nothing is left.
-
-Pass the resolved value as the subagent `model` argument. `inherit` means omit
-`model` and let the subagent run on the parent chat model. A line never mixes
-`inherit` with a model ID. Hosts that do not load the rule resolve every role
-to `inherit`. When the host rejects a model ID, do not swap in a nearby one. A
-successful call proves nothing about which model ran, because the host may
-substitute one without saying so.
+Run one reviewer on the parent model by default: omit the subagent `model`
+argument. When the user names other models in the request, add one reviewer per
+named model as a second opinion. Different models miss different bugs, so a
+named second opinion is worth its cost; an unnamed panel on the same model is
+not. If the host rejects a named model, say so and continue with the rest. Do
+not substitute a nearby model.
 
 ## Step 1, Determine Scope
 
@@ -52,20 +44,13 @@ Write one clear paragraph. Reviewers challenge whether the work achieves the int
 
 ## Step 3, Spawn Reviewers
 
-Launch all reviewers in a single message. Create one reviewer per entry in the
-resolved `interrogate reviewers` panel and label them in spawn order (Reviewer
-A, Reviewer B, and so on). The resolved entries define the panel's size and
-requested models.
+Launch every reviewer in a single message and label them in spawn order
+(Reviewer A, Reviewer B, and so on).
 
 For each reviewer:
 - `subagent_type`: `generalPurpose` in Cursor; `Explore` (read-only) or `general-purpose` in Claude Code
-- `model`: one entry from the resolved `interrogate reviewers` panel
+- `model`: omitted for the default reviewer; the named model for a second opinion
 - `readonly`: `true`
-
-If a configured model entry is rejected, remove that entry from this panel and
-continue with the remaining entries. Use `inherit` only when no entries
-remain. Do not pick a nearby slug or edit the model configuration as part of a
-review.
 
 Read `references/reviewer-prompt.md` and fill in the template with:
 1. The stated intent
@@ -73,19 +58,16 @@ Read `references/reviewer-prompt.md` and fill in the template with:
 3. The review rubric from `references/rubric.md`
 4. The code-quality lens from `references/code-quality-review.md`
 
-The same filled template goes to all reviewers, so every model applies the code-quality lens.
+Every reviewer gets the same filled template.
 
 Each reviewer produces structured findings as described in the prompt template.
 
 ## Step 4, Synthesize
 
-As results come back, build a unified picture:
-
-1. **Parse all findings** from the reviewers
-2. **Check evidence**. Trace the claimed failure and its actual impact.
-3. **Identify agreement and lone findings** without using vote count as severity.
-4. **Deduplicate**. Different models may describe the same issue differently. Merge these and note which models raised it.
-5. **Note disagreements**. If one model flags something and another explicitly says the opposite, that's useful context for the verdict.
+Check every finding against the source. Trace the claimed failure and its
+actual impact before accepting it. With more than one reviewer, merge
+duplicates, note which reviewers raised each finding, and record explicit
+disagreements. Agreement directs attention; it never sets severity.
 
 ## Step 5, Lead Judgment
 
@@ -100,10 +82,8 @@ Categorize every finding using these buckets:
 - **Noted**. Technically valid but not actionable. Context-dependent, premature optimization, or low-impact given the current stage.
 - **Dismissed**. Wrong, nitpicky, or missing context. Brief explanation why.
 
-For each finding, include:
-- Which model(s) raised it
-- The category (act on / consider / noted / dismissed)
-- A one-line rationale for the categorization
+Give each finding its category and a one-line rationale. With more than one
+reviewer, also name who raised it.
 
 ## Output Format
 
@@ -113,13 +93,13 @@ Present the verdict in this structure:
 > [The stated intent paragraph from Step 2]
 
 ### Reviewers
-- Reviewer [label]: requested model, confirmed actual model if available, and findings
+- Reviewer [label]: model (parent or the named model) and finding count
 
 ### Act On
-[Findings that should be addressed. For each: description, which models raised it, why it matters.]
+[Findings that should be addressed. For each: description and why it matters.]
 
 ### Consider
-[Findings worth thinking about. For each: description, which models raised it, tradeoff involved.]
+[Findings worth thinking about. For each: description and the tradeoff involved.]
 
 ### Noted
 [Valid but low-priority. Brief list.]
@@ -128,4 +108,4 @@ Present the verdict in this structure:
 [Rejected findings with brief rationale. This shows the user what was filtered out and why, so they can override your judgment if they disagree.]
 
 ### Agreement Map
-[Where did models agree, where did they diverge, and what does the pattern of agreement/disagreement tell us?]
+[Only when more than one reviewer ran: where they agreed, where they diverged, and what that tells us.]

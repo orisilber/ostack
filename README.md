@@ -4,8 +4,8 @@ Personal agent skills and subagents. Two layers: the procedure that gets work fr
 a merged MR, and the judgment that decides whether what shipped was any good.
 
 Skills live in [`skills/`](skills/) as standard `SKILL.md` folders (Cursor /
-Claude Code / opencode compatible). Written Cursor-first: multi-model panels and
-`~/.cursor` paths are the default path, but every skill names its fallback for
+Claude Code / opencode compatible). Written Cursor-first: `~/.cursor` paths and Cursor
+subagent types are the default path, but every skill names its fallback for
 single-vendor hosts, so nothing silently no-ops in Claude Code.
 
 Named subagents live in [`agents/`](agents/) and are installed for Cursor,
@@ -56,14 +56,9 @@ resume the original route and scope. Later execution requires an explicitly
 requested and confirmed host schedule; installing the skill does not keep the
 agent running after its host stops.
 
-The model-aware skills (`architect`, `arena`, `how`, `interrogate`, `swarm`,
-`why`) run their subagents on configured models. Configure them in Cursor with
-`setup-blahaj-mode`, which writes `~/.cursor/rules/ostack-models.mdc` as an
-always-applied rule, so Cursor loads it into new sessions on its own.
-[`skills/blahaj-mode/references/models.example.md`](skills/blahaj-mode/references/models.example.md)
-has the shape. A role with no line falls back to its generic role line, then to
-`inherit`. Hosts that do not load `.mdc` rules resolve everything to `inherit`
-and delegate on the parent model.
+Delegating skills (`arena`, `how`, `interrogate`, `swarm`, `why`) run their
+subagents on the parent model. Name a model in the request to get a second
+opinion from it, for example a second `interrogate` reviewer.
 
 ## How skills participate
 
@@ -96,8 +91,7 @@ You do not need to name them in the prompt.
 | `verify-changes` | Run repository checks and affected project-local verification after a code change |
 
 `blahaj-mode` is the workflow entry point. `djungelskog-mode` enters that same
-workflow with autonomous execution enabled. `setup-blahaj-mode` configures its
-model roles but does not run inside a task route.
+workflow with autonomous execution enabled.
 
 When a repository contains a project-local `verify-*` skill, `verify-changes`
 uses it automatically for affected user behavior. Creating or auditing that
@@ -126,7 +120,7 @@ Skills with `disable-model-invocation: true` do not start from a model-selected
 trigger. Invoke them by name or slash command when no active workflow already
 calls for them:
 
-`blahaj-mode`, `djungelskog-mode`, `setup-blahaj-mode`, `architect`, `arena`,
+`blahaj-mode`, `djungelskog-mode`, `architect`, `arena`,
 `blast-radius`, `create-verification-skill`, `interrogate`,
 `maintain-verification-skill`, `no-comments`, `recall`, `show-me-your-work`,
 `swarm`, and `technical-writing`.
@@ -151,7 +145,6 @@ below for what changed).
 |---|---|---|
 | `blahaj-mode` | ostack | Cursor-first router for task kind, outcome, execution mode, and implemented playbooks |
 | `djungelskog-mode` | ostack | Explicit autonomous entry point for Blahaj: research, decide, implement, verify, open the change request, and drive it merge-ready |
-| `setup-blahaj-mode` | ostack | Configure ostack's delegated model roles and fallback behavior |
 | `pick-next-task` | ostack | Claim the next Jira work item with `acli`: JQL by agent-ready criteria, self-assign with read-back, transition, branch |
 | `decompose-epic` | ostack | Jira epic → atomic, conflict-free child tickets with acceptance criteria, disjoint file scopes, and real `Blocks` links |
 | `clarify-requirements` | ostack | One batched round of upfront questions per ticket, defaults included, then never interrupts |
@@ -237,7 +230,7 @@ and `maintain-verification-skill` are adapted from
 - 21 standalone principle skills consolidated into one `principles` skill with
   grouped references, so the skill index costs one entry instead of twenty-one.
 - Cursor-specific hooks kept as the default path, with a fallback named for
-  single-vendor hosts: subagent types, model panels, transcript locations.
+  single-vendor hosts: subagent types and transcript locations.
 - GitHub/graphite replaced by GitLab (`glab`) and Linear/Notion by Jira and
   Confluence (`acli`) in `why`'s evidence playbooks.
 - `never-block-on-the-human` scoped by `escalate`, which owns the hard stops.
