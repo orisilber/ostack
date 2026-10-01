@@ -86,6 +86,16 @@ PY
 
 expect pass "valid verifier" "$(build valid)"
 
+d="$(build bare-links)"; sed -i.bak 's|(\./|(|g' "$d/.agents/skills/verify-notes/features/README.md"
+expect pass "index links without ./" "$d"
+
+d="$(build no-frontmatter)"; edit "$(skill "$d")" "---
+name: verify-notes" "name: verify-notes"
+expect fail "name outside frontmatter" "$d"
+
+d="$(build escape)"; edit "$(skill "$d")" "| \`package.json\` |" "| \`../outside.txt\` |"; touch "$TMP/outside.txt"
+expect fail "anchor outside repository" "$d"
+
 d="$(build marker)"; edit "$(skill "$d")" "Stop the dev server" "{{teardown}}"
 expect fail "template marker" "$d"
 

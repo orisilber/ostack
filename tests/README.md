@@ -33,7 +33,9 @@ behavior. The GitHub delivery YAML scenario uses a local bare remote and checks
 the final head and readiness result, in addition to the agent's narration.
 
 `bash tests/verifier-lint.sh` builds a valid project-local verifier from the
-shipped feature-map example and requires `lint-verifier.py` to reject each
-structural break: template markers, missing sections, a bad `Last verified:`
-line, missing or unknown anchors, unanchored features, wrong feature sections,
-missing feature statuses, and broken index links. `evals/lint.sh` runs it.
+shipped feature-map example, checks that index links without `./` still
+resolve, and requires `lint-verifier.py` to reject each structural break: a
+name outside the frontmatter, template markers, missing sections, a bad
+`Last verified:` line, anchors outside the repository, missing or unknown
+anchors, unanchored features, wrong feature sections, missing feature
+statuses, and broken index links. `evals/lint.sh` runs it.

@@ -28,8 +28,18 @@ FEATURE_SECTIONS = (
 )
 MARKER = re.compile(r"\{\{[^}]*\}\}")
 LAST_VERIFIED = re.compile(r"^Last verified: `?([0-9a-f]{7,40}|never)`?\s*$", re.M)
-LINK = re.compile(r"\]\(\./?([^)#\s]+\.md)\)")
+LINK = re.compile(r"\]\((?:\./)?([^)#\s]+\.md)\)")
 STATUS = re.compile(r"Status: `(verified|draft|verified-unreachable)`\.?\s*$")
+
+
+def frontmatter(text):
+    match = re.match(r"---\n(.*?)\n---\n", text, re.S)
+    return match.group(1) if match else None
+
+
+def inside(root, path):
+    candidate = (root / path).resolve()
+    return candidate == root or root in candidate.parents
 
 
 def headings(text):
@@ -63,7 +73,10 @@ def lint(verifier, root):
         for marker in sorted(set(MARKER.findall(path.read_text()))):
             errors.append(f"{path.relative_to(verifier)}: template marker {marker}")
 
-    if not re.search(r"^name: verify-\S+$", text, re.M):
+    meta = frontmatter(text)
+    if meta is None:
+        errors.append("SKILL.md: missing YAML frontmatter")
+    elif not re.search(r"^name: verify-\S+$", meta, re.M):
         errors.append("SKILL.md: frontmatter name must be verify-<app>")
     if not LAST_VERIFIED.search(text):
         errors.append("SKILL.md: missing 'Last verified: <sha>' or 'Last verified: never'")
@@ -78,7 +91,9 @@ def lint(verifier, root):
     if "Source anchors" in present and not rows:
         errors.append("SKILL.md: Source anchors table has no rows")
     for path, ids in rows:
-        if not (root / path).exists():
+        if not inside(root, path):
+            errors.append(f"SKILL.md: anchor path is outside the repository: {path}")
+        elif not (root / path).exists():
             errors.append(f"SKILL.md: anchor path does not exist: {path}")
         for fid in ids:
             if fid == "unmapped":

@@ -92,8 +92,9 @@ either documentation drift, which you correct, or a product regression, which
 you report without hiding it in the map.
 
 1. **Scope from history.** Read `Last verified:`. When it names a commit, list
-   `git diff --name-only <sha>..HEAD` and map each changed path to features
-   through the anchors table by path prefix. Changed user-facing paths that no
+   committed, staged, and unstaged changes with `git diff --name-only <sha>`
+   and untracked files with `git ls-files --others --exclude-standard`. Map
+   each path to features through the anchors table by path prefix. Changed user-facing paths that no
    anchor covers are candidate new features or `unmapped` rows. A full audit,
    a `never` value, or an unreachable commit covers every feature. State the
    scope and the features left out.
@@ -115,7 +116,8 @@ you report without hiding it in the map.
    gap; fix and re-drive it. Broken application behavior is a product gap;
    report it.
 6. **Finish.** Advance `Last verified:` to `HEAD` when every feature in scope
-   passed and the scope covered everything changed since the old value. An
+   passed, the scope covered everything changed since the old value, and no
+   product change is still uncommitted. An
    audit the user narrowed further leaves it alone. Run `verify-changes` after
    corrections and re-read every changed file.
 
