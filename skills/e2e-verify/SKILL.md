@@ -24,7 +24,7 @@ local verifier provides one.
 
 If a local instruction drifts, report it and use a current repository command
 or observed path that exercises the same affected behavior. Point to
-`maintain-verification-skill`; fail only when the behavior fails or remains
+`verification-skill audit`; fail only when the behavior fails or remains
 unverified. An unrelated passing flow does not substitute for that evidence.
 
 ## 1. Choose browser control
@@ -129,7 +129,7 @@ declaring PASS; a blank page passes a lazy gate.
 
 If an intentional change alters a mapped UI route, entry point, or result,
 update only the affected feature-map file before the final run. Leave a full
-map audit to `maintain-verification-skill`.
+map audit to `verification-skill audit`.
 
 ## 6. Verdict format
 
@@ -145,9 +145,9 @@ Suppressed: <none | the pre-existing noise you filtered>
 
 On FAIL: the failing assertion, the last screenshot path, and the trace
 (`npx playwright show-trace <path>`). Fix product code, adjust selectors freely
-when the UI intentionally changed, and rerun the affected check. After three
-failed fix-and-rerun cycles, `escalate`. Two unchanged transient failures require
-diagnosis before any further retry.
+when the UI intentionally changed, and rerun the affected check. When
+materially different fixes stop making progress, follow `escalate`. Two
+unchanged transient failures require diagnosis before any further retry.
 
 ## 7. Flake protocol
 

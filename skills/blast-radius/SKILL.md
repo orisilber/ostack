@@ -45,9 +45,6 @@ ships and calls the exact function you're worried about.
    real code when that is a cheap, meaningful check, and paste what happened.
    For a low-risk or purely static change, cite the strongest available evidence
    instead. If a material safety fact remains unproven, say so plainly.
-6. Use `arena` only when comparison earns its cost. A wide change with
-   genuinely different risk surfaces may benefit from several independent
-   reviewers. A small or well-understood change does not need a panel by default.
 
 ## What to hand back
 
@@ -58,6 +55,6 @@ ships and calls the exact function you're worried about.
 - **Before you merge.** The cheapest test or repro that catches the real bug,
   including the script when an executable proof was warranted and used.
 
-Write it through `unslop`, cite real code, and strip anything private before it goes anywhere public.
+Cite real code, and strip anything private before it goes anywhere public.
 
 **Reply:** the writeup above, with the one safety fact either proven or marked unproven.

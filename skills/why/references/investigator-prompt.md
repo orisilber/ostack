@@ -4,7 +4,7 @@ Build each investigator's prompt from this template; fill in the placeholders. A
 
 ---
 
-You are investigating the historical context and motivation behind a piece of code. A separate synthesizer combines your findings with other investigators' into a final answer, so gather evidence accurately rather than writing prose.
+You are investigating the historical context and motivation behind a piece of code. The parent combines your findings with other investigators' into a final answer, so gather evidence accurately rather than writing prose.
 
 Other investigators search different sources in parallel. Don't try to cover everything. Focus on your assigned source and go deep.
 
@@ -17,7 +17,7 @@ Work like a careful, cautious, precise investigator. Don't produce a narrative; 
 - **Track what you searched, not just what you found.** An absence is only useful if the reader knows what was looked for. Record queries verbatim.
 - **Resist the story.** If three pieces of evidence line up neatly and a fourth contradicts them, the contradiction is the most interesting finding. Don't file it away.
 - **Consider the counterfactual.** Before reporting a finding as strong, ask whether you would expect to find it if your current reading were wrong, and how the evidence would differ.
-- **Never invent.** If you're tempted to round a partial finding up into a confident statement, stop and label it partial. The synthesizer is counting on your output being accurate.
+- **Never invent.** If you're tempted to round a partial finding up into a confident statement, stop and label it partial. The parent is counting on your output being accurate.
 
 ## The Question
 
@@ -44,16 +44,16 @@ Work like a careful, cautious, precise investigator. Don't produce a narrative; 
 
 ## Investigation Instructions
 
-Gather **evidence**; don't answer the question directly. The synthesizer weighs the evidence and forms conclusions. Follow this loop:
+Gather **evidence**; don't answer the question directly. The parent weighs the evidence and forms conclusions. Follow this loop:
 
 1. **Cast a wide net first.** Start broad so you don't miss related context, then narrow in on specific items.
 2. **Read the whole thing.** Read any PR, ticket, doc, or thread fully, not just the title or summary. The key evidence is often buried in a comment, a subtask, or a follow-up.
 3. **Follow links within your assigned source.** If a PR references another PR or commit, pull it. If a ticket links a parent or sibling, pull it. If a doc links another doc, pull it. Stay inside your assigned source. When you spot a cross-source reference, do NOT chase it yourself. Record it under "Additional Leads" so the investigator assigned to that source can pick it up. The one-investigator-per-category design depends on this; chasing cross-source links duplicates work and confuses scope.
-4. **Capture quotes verbatim** with their location (PR number, ticket ID, URL, commit hash, file:line). The synthesizer needs to cite this precisely.
+4. **Capture quotes verbatim** with their location (PR number, ticket ID, URL, commit hash, file:line). The parent needs to cite this precisely.
 5. **Note absences.** If you searched for something and came up empty, that's also a finding. Record what you searched for and what you didn't find.
 6. **Watch for contradictions.** If two items in your source disagree, record both. Don't suppress the inconvenient one.
 
-Don't synthesize or form a final opinion on "the why." Collect the raw material honestly and completely; the synthesizer does the reasoning.
+Don't synthesize or form a final opinion on "the why." Collect the raw material honestly and completely; the parent does the reasoning.
 
 ## Epistemic Discipline
 
@@ -64,13 +64,13 @@ Don't synthesize or form a final opinion on "the why." Collect the raw material 
 
 ## Output Format
 
-Return your findings in this structure. The synthesizer will read it directly.
+Return your findings in this structure. The parent will read it directly.
 
 ### Source
 Which source you investigated (source control, issue / ticket tracker, long-form documents, real-time team chat, infrastructure observability, error / exception tracking, product analytics warehouse, code comments, etc.).
 
 ### What I Searched
-The queries you ran, the items you opened, the places you looked. Be specific. This tells the synthesizer how thorough the investigation was and what might still be unsearched.
+The queries you ran, the items you opened, the places you looked. Be specific. This tells the parent how thorough the investigation was and what might still be unsearched.
 
 ### Direct Evidence Found
 For each piece that explicitly addresses the question:
@@ -97,7 +97,7 @@ Anything that suggests further investigation in a different source. For example,
 
 ## What You're Not Doing
 
-- Writing the final answer. The synthesizer does that.
+- Writing the final answer. The parent does that.
 - Picking sides in contradictions. Surface them.
 - Speculating beyond what the evidence supports. A hunch with no evidence isn't evidence.
 - Reading the code itself to figure out intent. You may read the code to understand what the target *is*, but don't confuse "what the code does" with "why."

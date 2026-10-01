@@ -24,7 +24,7 @@ gate; it is not evidence of an empty review policy.
    required specific reviewer. The default requires a current-head approval
    even when branch protection does not require one. Use `--no-review-required`
    only after confirming neither repository policy nor the user requires an
-   external review. It does not waive the local `no-comments` gate.
+   external review.
 5. The helper collects all reviews and review threads, required checks, and PR
    metadata before and after collection. It requires an open, non-draft,
    conflict-free PR, current-head approvals, resolved threads, and passing

@@ -1,0 +1,45 @@
+skill: recall
+description: Recalls one topic from the last 7 days, cites chat IDs, and tags every thread.
+
+setup: |
+  git init -q -b main
+  git config user.email dev@ostack.dev
+  git config user.name dev
+  echo "# fixture" > README.md
+  git add -A && git commit -qm init
+  git switch -qc fix/billing-retry
+  echo "retry = 3" > billing.cfg
+  git add -A && git commit -qm "billing: cap retries at 3"
+  git switch -q main
+
+  old=$(date -v-21d +%Y%m%d0000 2>/dev/null || date -d '21 days ago' +%Y%m%d0000)
+  chat() {
+    printf '{"role":"user","message":{"content":[{"type":"text","text":"%s"}]}}\n{"role":"assistant","message":{"content":[{"type":"text","text":"%s"}]}}\n' "$3" "$4" > "$1/$2.jsonl"
+  }
+  for slug in $(printf '%s\n%s\n' "$(pwd)" "$(pwd -P)" | sort -u | tr '/.' '--'); do
+    for dir in "$HOME/.cursor/projects/${slug#-}/agent-transcripts" "$HOME/.claude/projects/$slug"; do
+      mkdir -p "$dir"
+      chat "$dir" aaaa1111-recent-billing "Billing retries loop forever on card declines. Fix it." "Capped retries at 3 on branch fix/billing-retry. Not pushed yet; declined-card test still flaky."
+      chat "$dir" bbbb2222-old-billing "Billing retries: first attempt." "Tried exponential backoff; reverted because it delayed invoices."
+      chat "$dir" cccc3333-recent-search "Speed up the search page." "Added an index on products.name."
+      touch -t "$old" "$dir/bbbb2222-old-billing.jsonl"
+    done
+  done
+
+prompt: |
+  Catch me up on the billing retries work from the last week. Do not edit files.
+
+assert:
+  output_contains:
+    - "aaaa1111"
+    - "\\[(in flight|verified, uncommitted|open MR|merged|reverted|planned, not started)"
+    - "fix/billing-retry"
+  output_not_contains:
+    - "bbbb2222"
+    - "products\\.name"
+  tools_not_called:
+    - "git commit"
+    - "git push"
+  custom: |
+    set -eu
+    [ -z "$(git -C "$WORK" status --porcelain)" ] || { echo "worktree changed"; exit 1; }

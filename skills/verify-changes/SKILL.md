@@ -34,7 +34,7 @@ The project-local verifier supplements this gate. It does not replace declared
 repository checks. Confirm its commands against its source anchors before use.
 If a command or path has drifted, report the documentation defect and use a
 current repository declaration that checks the same behavior. Point to
-`maintain-verification-skill` for repair. Stale instructions alone do not fail
+`verification-skill audit` for repair. Stale instructions alone do not fail
 the product gate when equivalent current evidence passes; an unverified affected
 behavior still does.
 
@@ -46,32 +46,12 @@ Priority order, first source that names a command wins:
    or **Verification** section that lists lint, typecheck, and test commands.
 2. A valid project-local verifier's **Repository checks** section. Confirm each
    command against the source anchor that it names.
-3. Manifests. Use the repository's files to find the declared checks; a
-   manifest tells you where to inspect, but it never authorizes a guessed
-   command. In addition to the common manifests, inspect:
-
-   - Common repositories: `package.json` scripts (`lint`, `typecheck`/`tsc
-     --noEmit`, `test`), `Makefile` targets, `justfile`, `pyproject.toml`
-     (`ruff`, `mypy`, `pytest`), and `Cargo.toml`.
-   - JVM/Scala: `pom.xml`, `build.gradle`, `build.gradle.kts`, and `build.sbt`.
-     Check the Maven/Gradle/SBT wrapper and project or CI documentation for
-     the exact check before running it.
-   - Go: `go.mod` and `go.work`. Look for the check in a `Makefile`,
-     `justfile`, `Taskfile.yml`, repository documentation, or CI configuration.
-   - .NET: `*.sln`, `*.slnx`, `*.csproj`, `global.json`, and
-     `Directory.Build.*`. Confirm the exact `dotnet` invocation in project
-     documentation or CI.
-   - Ruby: `Gemfile`, `*.gemspec`, and `Rakefile`. Confirm the exact Bundler or
-     Rake task in project documentation or CI.
-   - PHP: `composer.json`, `phpunit.xml*`, `phpstan.neon*`, and `psalm.xml*`.
-     Confirm the exact Composer or analysis task in project documentation or
-     CI.
-
-   `Makefile` targets, `justfile` recipes, package scripts, and equivalent
-   task definitions are declarations when they name the check directly. Do
-   not turn the mere presence of a language manifest into an invented command
-   such as `npm test`, `go test ./...`, `dotnet test`, `bundle exec`, or
-   `composer test`.
+3. Task declarations: `package.json` scripts, `Makefile` targets, `justfile`
+   recipes, `Taskfile.yml`, `pyproject.toml` tool sections, and build-tool
+   wrappers (Maven, Gradle, SBT, `dotnet`, Bundler, Composer) named in project
+   documentation. A language manifest shows where to look; it never authorizes
+   a guessed command such as `npm test`, `go test ./...`, or `dotnet test`.
+   Run only a command the repository declares.
 4. CI config as ground truth of what must pass: `.gitlab-ci.yml` or GitHub
    workflows job names → map to local equivalents.
 
@@ -116,13 +96,16 @@ user behavior.
 - With a matching project-local verifier, use its source anchors and feature
   index to identify the affected features. Drive every matching feature. Run
   its launch, doctor, evidence, and cleanup steps.
+- A feature marked `draft` in the index has never been driven. Use its recipe
+  as a lead, not as proof: when it cannot drive the behavior, apply the drift
+  rule above instead of failing the product on unproven instructions.
 - If a changed path cannot be classified from those anchors, treat it as
   affected user behavior instead of assuming that it is internal.
 - If changed user-facing code has no mapped feature, use the repository's
   existing integration or end-to-end tool. Invoke `e2e-verify` for a browser.
   If no executable fallback exists, report `Behavior: FAIL unmapped affected
   user behavior` and emit `VERIFY: FAIL project-local verifier has no recipe
-  for affected user behavior`. Point to `maintain-verification-skill`.
+  for affected user behavior`. Point to `verification-skill audit`.
 - For browser behavior, invoke `e2e-verify`. The project-local verifier owns
   launch, authentication, exact feature recipes, and evidence locations.
   `e2e-verify` owns browser assertions, console errors, traces, and retries.
@@ -136,13 +119,13 @@ user behavior.
 
 When an intentional product change alters a mapped route, command, or result,
 update the affected feature file in the same change and run that recipe. Do not
-audit unrelated features. `maintain-verification-skill` owns the full audit.
+audit unrelated features. `verification-skill audit` owns the full audit.
 
 ## 6. On failure
 
-Fix code (that's your job, not the gate's), re-run the failed check only.
-Loop max 3 attempts (matches `escalate` soft-stop default) → call `escalate`
-with the shortest reproduction of the failure.
+Fix code (that's your job, not the gate's) and re-run the failed check only.
+When materially different fixes stop making progress, follow `escalate` with
+the shortest reproduction of the failure.
 
 ## 7. Before PASS
 

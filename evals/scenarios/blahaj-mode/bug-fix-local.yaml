@@ -1,5 +1,5 @@
 skill: blahaj-mode
-description: Selects the local-change bug-fix route and does not infer an MR.
+description: Keeps a bug fix local and does not infer an MR.
 
 setup: |
   git init -q -b main
@@ -38,7 +38,7 @@ prompt: |
 
 assert:
   output_contains:
-    - "Route: bug-fix -> local-change"
+    - "Outcome: local-change"
   tools_not_called:
     - "git push"
     - "glab mr create"

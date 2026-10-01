@@ -9,24 +9,14 @@ disable-model-invocation: true
 Produce one selected or synthesized artifact with evidence for the choice.
 Preserve the caller's acceptance scope, write boundaries, and test sequencing.
 
-## Resolve models and candidate count
+## Candidates and models
 
-Arena owns resolution for its subagents. The runner role defaults to
-`arena runners`. A nested caller may pass a supported **runner-role override**,
-such as Architect's `architect runners`. Resolve that role instead of merging
-it with the default panel. The judge role remains `arena cross-judge`.
-
-Resolve each role from `~/.cursor/rules/ostack-models.mdc`: skill-role line,
-then generic `judgment`, then `inherit`. Pass the resolved value as the
-subagent `model` argument; `inherit` omits it. Hosts that do not load the rule
-use `inherit`. Drop rejected entries, falling back to `inherit` when none
-remain. Do not invent a nearby model ID or claim actual model identity from
-a successful call alone.
-
-The configured list supplies models, not candidate count. Choose N from useful
-directions and the requested comparison, reusing a model for multiple candidates
-when needed. A judge, when useful, takes one available entry, preferably from a
-different model family when the host confirms that option.
+Choose the candidate count from the useful directions and the requested
+comparison, usually two or three. Candidates run on the parent model: omit the
+subagent `model` argument. When the user names models in the request, assign
+them to candidates or to a separate judge as the user asked. If the host rejects
+a named model, say so and run that candidate on the parent model. Do not
+substitute a nearby model.
 
 ## Frame and run
 
@@ -47,9 +37,9 @@ until real-interface acceptance. Arena verification does not replace that gate.
 ## Choose and integrate
 
 Assess every candidate against the same concrete criteria. Inspect the affected
-contracts and evidence closely enough to justify the choice. Use a separate
-read-only cross-judge when requested or when another assessment would materially
-reduce uncertainty; an unavailable judge does not stall a supported parent review.
+contracts and evidence closely enough to justify the choice. The parent judges.
+Add a separate read-only judge only when the user names a model for it; an
+unavailable judge does not stall the parent's review.
 
 Choose on evidence and maintainability. Agreement is corroboration, not proof;
 a concrete counterexample can outweigh consensus. Resolve material disagreements

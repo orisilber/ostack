@@ -33,7 +33,7 @@ be hard to check by hand. Reuse an existing check when it proves the same fact;
 create a helper when its value justifies maintaining it. A direct manual check
 can be sufficient for a small, reversible change. Record what was observed.
 
-Keep the artifact visible for the human. Commit it only for large or complex work where the trail has to be auditable later, like a big port or migration (the **show-me-your-work** skill). Most work just needs it visible, not committed.
+Keep the artifact visible for the human. Commit it only for large or complex work where the trail has to be auditable later, like a big port or migration. Most work just needs it visible, not committed.
 
 
 ## Fix Root Causes
@@ -76,4 +76,4 @@ useful when the baseline matters, but is not a prerequisite for local work.
   when one focused check covers the unit.
 - Order the units so the sequence builds confidence on its own, for you while executing and for a reviewer reading the stack.
 
-The sequencing complement to the **prove-it-works** principle skill, which keeps each check real, and the **build-the-lever** principle skill, which makes the per-unit check cheap.
+The sequencing complement to Prove It Works, which keeps each check real.

@@ -16,7 +16,7 @@ prompt: |
 
 assert:
   output_contains:
-    - "Route: pause-safely -> answer"
+    - "Outcome: answer"
     - "resume"
   tools_not_called:
     - "git push"

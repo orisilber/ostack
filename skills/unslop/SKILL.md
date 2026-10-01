@@ -1,11 +1,22 @@
 ---
 name: unslop
-description: "Cut AI tells from writing about to be published: MR descriptions, commit bodies, docs, ticket comments. Put a human voice back in. Triggers \"unslop\", \"this reads like AI\", \"tighten this up\". Applies to prose, never to code."
+description: "Write or edit prose about to be published: MR descriptions, commit bodies, docs, READMEs, RFCs, ticket comments. Cut AI tells and put a human voice back in. Triggers \"unslop\", \"this reads like AI\", \"tighten this up\", or writing documentation. Applies to published prose, never to code or internal notes."
 ---
 
 # Unslop
 
-Edit text to remove AI patterns and add human voice.
+Edit text to remove AI patterns and add human voice. Use it for prose other
+people will read outside the chat, not for internal briefs or chat replies.
+
+Write for the reader's task. Lead with the point, and verify every real symbol,
+path, command, and count against the source. A PR or MR description states the
+change, its reason, and how it was verified.
+
+For a tutorial, how-to guide, reference page, or explanation, pick the mode with
+[references/document-modes.md](references/document-modes.md). For substantial
+editing, ambiguous sentences, or a global audience, apply
+[references/sentence-style.md](references/sentence-style.md). A commit message
+or short description needs neither.
 
 ## Process
 

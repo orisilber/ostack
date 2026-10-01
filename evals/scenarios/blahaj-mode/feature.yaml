@@ -47,9 +47,7 @@ prompt: |
 
 assert:
   output_contains:
-    - "Route: feature -> local-change"
-    - "architect skipped"
-    - "arena skipped"
+    - "Outcome: local-change"
     - "retention"
   tools_not_called:
     - "glab mr create"

@@ -2,12 +2,13 @@ Portions of this repository are adapted from pstack
 (https://github.com/poteto/pstack), Copyright (c) 2026 Lauren Tan,
 licensed under the MIT License.
 
-Adapted skills: blahaj-mode (the mode and playbook mechanism from pstack's
-poteto-mode; the route registry, outcome tails, and playbook text are specific
-to ostack), principles (consolidated from the 21 principle-* skills), how, why,
-blast-radius, architect, arena, swarm, interrogate, recall, show-me-your-work,
-unslop, technical-writing, typescript-best-practices,
-create-verification-skill, maintain-verification-skill.
+Adapted skills: blahaj-mode (the mode mechanism from pstack's poteto-mode,
+reworked into a single working agreement specific to ostack), principles
+(consolidated from the 21 principle-* skills, with architect's design red
+flags), how, why, blast-radius, arena, swarm, interrogate, no-comments, recall,
+unslop (with technical-writing's document modes and sentence style),
+typescript-best-practices, verification-skill (merged from
+create-verification-skill and maintain-verification-skill).
 
 MIT License
 
