@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Install every skill and subagent in this checkout into every supported host:
-#   ~/.agents/skills  (canonical runtime location)
-#   ~/.claude/skills  (Claude Code)
-#   ~/.cursor/skills  (Cursor)
-#   ~/.codex/agents, ~/.claude/agents, ~/.cursor/agents
+# Install every skill and subagent in this checkout into Claude Code's folders only:
+#   ~/.claude/skills, ~/.claude/agents
+# Cursor loads both of those too. Earlier versions also copied into ~/.agents/skills,
+# ~/.cursor/skills, ~/.codex/agents and ~/.cursor/agents, which made Cursor list everything
+# several times; re-running removes ostack's old copies from there. Codex reads only those
+# other folders, so it no longer gets ostack's skills or agents.
 # Files are COPIED, not symlinked, so the clone can be deleted after install.
 # Re-running replaces current items and removes retired copies with an .ostack
 # marker. Unmarked paths and symlinks are left alone and reported.
@@ -12,8 +13,11 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INSTALL_HOME="${OSTACK_INSTALL_HOME:-$HOME}"
 AGENTS_HOME="${AGENTS_HOME:-$INSTALL_HOME/.agents}"
-SKILL_TARGETS=("$AGENTS_HOME/skills" "$INSTALL_HOME/.claude/skills" "$INSTALL_HOME/.cursor/skills")
-AGENT_TARGETS=("$INSTALL_HOME/.codex/agents" "$INSTALL_HOME/.claude/agents" "$INSTALL_HOME/.cursor/agents")
+SKILL_TARGETS=("$INSTALL_HOME/.claude/skills")
+# Where earlier versions also installed skills; only ostack's own copies are removed.
+LEGACY_SKILL_TARGETS=("$AGENTS_HOME/skills" "$INSTALL_HOME/.cursor/skills")
+AGENT_TARGETS=("$INSTALL_HOME/.claude/agents")
+LEGACY_AGENT_TARGETS=("$INSTALL_HOME/.codex/agents" "$INSTALL_HOME/.cursor/agents")
 DRY_RUN=0
 
 for arg in "$@"; do
@@ -21,7 +25,7 @@ for arg in "$@"; do
 	--dry-run) DRY_RUN=1 ;;
 	-h | --help)
 		echo "Usage: $0 [--dry-run]"
-		echo "  AGENTS_HOME env var overrides the default ~/.agents"
+		echo "  AGENTS_HOME env var overrides the default ~/.agents (old skill copies are removed from there)"
 		echo "  OSTACK_INSTALL_HOME env var overrides the user home for all targets"
 		exit 0
 		;;
@@ -93,6 +97,22 @@ for target in "${SKILL_TARGETS[@]}"; do
 	done
 done
 
+for target in "${LEGACY_SKILL_TARGETS[@]}"; do
+	for dest in "$target"/*; do
+		[ -L "$dest" ] && continue
+		[ -d "$dest" ] || continue
+		[ -f "$dest/.ostack" ] || continue
+		name="$(basename "$dest")"
+		if [ "$DRY_RUN" = 1 ]; then
+			echo "would remove old copy of $name from $target"
+		else
+			rm -rf "$dest"
+			echo "removed old copy of $name from $target"
+		fi
+		removed=$((removed + 1))
+	done
+done
+
 installed_agents=0
 if [ -d "$REPO_DIR/agents" ]; then
 	for source in "$REPO_DIR"/agents/*.md; do
@@ -137,6 +157,25 @@ for target in "${AGENT_TARGETS[@]}"; do
 		else
 			rm -f "$dest" "$marker"
 			echo "removed agent $name from $target"
+		fi
+		removed=$((removed + 1))
+	done
+done
+
+for target in "${LEGACY_AGENT_TARGETS[@]}"; do
+	for marker in "$target"/*.md.ostack; do
+		[ -f "$marker" ] || continue
+		dest="${marker%.ostack}"
+		name="$(basename "$dest")"
+		if [ -L "$dest" ]; then
+			[ "$DRY_RUN" = 1 ] || rm -f "$marker"
+			continue
+		fi
+		if [ "$DRY_RUN" = 1 ]; then
+			echo "would remove old copy of agent $name from $target"
+		else
+			rm -f "$dest" "$marker"
+			echo "removed old copy of agent $name from $target"
 		fi
 		removed=$((removed + 1))
 	done

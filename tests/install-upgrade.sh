@@ -36,16 +36,18 @@ make_release() {
 assert_installed() {
 	local install_home="$1" name="$2"
 	local target
-	for target in \
-		"$install_home/.agents/skills" \
-		"$install_home/.claude/skills" \
-		"$install_home/.cursor/skills"; do
-		[ -f "$target/$name/SKILL.md" ] || {
-			echo "expected $name in $target" >&2
-			exit 1
-		}
-		[ -f "$target/$name/.ostack" ] || {
-			echo "expected ownership marker for $name in $target" >&2
+	target="$install_home/.claude/skills"
+	[ -f "$target/$name/SKILL.md" ] || {
+		echo "expected $name in $target" >&2
+		exit 1
+	}
+	[ -f "$target/$name/.ostack" ] || {
+		echo "expected ownership marker for $name in $target" >&2
+		exit 1
+	}
+	for target in "$install_home/.agents/skills" "$install_home/.cursor/skills"; do
+		[ ! -e "$target/$name" ] || {
+			echo "expected no copy of $name in $target (Cursor would list it twice)" >&2
 			exit 1
 		}
 	done
@@ -54,16 +56,18 @@ assert_installed() {
 assert_agent_installed() {
 	local install_home="$1" name="$2"
 	local target
-	for target in \
-		"$install_home/.codex/agents" \
-		"$install_home/.claude/agents" \
-		"$install_home/.cursor/agents"; do
-		[ -f "$target/$name.md" ] || {
-			echo "expected agent $name in $target" >&2
-			exit 1
-		}
-		[ -f "$target/$name.md.ostack" ] || {
-			echo "expected agent ownership marker for $name in $target" >&2
+	target="$install_home/.claude/agents"
+	[ -f "$target/$name.md" ] || {
+		echo "expected agent $name in $target" >&2
+		exit 1
+	}
+	[ -f "$target/$name.md.ostack" ] || {
+		echo "expected agent ownership marker for $name in $target" >&2
+		exit 1
+	}
+	for target in "$install_home/.codex/agents" "$install_home/.cursor/agents"; do
+		[ ! -e "$target/$name.md" ] || {
+			echo "expected no copy of agent $name in $target (Cursor would list it twice)" >&2
 			exit 1
 		}
 	done
@@ -74,12 +78,39 @@ make_release v2 keep occupied -- keep-agent occupied-agent
 
 INSTALL_ROOT="$TEST_ROOT/installed"
 mkdir -p "$INSTALL_ROOT/.agents/skills/occupied"
-mkdir -p "$INSTALL_ROOT/.codex/agents"
+for target in "$INSTALL_ROOT/.agents/skills" "$INSTALL_ROOT/.cursor/skills"; do
+	mkdir -p "$target/keep" "$target/gone"
+	touch "$target/keep/SKILL.md" "$target/keep/.ostack" "$target/gone/SKILL.md" "$target/gone/.ostack"
+done
+mkdir -p "$INSTALL_ROOT/.codex/agents" "$INSTALL_ROOT/.cursor/agents"
 touch "$INSTALL_ROOT/.codex/agents/occupied-agent.md"
+for target in "$INSTALL_ROOT/.codex/agents" "$INSTALL_ROOT/.cursor/agents"; do
+	touch "$target/keep-agent.md" "$target/keep-agent.md.ostack" "$target/gone-agent.md" "$target/gone-agent.md.ostack"
+done
 AGENTS_HOME="$INSTALL_ROOT/.agents" OSTACK_INSTALL_HOME="$INSTALL_ROOT" \
 	bash "$TEST_ROOT/v1/scripts/install.sh" >/dev/null
 assert_installed "$INSTALL_ROOT" keep
 assert_installed "$INSTALL_ROOT" retired
+for target in "$INSTALL_ROOT/.agents/skills" "$INSTALL_ROOT/.cursor/skills"; do
+	[ ! -e "$target/gone" ] || {
+		echo "old ostack copy of a retired skill remained in $target" >&2
+		exit 1
+	}
+	[ -d "$target/occupied" ] || [ "$target" = "$INSTALL_ROOT/.cursor/skills" ] || {
+		echo "foreign skill was removed from $target" >&2
+		exit 1
+	}
+done
+for target in "$INSTALL_ROOT/.codex/agents" "$INSTALL_ROOT/.cursor/agents"; do
+	[ ! -e "$target/gone-agent.md" ] && [ ! -e "$target/gone-agent.md.ostack" ] || {
+		echo "old ostack copy of an agent remained in $target" >&2
+		exit 1
+	}
+done
+[ -f "$INSTALL_ROOT/.codex/agents/occupied-agent.md" ] || {
+	echo "foreign agent was removed from .codex/agents" >&2
+	exit 1
+}
 assert_agent_installed "$INSTALL_ROOT" keep-agent
 assert_agent_installed "$INSTALL_ROOT" retired-agent
 [ ! -e "$CALLER_AGENTS_HOME/skills/keep" ] || {
@@ -153,11 +184,11 @@ dry_output="$(AGENTS_HOME="$DRY_ROOT/.agents" OSTACK_INSTALL_HOME="$DRY_ROOT" \
 	bash "$TEST_ROOT/v2/scripts/install.sh" --dry-run)"
 assert_installed "$DRY_ROOT" retired
 assert_agent_installed "$DRY_ROOT" retired-agent
-[ "$(grep -c 'would remove retired' <<< "$dry_output")" -eq 3 ] || {
+[ "$(grep -c 'would remove retired' <<< "$dry_output")" -eq 1 ] || {
 	echo 'dry run did not report all retired skills' >&2
 	exit 1
 }
-[ "$(grep -c 'would remove agent retired-agent.md' <<< "$dry_output")" -eq 3 ] || {
+[ "$(grep -c 'would remove agent retired-agent.md' <<< "$dry_output")" -eq 1 ] || {
 	echo 'dry run did not report all retired agents' >&2
 	exit 1
 }

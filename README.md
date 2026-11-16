@@ -8,8 +8,8 @@ Claude Code / opencode compatible). Written Cursor-first: `~/.cursor` paths and 
 subagent types are the default path, but every skill names its fallback for
 single-vendor hosts, so nothing silently no-ops in Claude Code.
 
-Named subagents live in [`agents/`](agents/) and are installed for Cursor,
-Claude Code, and Codex.
+Named subagents live in [`agents/`](agents/) and are installed into
+`~/.claude/agents`, which Claude Code and Cursor both load.
 
 ## Install
 
@@ -24,9 +24,12 @@ let tmp = (mktemp -d); git clone -q git@github.com:orisilber/ostack.git $"($tmp)
 ```
 
 One line, nothing left behind but the skills and agents: copies skills into
-`~/.agents/skills`, `~/.claude/skills`, and `~/.cursor/skills`; copies
-agents into `~/.codex/agents`, `~/.claude/agents`, and `~/.cursor/agents`;
-then deletes the clone. Re-run anytime to upgrade or drop retired items.
+`~/.claude/skills` and agents into `~/.claude/agents`, which Claude Code and
+Cursor both load; then deletes the clone. Re-run anytime to upgrade or drop
+retired items. Earlier versions also copied into `~/.agents/skills`,
+`~/.cursor/skills`, `~/.codex/agents` and `~/.cursor/agents`, which made Cursor
+list everything several times; re-running removes those copies. Codex reads only
+those folders, so it no longer gets ostack's skills or agents.
 `--dry-run` previews; `AGENTS_HOME` or `OSTACK_INSTALL_HOME` redirect the
 target.
 
@@ -143,7 +146,7 @@ Not vendored here. `memory-admin`, `memory-capture`, `memory-loop`, and
 `memory-recall` ship from
 [agent-memory](https://github.com/orisilber/agent-memory), a separate local-first
 memory service with its own installer. Install that repo and its skills land in
-`~/.agents/skills` next to these. `recall` rebuilds working context for a task;
+`~/.agents/skills`. `recall` rebuilds working context for a task;
 `memory-recall` holds durable preferences and facts across tasks.
 
 ## Where the loop runs
